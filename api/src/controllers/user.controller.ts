@@ -158,11 +158,7 @@ export class UserController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [
-        PermissionKeys.SUPER_ADMIN,
-        PermissionKeys.CLUSTER_ADMIN,
-        PermissionKeys.GROUP_ADMIN,
-      ],
+      required: [PermissionKeys.SUPER_ADMIN],
     },
   })
   @get('/api/users/list')
