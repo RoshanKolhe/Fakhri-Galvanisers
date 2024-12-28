@@ -22,7 +22,7 @@ import Iconify from 'src/components/iconify';
 
 const LINKS = [
   {
-    headline: 'Minimal',
+    headline: 'Fakhri Galvanisers',
     children: [
       { name: 'About us', href: paths.about },
       { name: 'Contact us', href: paths.contact },

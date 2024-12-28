@@ -63,7 +63,7 @@ export default function ModernForgotPasswordView() {
 
       <Link
         component={RouterLink}
-        href={paths.authDemo.modern.login}
+        href={paths.auth.jwt.login}
         color="inherit"
         variant="subtitle2"
         sx={{
