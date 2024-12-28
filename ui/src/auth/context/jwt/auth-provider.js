@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
 
         const response = await axios.get(endpoints.auth.me);
 
-        const { user } = response.data;
+        const  user  = response.data;
 
         dispatch({
           type: 'INITIAL',
@@ -104,8 +104,9 @@ export function AuthProvider({ children }) {
     const response = await axios.post(endpoints.auth.login, data);
 
     const { accessToken, user } = response.data;
-
-    setSession(accessToken);
+    console.log(user);
+    if (user && user.permissions.includes('super_admin')) setSession(accessToken);
+    else throw new Error("User Doesn't have permission");
 
     dispatch({
       type: 'LOGIN',
