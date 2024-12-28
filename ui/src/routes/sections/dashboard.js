@@ -79,6 +79,7 @@ export const dashboardRoutes = [
     ),
     children: [
       { element: <IndexPage />, index: true },
+      { path: 'profile', element: <UserAccountPage /> },
       {
         path: 'user',
         children: [
@@ -88,7 +89,6 @@ export const dashboardRoutes = [
           { path: 'list', element: <UserListPage /> },
           { path: 'new', element: <UserCreatePage /> },
           { path: ':id/edit', element: <UserEditPage /> },
-          { path: 'account', element: <UserAccountPage /> },
         ],
       },
       {

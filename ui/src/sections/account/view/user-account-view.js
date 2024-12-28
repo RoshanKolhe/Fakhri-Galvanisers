@@ -62,45 +62,17 @@ export default function AccountView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Account"
+        heading="Profile"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'User', href: paths.dashboard.user.root },
-          { name: 'Account' },
+          { name: 'Profile' },
         ]}
         sx={{
           mb: { xs: 3, md: 5 },
         }}
       />
-
-      <Tabs
-        value={currentTab}
-        onChange={handleChangeTab}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      >
-        {TABS.map((tab) => (
-          <Tab key={tab.value} label={tab.label} icon={tab.icon} value={tab.value} />
-        ))}
-      </Tabs>
-
-      {currentTab === 'general' && <AccountGeneral />}
-
-      {currentTab === 'billing' && (
-        <AccountBilling
-          plans={_userPlans}
-          cards={_userPayment}
-          invoices={_userInvoices}
-          addressBook={_userAddressBook}
-        />
-      )}
-
-      {currentTab === 'notifications' && <AccountNotifications />}
-
-      {currentTab === 'social' && <AccountSocialLinks socialLinks={_userAbout.socialLinks} />}
-
-      {currentTab === 'security' && <AccountChangePassword />}
+      <AccountGeneral />
     </Container>
   );
 }
