@@ -8,25 +8,15 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 // hooks
-import { useMockedUser } from 'src/hooks/use-mocked-user';
 // utils
 import { fData } from 'src/utils/format-number';
 // assets
-import { countries } from 'src/assets/data';
 // components
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, {
-  RHFSwitch,
-  RHFTextField,
-  RHFUploadAvatar,
-  RHFAutocomplete,
-  RHFSelect,
-} from 'src/components/hook-form';
+import FormProvider, { RHFTextField, RHFUploadAvatar, RHFSelect } from 'src/components/hook-form';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { MenuItem } from '@mui/material';
 import { states } from 'src/utils/constants';
@@ -75,11 +65,10 @@ export default function AccountGeneral() {
 
   const {
     reset,
-    watch,
     control,
     setValue,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (formData) => {

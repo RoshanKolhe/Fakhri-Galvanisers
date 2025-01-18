@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -17,15 +18,25 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { SentIcon } from 'src/assets/icons';
 // components
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFTextField, RHFCode } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { useRouter, useSearchParams } from 'src/routes/hook';
+import { useEffect, useState } from 'react';
+import axiosInstance from 'src/utils/axios';
+import { CircularProgress } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 // ----------------------------------------------------------------------
 
 export default function ModernNewPasswordView() {
   const password = useBoolean();
+  const params = useSearchParams();
+  const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
 
+  const [isValidToken, setIsValidToken] = useState(null);
+
+  const token = params.get('token');
   const NewPasswordSchema = Yup.object().shape({
-    code: Yup.string().min(6, 'Code must be at least 6 characters').required('Code is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string()
       .min(6, 'Password must be at least 6 characters')
@@ -36,7 +47,6 @@ export default function ModernNewPasswordView() {
   });
 
   const defaultValues = {
-    code: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -50,15 +60,28 @@ export default function ModernNewPasswordView() {
 
   const {
     handleSubmit,
+    setValue,
     formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.info('DATA', data);
+      const inputData = {
+        email: data.email,
+        newPassword: data.confirmPassword,
+      };
+
+      const response = await axiosInstance.post('setNewPassword', inputData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response);
+      enqueueSnackbar(response?.data?.message, { variant: 'success' });
+      router.push(paths.auth.jwt.login);
     } catch (error) {
       console.error(error);
+      setIsValidToken(false);
     }
   });
 
@@ -69,9 +92,8 @@ export default function ModernNewPasswordView() {
         label="Email"
         placeholder="example@gmail.com"
         InputLabelProps={{ shrink: true }}
+        disabled
       />
-
-      <RHFCode name="code" />
 
       <RHFTextField
         name="password"
@@ -113,21 +135,9 @@ export default function ModernNewPasswordView() {
         Update Password
       </LoadingButton>
 
-      <Typography variant="body2">
-        {`Don’t have a code? `}
-        <Link
-          variant="subtitle2"
-          sx={{
-            cursor: 'pointer',
-          }}
-        >
-          Resend code
-        </Link>
-      </Typography>
-
       <Link
         component={RouterLink}
-        href={paths.authDemo.modern.login}
+        href={paths.auth.jwt.login}
         color="inherit"
         variant="subtitle2"
         sx={{
@@ -146,22 +156,53 @@ export default function ModernNewPasswordView() {
       <SentIcon sx={{ height: 96 }} />
 
       <Stack spacing={1} sx={{ my: 5 }}>
-        <Typography variant="h3">Request sent successfully!</Typography>
-
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          We&apos;ve sent a 6-digit confirmation email to your email.
-          <br />
-          Please enter the code in below box to verify your email.
-        </Typography>
+        <Typography variant="h3">Reset Password</Typography>
       </Stack>
     </>
   );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axiosInstance.get('/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setIsValidToken(true);
+        setValue('email', response?.data?.email);
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          console.error('Unauthorized: Invalid token');
+          setIsValidToken(false); // Set to false if token is invalid
+        } else {
+          console.error('An error occurred:', error);
+          setIsValidToken(false); // Handle other errors as invalid token
+        }
+      }
+    };
+
+    if (token) {
+      fetchData();
+    }
+  }, [setValue, token]);
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       {renderHead}
 
-      {renderForm}
+      {isValidToken === null ? (
+        // Display nothing or a loading state while checking token validity
+        <Stack spacing={1} sx={{ my: 5 }} justifyContent="center">
+          <CircularProgress color="info" sx={{ alignSelf: 'center' }} />
+        </Stack>
+      ) : isValidToken ? (
+        renderForm
+      ) : (
+        <Stack spacing={1} sx={{ my: 5 }}>
+          <Typography variant="subtitle1">This link is not valid</Typography>
+        </Stack>
+      )}
     </FormProvider>
   );
 }

@@ -22,6 +22,24 @@ export class JWTService {
     return token;
   }
 
+
+  async generate10MinToken(userProfile: UserProfile): Promise<string> {
+    if (!userProfile) {
+      throw new HttpErrors.NotFound(
+        'Error while generating token Userprofile is null',
+      );
+    }
+    let token = '';
+    try {
+      token = await signAsync(userProfile, 'mushroom', {
+        expiresIn: '10m',
+      });
+    } catch (err) {
+      throw new HttpErrors.Unauthorized(`error generating token${err}`);
+    }
+    return token;
+  }
+
   async verifyToken(token: string): Promise<UserProfile> {
     if (!token) {
       throw new HttpErrors.Unauthorized(

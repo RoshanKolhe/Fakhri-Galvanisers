@@ -8,10 +8,10 @@ const SITE_SETTINGS = {
       rejectUnauthorized: false,
     },
     auth: {
-      user: 'test@stuckatpoint.com',
-      pass: 'Test@2023',
+      user: 'thanepetfest@nimblenest.co',
+      pass: 'ThanePetFest#2024',
     },
   },
-  fromMail: 'test@stuckatpoint.com',
+  fromMail: 'thanepetfest@nimblenest.co',
 };
 export default SITE_SETTINGS;

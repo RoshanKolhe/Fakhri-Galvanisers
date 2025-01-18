@@ -35,6 +35,7 @@ import SITE_SETTINGS from '../utils/config';
 import {CredentialsRequestBody} from './specs/user-controller-spec';
 import {getStartAndEndDateOfWeek} from '../utils/constants';
 import {FakhriGalvanisersDataSource} from '../datasources';
+import generateResetPasswordTemplate from '../templates/reset-password.template';
 
 export class UserController {
   constructor(
@@ -80,24 +81,22 @@ export class UserController {
     try {
       const user = await this.userRepository.findOne({
         where: {
-          or: [{phoneNumber: userData.phoneNumber}],
+          or: [{email: userData.email}],
         },
       });
       if (user) {
         throw new HttpErrors.BadRequest('User Already Exists');
       }
 
-      validateCredentials(_.pick(userData, ['email', 'password']));
+      validateCredentials(userData);
       // userData.permissions = [PermissionKeys.ADMIN];
-      const decryptedPassword = userData.password;
-      userData.password = await this.hasher.hashPassword(userData.password);
-      const savedUser = await this.userRepository.create(userData);
-      const savedUserData = _.omit(savedUser, 'password');
-
+      const savedUser = await this.userRepository.create(userData, {
+        transaction: tx,
+      });
       tx.commit();
       return Promise.resolve({
         success: true,
-        userData: savedUserData,
+        userData: savedUser,
         message: `User registered successfully`,
       });
     } catch (err) {
@@ -138,6 +137,7 @@ export class UserController {
       user: allUserData,
     });
   }
+
   @get('/me')
   @authenticate('jwt')
   async whoAmI(
@@ -250,7 +250,178 @@ export class UserController {
     });
   }
 
-  addMinutesToDate(date: any, minutes: any) {
-    return new Date(date.getTime() + minutes * 60000);
+  @post('/sendResetPasswordLink')
+  async sendResetPasswordLink(
+    @requestBody({
+      description: 'Input for sending reset password link',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                format: 'email',
+                description: 'The email address of the user',
+              },
+            },
+            required: ['email'],
+          },
+        },
+      },
+    })
+    userData: {
+      email: string;
+    },
+  ): Promise<object> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: userData.email,
+      },
+    });
+    if (user) {
+      const userProfile = this.userService.convertToUserProfile(user);
+      const token = await this.jwtService.generate10MinToken(userProfile);
+      const resetPasswordLink = `${process.env.REACT_APP_ENDPOINT}/auth/admin/new-password?token=${token}`;
+      const template = generateResetPasswordTemplate({
+        userData: userProfile,
+        resetLink: resetPasswordLink,
+      });
+      console.log(template);
+      const mailOptions = {
+        from: SITE_SETTINGS.fromMail,
+        to: userData.email,
+        subject: template.subject,
+        html: template.html,
+      };
+
+      try {
+        await this.emailManager.sendMail(mailOptions);
+        return {
+          success: true,
+          message: `Password reset link sent to ${userData.email}. Please check your inbox.`,
+        };
+      } catch (err) {
+        throw new HttpErrors.UnprocessableEntity(
+          err.message || 'Mail sending failed',
+        );
+      }
+    } else {
+      throw new HttpErrors.BadRequest("Email Doesn't Exist");
+    }
+  }
+
+  @authenticate('jwt')
+  @post('/setPassword')
+  async setPassword(
+    @requestBody({
+      description: 'Input for changing user password',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                format: 'email',
+                description: 'The email address of the user',
+              },
+              oldPassword: {
+                type: 'string',
+                description: "The user's current password",
+              },
+              newPassword: {
+                type: 'string',
+                description: 'The new password to be set',
+              },
+            },
+            required: ['email', 'oldPassword', 'newPassword'], // Specify the required fields
+          },
+        },
+      },
+    })
+    passwordOptions: any, // Use `any` here since the structure is defined in the decorator
+  ): Promise<object> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: passwordOptions.email,
+      },
+    });
+
+    if (user) {
+      const passwordCheck = await this.hasher.comparePassword(
+        passwordOptions.oldPassword,
+        user.password,
+      );
+
+      if (passwordCheck) {
+        const encryptedPassword = await this.hasher.hashPassword(
+          passwordOptions.newPassword,
+        );
+        await this.userRepository.updateById(user.id, {
+          password: encryptedPassword,
+        });
+        return {
+          success: true,
+          message: 'Password changed successfully',
+        };
+      } else {
+        throw new HttpErrors.BadRequest("Old password doesn't match");
+      }
+    } else {
+      throw new HttpErrors.BadRequest("Email doesn't exist");
+    }
+  }
+
+  @authenticate('jwt')
+  @post('/setNewPassword')
+  async setNewPassword(
+    @requestBody({
+      description: 'Input for resetting user password without the old password',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                format: 'email',
+                description: 'The email address of the user',
+              },
+              newPassword: {
+                type: 'string',
+                description: 'The new password to be set',
+              },
+            },
+            required: ['email', 'newPassword'], // Only email and newPassword are required
+          },
+        },
+      },
+    })
+    passwordOptions: any,
+  ): Promise<object> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: passwordOptions.email,
+      },
+    });
+
+    if (user) {
+      const encryptedPassword = await this.hasher.hashPassword(
+        passwordOptions.newPassword,
+      );
+      await this.userRepository.updateById(user.id, {
+        password: encryptedPassword,
+      });
+      return {
+        success: true,
+        message: 'Password updated successfully',
+      };
+    } else {
+      throw new HttpErrors.BadRequest("Email doesn't exist");
+    }
   }
 }

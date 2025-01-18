@@ -22,7 +22,7 @@ import UserQuickEditForm from './user-quick-edit-form';
 // ----------------------------------------------------------------------
 
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  const { name, avatarUrl, company, role, status, email, phoneNumber } = row;
+  const { firstName, lastName, avatar, permissions, isActive, email, phoneNumber } = row;
 
   const confirm = useBoolean();
 
@@ -33,15 +33,15 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
   return (
     <>
       <TableRow hover selected={selected}>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox checked={selected} onClick={onSelectRow} />
-        </TableCell>
+        </TableCell> */}
 
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar alt={name} src={avatarUrl} sx={{ mr: 2 }} />
+          <Avatar alt={firstName} src={avatar?.fileUrl} sx={{ mr: 2 }} />
 
           <ListItemText
-            primary={name}
+            primary={`${firstName} ${lastName || ''}`}
             secondary={email}
             primaryTypographyProps={{ typography: 'body2' }}
             secondaryTypographyProps={{ component: 'span', color: 'text.disabled' }}
@@ -50,21 +50,26 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{company}</TableCell>
-
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{role}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{permissions.toString()}</TableCell>
 
         <TableCell>
           <Label
             variant="soft"
             color={
-              (status === 'active' && 'success') ||
-              (status === 'pending' && 'warning') ||
-              (status === 'banned' && 'error') ||
-              'default'
+              {
+                1: 'success', // Active
+                0: 'warning', // Pending
+                2: 'error', // Inactive
+                3: 'error', // Rejected
+              }[isActive] || 'default'
             }
           >
-            {status}
+            {{
+              1: 'Active',
+              0: 'Pending',
+              2: 'In-Active',
+              3: 'Rejected',
+            }[isActive] || 'Unknown'}
           </Label>
         </TableCell>
 

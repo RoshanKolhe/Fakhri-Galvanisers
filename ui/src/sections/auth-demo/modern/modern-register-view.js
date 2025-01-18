@@ -16,6 +16,7 @@ import { paths } from 'src/routes/paths';
 import Iconify from 'src/components/iconify';
 import { RouterLink } from 'src/routes/components';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import LinearAlternativeLabel from 'src/sections/_examples/mui/stepper-view/linear-alternative-label-stepper';
 
 // ----------------------------------------------------------------------
 
@@ -57,15 +58,16 @@ export default function ModernRegisterView() {
 
   const renderHead = (
     <Stack spacing={2} sx={{ mb: 5, position: 'relative' }}>
-      <Typography variant="h4">Get started absolutely free</Typography>
+      <Typography variant="h4">Request for a Quote</Typography>
 
-      <Stack direction="row" spacing={0.5}>
+      <Stack direction="row" justifyContent="center" spacing={0.5}>
         <Typography variant="body2"> Already have an account? </Typography>
 
         <Link href={paths.auth.jwt.login} component={RouterLink} variant="subtitle2">
           Sign in
         </Link>
       </Stack>
+      <LinearAlternativeLabel />
     </Stack>
   );
 

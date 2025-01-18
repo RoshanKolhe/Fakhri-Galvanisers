@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 
 // ----------------------------------------------------------------------
 
-const steps = ['Select campaign settings', 'Create an ad group', 'Create an ad'];
+const steps = ['User Details', 'Request A Quote'];
 
 export default function LinearAlternativeLabel() {
   const [activeStep, setActiveStep] = useState(0);

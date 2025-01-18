@@ -24,7 +24,7 @@ import { Button, IconButton, InputAdornment } from '@mui/material';
 import { RouterLink } from 'src/routes/components';
 import { paths } from 'src/routes/paths';
 
-export default function ModernLoginView() {
+export default function ModernCustomerLoginView() {
   const password = useBoolean();
   const { login } = useAuthContext();
   const router = useRouter();
@@ -84,8 +84,15 @@ export default function ModernLoginView() {
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack mb={2} sx={{ mb: 5 }}>
+      <Stack mb={2}>
         <Typography variant="h4">Login</Typography>
+      </Stack>
+      <Stack direction="row" spacing={1} sx={{ mb: 5, justifyContent: 'center' }}>
+        <Typography variant="body1"> New customer? </Typography>
+
+        <Link href={paths.auth.jwt.register} component={RouterLink} variant="subtitle1">
+          Create an account
+        </Link>
       </Stack>
 
       <Stack spacing={2.5}>

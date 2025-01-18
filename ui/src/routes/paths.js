@@ -57,6 +57,7 @@ export const paths = {
       register: `${ROOTS.AUTH}/admin/register`,
       forgotPassword: `${ROOTS.AUTH}/admin/forgot-password`,
       newPassword: `${ROOTS.AUTH}/admin/new-password`,
+      customerLogin: `${ROOTS.AUTH}/customer/login`,
     },
   },
   // DASHBOARD

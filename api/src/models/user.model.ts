@@ -1,4 +1,4 @@
-import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
 export class User extends Entity {
@@ -22,11 +22,6 @@ export class User extends Entity {
   @property({
     type: 'string',
   })
-  gender: string;
-
-  @property({
-    type: 'string',
-  })
   dob: string;
 
   @property({
@@ -43,6 +38,11 @@ export class User extends Entity {
     type: 'string',
   })
   state: string;
+
+  @property({
+    type: 'string',
+  })
+  gstNo: string;
 
   @property({
     type: 'string',
@@ -71,10 +71,10 @@ export class User extends Entity {
   permissions: String[];
 
   @property({
-    type: 'boolean',
+    type: 'number',
     required: true,
   })
-  isActive: boolean;
+  isActive: number;
 
   @property({
     type: 'string',
@@ -90,6 +90,12 @@ export class User extends Entity {
     type: 'string',
   })
   otpExpireAt: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+  })
+  isEmailVerified: boolean;
 
   @property({
     type: 'date',

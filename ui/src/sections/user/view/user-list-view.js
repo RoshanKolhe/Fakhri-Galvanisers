@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 // @mui
 import { alpha } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
@@ -17,7 +17,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
 import { RouterLink } from 'src/routes/components';
 // _mock
-import { _userList, _roles, USER_STATUS_OPTIONS } from 'src/_mock';
+import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
 // components
@@ -38,6 +38,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetUsers } from 'src/api/user';
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
@@ -49,7 +50,6 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
   { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-  { id: 'company', label: 'Company', width: 220 },
   { id: 'role', label: 'Role', width: 180 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
@@ -72,9 +72,11 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(_userList);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
+
+  const { users, usersLoading, usersEmpty, refreshUsers } = useGetUsers();
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -143,14 +145,21 @@ export default function UserListView() {
     setFilters(defaultFilters);
   }, []);
 
+  useEffect(() => {
+    if (users) {
+      // const updatedUsers = users.filter((obj) => !obj.permissions.includes('super_admin'));
+      setTableData(users);
+    }
+  }, [users]);
+
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="List"
+          heading="User Management"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'User', href: paths.dashboard.user.root },
+            { name: 'User Management', href: paths.dashboard.user.list },
             { name: 'List' },
           ]}
           action={
@@ -189,22 +198,19 @@ export default function UserListView() {
                       ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
                     }
                     color={
-                      (tab.value === 'active' && 'success') ||
-                      (tab.value === 'pending' && 'warning') ||
-                      (tab.value === 'banned' && 'error') ||
+                      (tab.value === 1 && 'success') ||
+                      (tab.value === 0 && 'warning') ||
+                      (tab.value === 2 && 'error') ||
+                      (tab.value === 3 && 'error') ||
                       'default'
                     }
                   >
-                    {tab.value === 'all' && _userList.length}
-                    {tab.value === 'active' &&
-                      _userList.filter((user) => user.status === 'active').length}
+                    {tab.value === 'all' && tableData.length}
+                    {tab.value === 1 && tableData.filter((user) => user.isActive === 1).length}
 
-                    {tab.value === 'pending' &&
-                      _userList.filter((user) => user.status === 'pending').length}
-                    {tab.value === 'banned' &&
-                      _userList.filter((user) => user.status === 'banned').length}
-                    {tab.value === 'rejected' &&
-                      _userList.filter((user) => user.status === 'rejected').length}
+                    {tab.value === 0 && tableData.filter((user) => user.status === 0).length}
+                    {tab.value === 2 && tableData.filter((user) => user.status === 2).length}
+                    {tab.value === 3 && tableData.filter((user) => user.status === 3).length}
                   </Label>
                 }
               />
@@ -265,6 +271,7 @@ export default function UserListView() {
                       tableData.map((row) => row.id)
                     )
                   }
+                  showCheckbox={false}
                 />
 
                 <TableBody>
@@ -338,9 +345,13 @@ export default function UserListView() {
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;
-
   const stabilizedThis = inputData.map((el, index) => [el, index]);
-
+  const roleMapping = {
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    worker: 'Worker',
+    qc_Admin: 'Qc Admin',
+  };
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
@@ -351,16 +362,37 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter(
-      (user) => user.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
+      (user) => user.fullName.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => user.status === status);
+    inputData = inputData.filter((user) => {
+      switch (status) {
+        case 1:
+          return user.isActive === 1;
+        case 0:
+          return user.isActive === 0;
+        case 2:
+          return user.isActive === 2;
+        case 3:
+          return user.isActive === 3;
+        default:
+          return false;
+      }
+    });
   }
-
   if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.role));
+    inputData = inputData.filter(
+      (user) =>
+        user.permissions &&
+        user.permissions.some((userRole) => {
+          console.log(userRole);
+          const mappedRole = roleMapping[userRole];
+          console.log('Mapped Role:', mappedRole); // Check the mapped role
+          return mappedRole && role.includes(mappedRole);
+        })
+    );
   }
 
   return inputData;
