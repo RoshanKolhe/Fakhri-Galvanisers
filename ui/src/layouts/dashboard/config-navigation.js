@@ -56,9 +56,7 @@ export function useNavData() {
       // ----------------------------------------------------------------------
       {
         subheader: t('overview'),
-        items: [
-          { title: t('dashboard'), path: paths.dashboard.root, icon: ICONS.dashboard },
-        ],
+        items: [{ title: t('dashboard'), path: paths.dashboard.root, icon: ICONS.dashboard }],
       },
 
       // MANAGEMENT
@@ -72,9 +70,9 @@ export function useNavData() {
             path: paths.dashboard.user.root,
             icon: ICONS.user,
             children: [
-              { title: t('list'), path: paths.dashboard.user.list },
-              { title: t('create'), path: paths.dashboard.user.new },
-              { title: t('edit'), path: paths.dashboard.user.demo.edit },
+              { title: t('list'), path: paths.dashboard.user.list, roles: ['super_admin'] },
+              { title: t('create'), path: paths.dashboard.user.new, roles: ['super_admin'] },
+              { title: t('edit'), path: paths.dashboard.user.demo.edit, roles: ['super_admin'] },
             ],
           },
         ],

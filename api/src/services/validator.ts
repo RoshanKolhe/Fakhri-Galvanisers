@@ -3,7 +3,7 @@ import * as isEmail from 'isemail';
 import {HttpErrors} from '@loopback/rest';
 
 export function validateCredentials(credentials: Credentials) {
-  if (!isEmail.validate(credentials.email)) {
+  if (credentials.email && !isEmail.validate(credentials.email)) {
     throw new HttpErrors.UnprocessableEntity('invalid email');
   }
 

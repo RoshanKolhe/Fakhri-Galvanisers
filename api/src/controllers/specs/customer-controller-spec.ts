@@ -3,14 +3,11 @@ import {SchemaObject} from '@loopback/rest';
 
 const CredentialsSchema: SchemaObject = {
   type: 'object',
-  required: ['password'],
+  required: ['email', 'password'],
   properties: {
     email: {
       type: 'string',
       format: 'email',
-    },
-    employeeId: {
-      type: 'string',
     },
     password: {
       type: 'string',

@@ -6,14 +6,13 @@ import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 // hooks
 import { useResponsive } from 'src/hooks/use-responsive';
-// hooks
-import { useMockedUser } from 'src/hooks/use-mocked-user';
 // components
 import Logo from 'src/components/logo';
 import Scrollbar from 'src/components/scrollbar';
 import { usePathname } from 'src/routes/hook';
 import { NavSectionVertical } from 'src/components/nav-section';
 //
+import { useAuthContext } from 'src/auth/hooks';
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
 import { NavToggleButton } from '../_common';
@@ -21,7 +20,7 @@ import { NavToggleButton } from '../_common';
 // ----------------------------------------------------------------------
 
 export default function NavVertical({ openNav, onCloseNav }) {
-  const { user } = useMockedUser();
+  const { user } = useAuthContext();
 
   const pathname = usePathname();
 
@@ -52,12 +51,11 @@ export default function NavVertical({ openNav, onCloseNav }) {
       <NavSectionVertical
         data={navData}
         config={{
-          currentRole: user?.role || 'admin',
+          currentRole: user?.permissions[0],
         }}
       />
 
       <Box sx={{ flexGrow: 1 }} />
-
     </Scrollbar>
   );
 

@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class User extends Entity {
+export class Customer extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -42,12 +42,12 @@ export class User extends Entity {
   @property({
     type: 'string',
   })
-  email: string;
+  gstNo: string;
 
   @property({
     type: 'string',
   })
-  employeeId: string;
+  email: string;
 
   @property({
     type: 'string',
@@ -77,21 +77,6 @@ export class User extends Entity {
   isActive: number;
 
   @property({
-    type: 'string',
-  })
-  otp?: string;
-
-  @property({
-    type: 'string',
-  })
-  fcmToken?: string;
-
-  @property({
-    type: 'string',
-  })
-  otpExpireAt: string;
-
-  @property({
     type: 'boolean',
     required: true,
   })
@@ -107,13 +92,13 @@ export class User extends Entity {
   })
   updatedAt?: Date;
 
-  constructor(data?: Partial<User>) {
+  constructor(data?: Partial<Customer>) {
     super(data);
   }
 }
 
-export interface UserRelations {
+export interface CustomerRelations {
   // describe navigational properties here
 }
 
-export type UserWithRelations = User & UserRelations;
+export type CustomerWithRelations = Customer & CustomerRelations;

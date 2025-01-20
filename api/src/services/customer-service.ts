@@ -3,26 +3,27 @@ import {inject} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {User} from '../models';
-import {Credentials, UserRepository} from './../repositories/user.repository';
+import {Customer, User} from '../models';
+import {Credentials, UserRepository} from '../repositories/user.repository';
 import {BcryptHasher} from './hash.password.bcrypt';
+import {CustomerRepository} from '../repositories';
 
-export class MyUserService implements UserService<User, Credentials> {
+export class MyCustomerService implements UserService<Customer, Credentials> {
   constructor(
-    @repository(UserRepository)
-    public userRepository: UserRepository,
+    @repository(CustomerRepository)
+    public customerRepository: CustomerRepository,
     @inject('service.hasher')
     public hasher: BcryptHasher,
   ) {}
 
-  async verifyCredentials(credentials: Credentials): Promise<User> {
-    const getUser = await this.userRepository.findOne({
+  async verifyCredentials(credentials: Credentials): Promise<Customer> {
+    const getUser = await this.customerRepository.findOne({
       where: {
-        or: [{email: credentials.email}, {employeeId: credentials.employeeId}],
+        email: credentials.email,
       },
     });
     if (!getUser) {
-      throw new HttpErrors.BadRequest('User not found');
+      throw new HttpErrors.BadRequest('Email not found');
     }
 
     if (!getUser.password) {
@@ -45,14 +46,14 @@ export class MyUserService implements UserService<User, Credentials> {
     throw new HttpErrors.BadRequest('password doesnt match');
   }
 
-  convertToUserProfile(user: User): UserProfile {
+  convertToUserProfile(customer: Customer): UserProfile {
     return {
-      id: `${user.id}`,
-      name: `${user.firstName}`,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      [securityId]: `${user.id}`,
-      permissions: user.permissions,
+      id: `${customer.id}`,
+      name: `${customer.firstName}`,
+      email: customer.email,
+      phoneNumber: customer.phoneNumber,
+      [securityId]: `${customer.id}`,
+      permissions: customer.permissions,
     };
   }
 }

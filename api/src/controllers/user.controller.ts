@@ -90,13 +90,15 @@ export class UserController {
 
       validateCredentials(userData);
       // userData.permissions = [PermissionKeys.ADMIN];
+      userData.password = await this.hasher.hashPassword(userData.password);
       const savedUser = await this.userRepository.create(userData, {
         transaction: tx,
       });
+      const savedUserData = _.omit(savedUser, 'password');
       tx.commit();
       return Promise.resolve({
         success: true,
-        userData: savedUser,
+        userData: savedUserData,
         message: `User registered successfully`,
       });
     } catch (err) {
