@@ -3,6 +3,11 @@ import * as isEmail from 'isemail';
 import {HttpErrors} from '@loopback/rest';
 
 export function validateCredentials(credentials: Credentials) {
+  if (!credentials.email && !credentials.employeeId) {
+    throw new HttpErrors.UnprocessableEntity(
+      'Either email or employeeId is mandatory',
+    );
+  }
   if (credentials.email && !isEmail.validate(credentials.email)) {
     throw new HttpErrors.UnprocessableEntity('invalid email');
   }

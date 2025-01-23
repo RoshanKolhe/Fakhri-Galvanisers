@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasOne, belongsTo} from '@loopback/repository';
 
 @model()
 export class User extends Entity {
@@ -71,10 +71,10 @@ export class User extends Entity {
   permissions: String[];
 
   @property({
-    type: 'number',
+    type: 'boolean',
     required: true,
   })
-  isActive: number;
+  isActive: boolean;
 
   @property({
     type: 'string',
@@ -92,12 +92,6 @@ export class User extends Entity {
   otpExpireAt: string;
 
   @property({
-    type: 'boolean',
-    required: true,
-  })
-  isEmailVerified: boolean;
-
-  @property({
     type: 'date',
   })
   createdAt?: Date;
@@ -106,6 +100,27 @@ export class User extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+
+  @property({
+    type: 'date',
+  })
+  deletedAt?: Date;
+
+  @belongsTo(() => User, {name: 'creator'})
+  createdBy: number;
+
+  @belongsTo(() => User, {name: 'updater'})
+  updatedBy: number;
+
+  @belongsTo(() => User, {name: 'deleter'})
+  deletedBy: number;
+
+  @property({
+    type: 'boolean',
+    required: true,
+    default: false,
+  })
+  isDeleted: boolean;
 
   constructor(data?: Partial<User>) {
     super(data);

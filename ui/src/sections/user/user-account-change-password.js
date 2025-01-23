@@ -13,17 +13,17 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import PropTypes from 'prop-types';
 import axiosInstance from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export default function AccountChangePassword() {
+export default function UserAccountChangePassword({ currentUser }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const password = useBoolean();
 
   const ChangePassWordSchema = Yup.object().shape({
-    oldPassword: Yup.string().required('Old Password is required'),
     newPassword: Yup.string()
       .required('New Password is required')
       .min(6, 'Password must be at least 6 characters')
@@ -36,7 +36,6 @@ export default function AccountChangePassword() {
   });
 
   const defaultValues = {
-    oldPassword: '',
     newPassword: '',
     confirmNewPassword: '',
   };
@@ -55,10 +54,9 @@ export default function AccountChangePassword() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const inputData = {
-        oldPassword: data.oldPassword,
-        newPassword: data.newPassword,
+        password: data.newPassword,
       };
-      await axiosInstance.post('/setPassword', inputData);
+      await axiosInstance.patch(`/api/users/${currentUser.id}`, inputData);
       reset();
       enqueueSnackbar('Update success!');
       console.info('DATA', data);
@@ -73,21 +71,6 @@ export default function AccountChangePassword() {
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Stack component={Card} spacing={3} sx={{ p: 3 }}>
-        <RHFTextField
-          name="oldPassword"
-          type={password.value ? 'text' : 'password'}
-          label="Old Password"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
         <RHFTextField
           name="newPassword"
           label="New Password"
@@ -131,3 +114,7 @@ export default function AccountChangePassword() {
     </FormProvider>
   );
 }
+
+UserAccountChangePassword.propTypes = {
+  currentUser: PropTypes.object,
+};

@@ -6,10 +6,8 @@ import { _mock } from './_mock';
 // ----------------------------------------------------------------------
 
 export const USER_STATUS_OPTIONS = [
-  { value: 1, label: 'Active' },
-  { value: 0, label: 'Pending' },
-  { value: 2, label: 'In Active' },
-  { value: 3, label: 'Rejected' },
+  { value: '1', label: 'Active' },
+  { value: '0', label: 'In-Active' },
 ];
 
 export const _userAbout = {

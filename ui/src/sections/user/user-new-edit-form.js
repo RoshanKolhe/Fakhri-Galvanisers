@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -32,9 +32,10 @@ import FormProvider, {
   RHFAutocomplete,
   RHFSelect,
 } from 'src/components/hook-form';
-import { MenuItem } from '@mui/material';
+import { IconButton, InputAdornment, MenuItem } from '@mui/material';
 import { states } from 'src/utils/constants';
 import axiosInstance from 'src/utils/axios';
+import { useBoolean } from 'src/hooks/use-boolean';
 
 // ----------------------------------------------------------------------
 
@@ -43,11 +44,26 @@ export default function UserNewEditForm({ currentUser }) {
 
   const { enqueueSnackbar } = useSnackbar();
 
+  const password = useBoolean();
+
   const NewUserSchema = Yup.object().shape({
     firstName: Yup.string().required('First Name is required'),
     lastName: Yup.string().required('Last Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    phoneNumber: Yup.string().required('Phone number is required'),
+    employeeId: Yup.string().required('Employee Id is required'),
+    password: !currentUser
+      ? Yup.string()
+          .min(6, 'Password must be at least 6 characters')
+          .required('Password is required')
+      : Yup.string(),
+    confirmPassword: !currentUser
+      ? Yup.string()
+          .required('Confirm password is required')
+          .oneOf([Yup.ref('password')], 'Passwords must match')
+      : Yup.string(),
+    phoneNumber: Yup.string()
+      .required('Phone number is required')
+      .matches(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'),
     dob: Yup.string(),
     address: Yup.string(),
     state: Yup.string(),
@@ -55,26 +71,25 @@ export default function UserNewEditForm({ currentUser }) {
     role: Yup.string().required('Role is required'),
     zipCode: Yup.string(),
     avatarUrl: Yup.mixed().nullable(),
-    status: Yup.string(),
-    isVerified: Yup.boolean(),
+    isActive: Yup.boolean(),
   });
 
   const defaultValues = useMemo(
     () => ({
       firstName: currentUser?.firstName || '',
       lastName: currentUser?.lastName || '',
-      city: currentUser?.city || '',
-      role: currentUser?.role || '',
+      role: currentUser?.permissions[0] || '',
+      dob: currentUser?.dob || '',
+      employeeId: currentUser?.employeeId || '',
       email: currentUser?.email || '',
-      state: currentUser?.state || '',
-      status: currentUser?.status || '',
-      address: currentUser?.address || '',
-      country: currentUser?.country || '',
-      zipCode: currentUser?.zipCode || '',
-      company: currentUser?.company || '',
-      avatarUrl: currentUser?.avatarUrl || null,
+      isActive: currentUser?.isActive || true,
+      avatarUrl: currentUser?.avatar?.fileUrl || null,
       phoneNumber: currentUser?.phoneNumber || '',
-      isVerified: currentUser?.isVerified || true,
+      address: currentUser?.fullAddress || '',
+      city: currentUser?.city || '',
+      state: currentUser?.state || '',
+      password: '',
+      confirmPassword: '',
     }),
     [currentUser]
   );
@@ -95,11 +110,45 @@ export default function UserNewEditForm({ currentUser }) {
 
   const values = watch();
 
-  const onSubmit = handleSubmit(async (data) => {
+  const onSubmit = handleSubmit(async (formData) => {
     try {
-      console.info('DATA', data);
+      console.info('DATA', formData);
+
+      const inputData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        permissions: [formData.role],
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        isActive: formData.isActive,
+        dob: formData.dob,
+        fullAddress: formData.address,
+        city: formData.city,
+        state: formData.state,
+        employeeId: formData.employeeId,
+      };
+      if (formData.avatarUrl) {
+        inputData.avatar = {
+          fileUrl: formData.avatarUrl,
+        };
+      }
+      if (formData.password) {
+        inputData.password = formData.password;
+      }
+      if (!currentUser) {
+        await axiosInstance.post('/register', inputData);
+      } else {
+        console.log('here');
+        await axiosInstance.patch(`/api/users/${currentUser.id}`, inputData);
+      }
+      reset();
+      enqueueSnackbar(currentUser ? 'Update success!' : 'Create success!');
+      router.push(paths.dashboard.user.list);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
     }
   });
 
@@ -121,6 +170,12 @@ export default function UserNewEditForm({ currentUser }) {
     [setValue]
   );
 
+  useEffect(() => {
+    if (currentUser) {
+      reset(defaultValues);
+    }
+  }, [currentUser, defaultValues, reset]);
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
@@ -128,14 +183,10 @@ export default function UserNewEditForm({ currentUser }) {
           <Card sx={{ pt: 10, pb: 5, px: 3 }}>
             {currentUser && (
               <Label
-                color={
-                  (values.status === 'active' && 'success') ||
-                  (values.status === 'banned' && 'error') ||
-                  'warning'
-                }
+                color={(values.isActive && 'success') || (!values.isActive && 'error') || 'warning'}
                 sx={{ position: 'absolute', top: 24, right: 24 }}
               >
-                {values.status}
+                {values.isActive ? 'Active' : 'In-Active'}
               </Label>
             )}
 
@@ -163,54 +214,6 @@ export default function UserNewEditForm({ currentUser }) {
             </Box>
 
             {currentUser && (
-              <FormControlLabel
-                labelPlacement="start"
-                control={
-                  <Controller
-                    name="status"
-                    control={control}
-                    render={({ field }) => (
-                      <Switch
-                        {...field}
-                        checked={field.value !== 'active'}
-                        onChange={(event) =>
-                          field.onChange(event.target.checked ? 'banned' : 'active')
-                        }
-                      />
-                    )}
-                  />
-                }
-                label={
-                  <>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                      Banned
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Apply disable account
-                    </Typography>
-                  </>
-                }
-                sx={{ mx: 0, mb: 3, width: 1, justifyContent: 'space-between' }}
-              />
-            )}
-
-            <RHFSwitch
-              name="isVerified"
-              labelPlacement="start"
-              label={
-                <>
-                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                    Email Verified
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    Disabling this will automatically send the user a verification email
-                  </Typography>
-                </>
-              }
-              sx={{ mx: 0, width: 1, justifyContent: 'space-between' }}
-            />
-
-            {currentUser && (
               <Stack justifyContent="center" alignItems="center" sx={{ mt: 3 }}>
                 <Button variant="soft" color="error">
                   Delete User
@@ -235,6 +238,45 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFTextField name="lastName" label="Last Name" />
               <RHFTextField name="email" label="Email Address" />
               <RHFTextField name="phoneNumber" label="Phone Number" />
+              <RHFTextField name="employeeId" label="Employee Id" />
+
+              {!currentUser ? (
+                <>
+                  <RHFTextField
+                    name="password"
+                    label="Password"
+                    type={password.value ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={password.onToggle} edge="end">
+                            <Iconify
+                              icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                            />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <RHFTextField
+                    name="confirmPassword"
+                    label="Confirm New Password"
+                    type={password.value ? 'text' : 'password'}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={password.onToggle} edge="end">
+                            <Iconify
+                              icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                            />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </>
+              ) : null}
 
               <Controller
                 name="dob"
@@ -266,12 +308,9 @@ export default function UserNewEditForm({ currentUser }) {
               </RHFSelect>
               <RHFTextField name="city" label="City" />
               <RHFTextField name="address" label="Address" />
-              <RHFTextField name="zipCode" label="Zip/Code" />
-              <RHFTextField name="gstgstNo" label="Gst No" />
               <RHFSelect fullWidth name="role" label="Role">
                 {[
                   { value: 'admin', name: 'Admin' },
-                  { value: 'customer', name: 'Customer' },
                   { value: 'worker', name: 'Worker' },
                   { value: 'qc_admin', name: 'Qc Admin' },
                 ].map((option) => (

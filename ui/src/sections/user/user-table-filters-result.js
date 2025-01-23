@@ -43,14 +43,7 @@ export default function UserTableFiltersResult({
           <Block label="Status:">
             <Chip
               size="small"
-              label={
-                {
-                  1: 'Active',
-                  0: 'Pending',
-                  2: 'In Active',
-                  3: 'Rejected',
-                }[filters.status] || 'Pending'
-              }
+              label={filters.status === '1' ? 'Active' : 'In-Active'}
               onDelete={handleRemoveStatus}
             />
           </Block>

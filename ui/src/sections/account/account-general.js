@@ -32,7 +32,6 @@ export default function AccountGeneral() {
     lastName: Yup.string().required('Last Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     role: Yup.string().required('Role is required'),
-    gender: Yup.string(),
     isActive: Yup.boolean(),
     dob: Yup.string(),
     fullAddress: Yup.string(),
@@ -46,7 +45,6 @@ export default function AccountGeneral() {
       lastName: user?.lastName || '',
       role: user?.permissions[0] || '',
       dob: user?.dob || '',
-      gender: user?.gender || '',
       email: user?.email || '',
       isActive: user?.isActive || true,
       avatarUrl: user?.avatar?.fileUrl || null,
@@ -80,7 +78,6 @@ export default function AccountGeneral() {
         permissions: [formData.role],
         email: formData.email,
         isActive: formData.isActive,
-        gender: formData.gender,
         dob: formData.dob,
         fullAddress: formData.fullAddress,
         city: formData.city,
@@ -204,17 +201,7 @@ export default function AccountGeneral() {
                   </MenuItem>
                 ))}
               </RHFSelect>
-              <RHFSelect fullWidth name="gender" label="Gender">
-                {[
-                  { value: 'male', name: 'Male' },
-                  { value: 'female', name: 'Female' },
-                  { value: 'other', name: 'Other' },
-                ].map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </RHFSelect>
+
               <Controller
                 name="dob"
                 control={control}

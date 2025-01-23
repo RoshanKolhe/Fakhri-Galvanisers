@@ -46,9 +46,9 @@ export default function SettingsDrawer() {
 
       <Tooltip title="Reset">
         <IconButton onClick={settings.onReset}>
-          <Badge color="error" variant="dot" invisible={!settings.canReset}>
+          {/* <Badge color="error" variant="dot" invisible={!settings.canReset}>
             <Iconify icon="solar:restart-bold" />
-          </Badge>
+          </Badge> */}
         </IconButton>
       </Tooltip>
 
@@ -179,13 +179,13 @@ export default function SettingsDrawer() {
 
           {renderContrast}
 
-          {renderDirection}
+          {/* {renderDirection} */}
 
-          {renderLayout}
+          {/* {renderLayout} */}
 
           {renderStretch}
 
-          {renderPresets}
+          {/* {renderPresets} */}
         </Stack>
       </Scrollbar>
 

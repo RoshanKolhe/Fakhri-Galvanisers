@@ -39,9 +39,12 @@ import {
 } from 'src/components/table';
 //
 import { useGetUsers } from 'src/api/user';
+import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'notistack';
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
+import UserQuickEditForm from '../user-quick-edit-form';
 
 // ----------------------------------------------------------------------
 
@@ -49,6 +52,7 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
+  { id: 'employeeId', label: 'Employee Id', width: 180 },
   { id: 'phoneNumber', label: 'Phone Number', width: 180 },
   { id: 'role', label: 'Role', width: 180 },
   { id: 'status', label: 'Status', width: 100 },
@@ -73,6 +77,12 @@ export default function UserListView() {
   const confirm = useBoolean();
 
   const [tableData, setTableData] = useState([]);
+
+  const [quickEditRow, setQuickEditRow] = useState();
+
+  const quickEdit = useBoolean();
+
+  const { enqueueSnackbar } = useSnackbar();
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -107,13 +117,24 @@ export default function UserListView() {
   );
 
   const handleDeleteRow = useCallback(
-    (id) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-      setTableData(deleteRow);
-
-      table.onUpdatePageDeleteRow(dataInPage.length);
+    async (id) => {
+      try {
+        // Make API call to delete the user
+        const response = await axiosInstance.delete(`/user/${id}`);
+        if (response.status === 204) {
+          console.log('User deleted successfully');
+          enqueueSnackbar('User Deleted Successfully');
+          refreshUsers();
+          confirm.onFalse();
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error.response?.data || error.message);
+        enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+          variant: 'error',
+        });
+      }
     },
-    [dataInPage.length, table, tableData]
+    [confirm, enqueueSnackbar, refreshUsers]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -132,6 +153,14 @@ export default function UserListView() {
       router.push(paths.dashboard.user.edit(id));
     },
     [router]
+  );
+
+  const handleQuickEditRow = useCallback(
+    (row) => {
+      setQuickEditRow(row);
+      quickEdit.onTrue();
+    },
+    [quickEdit]
   );
 
   const handleFilterStatus = useCallback(
@@ -198,19 +227,15 @@ export default function UserListView() {
                       ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
                     }
                     color={
-                      (tab.value === 1 && 'success') ||
-                      (tab.value === 0 && 'warning') ||
-                      (tab.value === 2 && 'error') ||
-                      (tab.value === 3 && 'error') ||
+                      (tab.value === '1' && 'success') ||
+                      (tab.value === '0' && 'error') ||
                       'default'
                     }
                   >
                     {tab.value === 'all' && tableData.length}
-                    {tab.value === 1 && tableData.filter((user) => user.isActive === 1).length}
+                    {tab.value === '1' && tableData.filter((user) => user.isActive).length}
 
-                    {tab.value === 0 && tableData.filter((user) => user.status === 0).length}
-                    {tab.value === 2 && tableData.filter((user) => user.status === 2).length}
-                    {tab.value === 3 && tableData.filter((user) => user.status === 3).length}
+                    {tab.value === '0' && tableData.filter((user) => !user.isActive).length}
                   </Label>
                 }
               />
@@ -288,6 +313,10 @@ export default function UserListView() {
                         onSelectRow={() => table.onSelectRow(row.id)}
                         onDeleteRow={() => handleDeleteRow(row.id)}
                         onEditRow={() => handleEditRow(row.id)}
+                        handleQuickEditRow={(user) => {
+                          handleQuickEditRow(user);
+                        }}
+                        quickEdit={quickEdit}
                       />
                     ))}
 
@@ -337,6 +366,18 @@ export default function UserListView() {
           </Button>
         }
       />
+
+      {quickEdit.value && quickEditRow && (
+        <UserQuickEditForm
+          currentUser={quickEditRow}
+          open={quickEdit.value}
+          onClose={() => {
+            setQuickEditRow(null);
+            quickEdit.onFalse();
+          }}
+          refreshUsers={refreshUsers}
+        />
+      )}
     </>
   );
 }
@@ -361,27 +402,15 @@ function applyFilter({ inputData, comparator, filters }) {
   inputData = stabilizedThis.map((el) => el[0]);
 
   if (name) {
-    inputData = inputData.filter(
-      (user) => user.fullName.toLowerCase().indexOf(name.toLowerCase()) !== -1
+    inputData = inputData.filter((user) =>
+      Object.values(user).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => {
-      switch (status) {
-        case 1:
-          return user.isActive === 1;
-        case 0:
-          return user.isActive === 0;
-        case 2:
-          return user.isActive === 2;
-        case 3:
-          return user.isActive === 3;
-        default:
-          return false;
-      }
-    });
+    inputData = inputData.filter((user) => (status === '1' ? user.isActive : !user.isActive));
   }
+
   if (role.length) {
     inputData = inputData.filter(
       (user) =>

@@ -10,6 +10,7 @@ import {
 } from '@loopback/repository';
 import {
   HttpErrors,
+  del,
   get,
   getJsonSchemaRef,
   getModelSchemaRef,
@@ -79,16 +80,17 @@ export class UserController {
     const repo = new DefaultTransactionalRepository(User, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
     try {
+      validateCredentials(userData);
       const user = await this.userRepository.findOne({
         where: {
-          or: [{email: userData.email}],
+          or: [{email: userData.email}, {employeeId: userData.employeeId}],
         },
       });
+      console.log(user);
       if (user) {
         throw new HttpErrors.BadRequest('User Already Exists');
       }
 
-      validateCredentials(userData);
       // userData.permissions = [PermissionKeys.ADMIN];
       userData.password = await this.hasher.hashPassword(userData.password);
       const savedUser = await this.userRepository.create(userData, {
@@ -177,10 +179,19 @@ export class UserController {
       },
     },
   })
-  async find(@param.filter(User) filter?: Filter<User>): Promise<User[]> {
+  async find(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.filter(User) filter?: Filter<User>,
+  ): Promise<User[]> {
     filter = {
       ...filter,
+      where: {
+        ...filter?.where,
+        id: {neq: currentUser.id},
+        isDeleted: false,
+      },
       fields: {password: false, otp: false, otpExpireAt: false},
+      include: [{relation: 'creator'}, {relation: 'updater'}],
     };
     return this.userRepository.find(filter);
   }
@@ -234,6 +245,7 @@ export class UserController {
       },
     })
     user: User,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<any> {
     // Fetch the user information before updating
     const existingUser = await this.userRepository.findById(id);
@@ -241,8 +253,22 @@ export class UserController {
       return;
     }
 
-    // Update user information
+    if (user.password) {
+      user.password = await this.hasher.hashPassword(user.password);
+    }
+
+    if (user.email && user.email !== existingUser.email) {
+      const emailExists = await this.userRepository.findOne({
+        where: {email: user.email},
+      });
+
+      if (emailExists) {
+        throw new HttpErrors.BadRequest('Email already exists');
+      }
+    }
+
     if (user) {
+      user.updatedBy = currentUser.id;
       await this.userRepository.updateById(id, user);
     }
 
@@ -325,11 +351,6 @@ export class UserController {
           schema: {
             type: 'object',
             properties: {
-              email: {
-                type: 'string',
-                format: 'email',
-                description: 'The email address of the user',
-              },
               oldPassword: {
                 type: 'string',
                 description: "The user's current password",
@@ -339,16 +360,17 @@ export class UserController {
                 description: 'The new password to be set',
               },
             },
-            required: ['email', 'oldPassword', 'newPassword'], // Specify the required fields
+            required: ['oldPassword', 'newPassword'],
           },
         },
       },
     })
-    passwordOptions: any, // Use `any` here since the structure is defined in the decorator
+    passwordOptions: any,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<object> {
     const user = await this.userRepository.findOne({
       where: {
-        email: passwordOptions.email,
+        id: currentUser.id,
       },
     });
 
@@ -425,5 +447,29 @@ export class UserController {
     } else {
       throw new HttpErrors.BadRequest("Email doesn't exist");
     }
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {required: [PermissionKeys.SUPER_ADMIN]},
+  })
+  @del('/user/{id}')
+  @response(204, {
+    description: 'User DELETE success',
+  })
+  async deleteById(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.path.number('id') id: number,
+  ): Promise<void> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new HttpErrors.BadRequest('User Not Found');
+    }
+
+    await this.userRepository.updateById(id, {
+      isDeleted: true,
+      deletedBy: currentUser.id,
+      deletedAt: new Date(),
+    });
   }
 }
