@@ -18,6 +18,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 import { useRouter } from 'src/routes/hook';
+import { Card } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -112,10 +113,19 @@ export default function ModernForgotPasswordView() {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+    <Card
+      sx={{
+        py: 5,
+        px: 3,
+        maxWidth: 720,
+        width: '100%',
+      }}
+    >
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        {renderHead}
 
-      {renderForm}
-    </FormProvider>
+        {renderForm}
+      </FormProvider>
+    </Card>
   );
 }

@@ -14,6 +14,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider, { RHFCode, RHFTextField } from 'src/components/hook-form';
 // assets
 import { EmailInboxIcon } from 'src/assets/icons';
+import { Card } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -113,10 +114,19 @@ export default function ModernVerifyView() {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+    <Card
+      sx={{
+        py: 5,
+        px: 3,
+        maxWidth: 720,
+        width: '100%',
+      }}
+    >
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        {renderHead}
 
-      {renderForm}
-    </FormProvider>
+        {renderForm}
+      </FormProvider>
+    </Card>
   );
 }

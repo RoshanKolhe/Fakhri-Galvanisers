@@ -37,16 +37,7 @@ export default function AuthModernCompactLayout({ children }) {
           },
         }}
       >
-        <Card
-          sx={{
-            py: 5,
-            px: 3,
-            maxWidth: 620,
-            width: '100%',
-          }}
-        >
-          {children}
-        </Card>
+        {children}
       </Box>
     </>
   );

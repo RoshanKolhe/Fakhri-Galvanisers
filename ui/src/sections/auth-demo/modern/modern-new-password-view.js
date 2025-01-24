@@ -22,7 +22,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import { useRouter, useSearchParams } from 'src/routes/hook';
 import { useEffect, useState } from 'react';
 import axiosInstance from 'src/utils/axios';
-import { CircularProgress } from '@mui/material';
+import { Card, CircularProgress } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 // ----------------------------------------------------------------------
@@ -188,21 +188,30 @@ export default function ModernNewPasswordView() {
   }, [setValue, token]);
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+    <Card
+      sx={{
+        py: 5,
+        px: 3,
+        maxWidth: 720,
+        width: '100%',
+      }}
+    >
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        {renderHead}
 
-      {isValidToken === null ? (
-        // Display nothing or a loading state while checking token validity
-        <Stack spacing={1} sx={{ my: 5 }} justifyContent="center">
-          <CircularProgress color="info" sx={{ alignSelf: 'center' }} />
-        </Stack>
-      ) : isValidToken ? (
-        renderForm
-      ) : (
-        <Stack spacing={1} sx={{ my: 5 }}>
-          <Typography variant="subtitle1">This link is not valid</Typography>
-        </Stack>
-      )}
-    </FormProvider>
+        {isValidToken === null ? (
+          // Display nothing or a loading state while checking token validity
+          <Stack spacing={1} sx={{ my: 5 }} justifyContent="center">
+            <CircularProgress color="info" sx={{ alignSelf: 'center' }} />
+          </Stack>
+        ) : isValidToken ? (
+          renderForm
+        ) : (
+          <Stack spacing={1} sx={{ my: 5 }}>
+            <Typography variant="subtitle1">This link is not valid</Typography>
+          </Stack>
+        )}
+      </FormProvider>
+    </Card>
   );
 }

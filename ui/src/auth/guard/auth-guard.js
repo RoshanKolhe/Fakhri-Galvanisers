@@ -4,12 +4,15 @@ import { useEffect, useCallback, useState } from 'react';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
 //
+import { PERMISSION_KEY } from 'src/utils/constants';
 import { useAuthContext } from '../hooks';
 
 // ----------------------------------------------------------------------
 
 const loginPaths = {
-  jwt: paths.auth.jwt.login,
+  super_admin: paths.auth.jwt.login,
+  admin: paths.auth.jwt.login,
+  customer: paths.auth.jwt.customerLogin,
 };
 
 // ----------------------------------------------------------------------
@@ -17,7 +20,9 @@ const loginPaths = {
 export default function AuthGuard({ children }) {
   const router = useRouter();
 
-  const { authenticated, method } = useAuthContext();
+  const { authenticated } = useAuthContext();
+
+  const loggedInUser = sessionStorage.getItem(PERMISSION_KEY);
 
   const [checked, setChecked] = useState(false);
 
@@ -25,15 +30,20 @@ export default function AuthGuard({ children }) {
     if (!authenticated) {
       const searchParams = new URLSearchParams({ returnTo: window.location.pathname }).toString();
 
-      const loginPath = loginPaths[method];
+      const loginPath = loginPaths[loggedInUser];
+      let href;
+      if (loginPath) {
+        href = `${loginPath}?${searchParams}`;
+      } else {
+        href = `${loginPaths.customer}?${searchParams}`;
+      }
 
-      const href = `${loginPath}?${searchParams}`;
-
+      console.log(href);
       router.replace(href);
     } else {
       setChecked(true);
     }
-  }, [authenticated, method, router]);
+  }, [authenticated, loggedInUser, router]);
 
   useEffect(() => {
     check();

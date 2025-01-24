@@ -360,3 +360,5 @@ export const states = [
     updatedAt: '2023-06-07T06:02:38.713Z',
   },
 ];
+
+export const PERMISSION_KEY = 'permission';

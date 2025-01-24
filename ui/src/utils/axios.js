@@ -28,6 +28,10 @@ export const fetcher = async (args) => {
 export const endpoints = {
   auth: {
     me: '/me',
+    customer: {
+      me: '/customer/me',
+      login: '/customer/login',
+    },
     login: '/login',
     register: '/register',
   },

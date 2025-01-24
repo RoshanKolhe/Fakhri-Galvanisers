@@ -69,6 +69,7 @@ export function useNavData() {
             title: t('user'),
             path: paths.dashboard.user.root,
             icon: ICONS.user,
+            roles: ['super_admin'],
             children: [
               { title: t('list'), path: paths.dashboard.user.list, roles: ['super_admin'] },
               { title: t('create'), path: paths.dashboard.user.new, roles: ['super_admin'] },

@@ -20,7 +20,7 @@ import { useSearchParams, useRouter } from 'src/routes/hook';
 import { useSnackbar } from 'notistack';
 import axiosInstance from 'src/utils/axios';
 import { useBoolean } from 'src/hooks/use-boolean';
-import { Button, IconButton, InputAdornment } from '@mui/material';
+import { Button, Card, IconButton, InputAdornment } from '@mui/material';
 import { RouterLink } from 'src/routes/components';
 import { paths } from 'src/routes/paths';
 
@@ -83,51 +83,60 @@ export default function ModernLoginView() {
   });
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack mb={2} sx={{ mb: 5 }}>
-        <Typography variant="h4">Login</Typography>
-      </Stack>
+    <Card
+      sx={{
+        py: 5,
+        px: 3,
+        maxWidth: 720,
+        width: '100%',
+      }}
+    >
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <Stack mb={2} sx={{ mb: 5 }}>
+          <Typography variant="h4">Login</Typography>
+        </Stack>
 
-      <Stack spacing={2.5}>
-        <RHFTextField name="email" label="Email address" />
+        <Stack spacing={2.5}>
+          <RHFTextField name="email" label="Email address" />
 
-        <RHFTextField
-          name="password"
-          label="Password"
-          type={password.value ? 'text' : 'password'}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+          <RHFTextField
+            name="password"
+            label="Password"
+            type={password.value ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={password.onToggle} edge="end">
+                    <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-        <Link
-          component={RouterLink}
-          href={paths.auth.jwt.forgotPassword}
-          variant="body2"
-          color="inherit"
-          underline="always"
-          sx={{ alignSelf: 'flex-end' }}
-        >
-          Forgot password?
-        </Link>
+          <Link
+            component={RouterLink}
+            href={paths.auth.jwt.forgotPassword}
+            variant="body2"
+            color="inherit"
+            underline="always"
+            sx={{ alignSelf: 'flex-end' }}
+          >
+            Forgot password?
+          </Link>
 
-        <LoadingButton
-          fullWidth
-          color="inherit"
-          size="large"
-          type="submit"
-          variant="contained"
-          loading={isSubmitting}
-        >
-          Login
-        </LoadingButton>
-      </Stack>
-    </FormProvider>
+          <LoadingButton
+            fullWidth
+            color="inherit"
+            size="large"
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+          >
+            Login
+          </LoadingButton>
+        </Stack>
+      </FormProvider>
+    </Card>
   );
 }
