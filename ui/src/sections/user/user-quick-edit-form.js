@@ -149,7 +149,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
             <RHFTextField name="firstName" label="First Name" />
             <RHFTextField name="lastName" label="Last Name" />
             <RHFTextField name="email" label="Email Address" />
-            <RHFTextField name="phoneNumber" label="Phone Number" />
+            <RHFTextField type="number" name="phoneNumber" label="Phone Number" />
             <RHFTextField name="employeeId" label="Employee Id" />
 
             <Controller

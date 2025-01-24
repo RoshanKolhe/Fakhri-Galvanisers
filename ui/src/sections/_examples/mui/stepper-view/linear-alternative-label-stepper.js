@@ -15,19 +15,33 @@ import Typography from '@mui/material/Typography';
 import { Stack, IconButton, Grid } from '@mui/material';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import Iconify from 'src/components/iconify';
+import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'notistack';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hook';
 
 // ----------------------------------------------------------------------
 
 const steps = ['User Details', 'Material Details'];
 
 export default function LinearAlternativeLabel() {
+  const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
-  const [userId, setUserId] = useState(null);
+  const [inquiryId, setInquiryId] = useState(null);
+
+  const { enqueueSnackbar } = useSnackbar();
 
   const RegisterSchema = Yup.object().shape({
     firstName: Yup.string().required('First name required'),
     lastName: Yup.string().required('Last name required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
+    phoneNumber: Yup.string()
+      .required('Phone number is required')
+      .matches(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'),
+    company: Yup.string().required('Company is required'),
+    gstIn: Yup.string().required('Gst In is required'),
+    designation: Yup.string().required('Designation is required'),
+    address: Yup.string().required('Address is required'),
     materials: Yup.array()
       .of(
         Yup.object().shape({
@@ -44,8 +58,14 @@ export default function LinearAlternativeLabel() {
     firstName: '',
     lastName: '',
     email: '',
-    password: '',
-    materials: [{ materialType: '', quantityInNos: null, quantityInKg: null, microns: null }],
+    phoneNumber: '',
+    company: '',
+    gstIn: '',
+    designation: '',
+    address: '',
+    materials: [
+      { materialType: '', quantityInNos: undefined, quantityInKg: undefined, microns: undefined },
+    ],
   };
 
   const methods = useForm({
@@ -64,12 +84,26 @@ export default function LinearAlternativeLabel() {
     name: 'materials',
   });
 
-  const onSubmit = handleSubmit(async (data) => {
+  const onSubmit = handleSubmit(async (formData) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.info('DATA', data);
+      const inputData = {
+        ...formData,
+        status: 1,
+      };
+      if (inquiryId) {
+        await axiosInstance.patch(`/inquiries/${inquiryId}`, inputData);
+      } else {
+        await axiosInstance.post('/inquiries', inputData);
+      }
+      enqueueSnackbar(
+        'Thank you for submitting your RFQ. Our team will get in touch with you shortly.'
+      );
+      router.replace(paths.auth.jwt.customerLogin);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
     }
   });
 
@@ -79,38 +113,46 @@ export default function LinearAlternativeLabel() {
 
     if (activeStep === 0) {
       // Validate fields for Step 1
-      isStepValid = await methods.trigger(['firstName', 'lastName', 'email']);
+      isStepValid = await methods.trigger([
+        'firstName',
+        'lastName',
+        'email',
+        'phoneNumber',
+        'company',
+        'gstIn',
+        'designation',
+        'address',
+      ]);
     } else if (activeStep === 1) {
-      // Validate fields for Step 2
       isStepValid = await methods.trigger(['materials']);
     }
     if (!isStepValid) {
       console.error('Validation failed:', methods.formState.errors);
-      return; // Prevent moving to the next step
+      return;
     }
     console.log(isStepValid);
     if (isStepValid) {
       if (activeStep === 0) {
-        // Trigger API call on the first step
         try {
           const userDetails = methods.getValues();
-          console.log(userDetails);
-          // const response = await fetch('/api/saveUserDetails', {
-          //   method: 'POST',
-          //   headers: {
-          //     'Content-Type': 'application/json',
-          //   },
-          //   body: JSON.stringify({
-          //     firstName: userDetails.firstName,
-          //     lastName: userDetails.lastName,
-          //     email: userDetails.email,
-          //     password: userDetails.password,
-          //   }),
-          // });
-          // const data = await response.json();
-          setUserId(1); // Store the user ID for later use
+          const inputData = {
+            ...userDetails,
+            phoneNumber: `${userDetails.phoneNumber}`,
+            status: 0,
+          };
+          delete inputData.materials;
+          console.log(inputData);
+          if (inquiryId) {
+            await axiosInstance.patch(`/inquiries/${inquiryId}`, inputData);
+          } else {
+            const { data } = await axiosInstance.post('/inquiries', inputData);
+            setInquiryId(data.id);
+          }
         } catch (error) {
           console.error('Error saving user details:', error);
+          enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+            variant: 'error',
+          });
           return;
         }
       }
@@ -129,14 +171,32 @@ export default function LinearAlternativeLabel() {
   };
 
   const renderUserDetailsForm = (
-    <Stack spacing={2.5}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+    <Grid container spacing={2}>
+      <Grid item xs={12} sm={6}>
         <RHFTextField name="firstName" label="First name" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
         <RHFTextField name="lastName" label="Last name" />
-      </Stack>
-
-      <RHFTextField name="email" label="Email address" />
-    </Stack>
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField type="number" name="phoneNumber" label="Contact Number" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField name="designation" label="Designation" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField name="email" label="Email address" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField name="company" label="Company" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField name="gstIn" label="GstIn" />
+      </Grid>
+      <Grid item xs={12} sm={6}>
+        <RHFTextField name="address" label="Address" />
+      </Grid>
+    </Grid>
   );
 
   const renderMaterialDetailsForm = (

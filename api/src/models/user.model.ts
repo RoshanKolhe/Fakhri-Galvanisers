@@ -117,7 +117,6 @@ export class User extends Entity {
 
   @property({
     type: 'boolean',
-    required: true,
     default: false,
   })
   isDeleted: boolean;
