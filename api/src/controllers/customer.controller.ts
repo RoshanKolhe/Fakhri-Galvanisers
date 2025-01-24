@@ -31,6 +31,8 @@ import {MyCustomerService} from '../services/customer-service';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {UserProfile} from '@loopback/security';
 import {PermissionKeys} from '../authorization/permission-keys';
+import generateResetPasswordTemplate from '../templates/reset-password.template';
+import SITE_SETTINGS from '../utils/config';
 
 export class CustomerController {
   constructor(
@@ -210,5 +212,117 @@ export class CustomerController {
     return Promise.resolve({
       ...user,
     });
+  }
+
+  @post('/customer/sendResetPasswordLink')
+  async sendResetPasswordLink(
+    @requestBody({
+      description: 'Input for sending reset password link',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                format: 'email',
+                description: 'The email address of the user',
+              },
+            },
+            required: ['email'],
+          },
+        },
+      },
+    })
+    userData: {
+      email: string;
+    },
+  ): Promise<object> {
+    const user = await this.customerRepository.findOne({
+      where: {
+        email: userData.email,
+      },
+    });
+    if (user) {
+      const userProfile = this.customerService.convertToUserProfile(user);
+      const token = await this.jwtService.generate10MinToken(userProfile);
+      const resetPasswordLink = `${process.env.REACT_APP_ENDPOINT}/auth/admin/customer-new-password?token=${token}`;
+      const template = generateResetPasswordTemplate({
+        userData: userProfile,
+        resetLink: resetPasswordLink,
+      });
+      console.log(template);
+      const mailOptions = {
+        from: SITE_SETTINGS.fromMail,
+        to: userData.email,
+        subject: template.subject,
+        html: template.html,
+      };
+
+      try {
+        await this.emailManager.sendMail(mailOptions);
+        return {
+          success: true,
+          message: `Password reset link sent to ${userData.email}. Please check your inbox.`,
+        };
+      } catch (err) {
+        throw new HttpErrors.UnprocessableEntity(
+          err.message || 'Mail sending failed',
+        );
+      }
+    } else {
+      throw new HttpErrors.BadRequest("Email Doesn't Exist");
+    }
+  }
+
+  @authenticate('jwt')
+  @post('/customer/setNewPassword')
+  async setNewPassword(
+    @requestBody({
+      description: 'Input for resetting user password without the old password',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                format: 'email',
+                description: 'The email address of the user',
+              },
+              newPassword: {
+                type: 'string',
+                description: 'The new password to be set',
+              },
+            },
+            required: ['email', 'newPassword'], // Only email and newPassword are required
+          },
+        },
+      },
+    })
+    passwordOptions: any,
+  ): Promise<object> {
+    const user = await this.customerRepository.findOne({
+      where: {
+        email: passwordOptions.email,
+      },
+    });
+
+    if (user) {
+      const encryptedPassword = await this.hasher.hashPassword(
+        passwordOptions.newPassword,
+      );
+      await this.customerRepository.updateById(user.id, {
+        password: encryptedPassword,
+      });
+      return {
+        success: true,
+        message: 'Password updated successfully',
+      };
+    } else {
+      throw new HttpErrors.BadRequest("Email doesn't exist");
+    }
   }
 }

@@ -123,7 +123,7 @@ export default function ModernCustomerLoginView() {
 
           <Link
             component={RouterLink}
-            href={paths.auth.jwt.forgotPassword}
+            href={paths.auth.jwt.customerForgotPassword}
             variant="body2"
             color="inherit"
             underline="always"
