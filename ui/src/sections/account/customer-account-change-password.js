@@ -58,7 +58,7 @@ export default function CustomerAccountChangePassword() {
         oldPassword: data.oldPassword,
         newPassword: data.newPassword,
       };
-      await axiosInstance.post('/setPassword', inputData);
+      await axiosInstance.post('/customer/setPassword', inputData);
       reset();
       enqueueSnackbar('Update success!');
       console.info('DATA', data);

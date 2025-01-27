@@ -376,4 +376,63 @@ export class CustomerController {
       message: `Customer profile updated successfully`,
     });
   }
+
+  @authenticate('jwt')
+  @post('/customer/setPassword')
+  async setPassword(
+    @requestBody({
+      description: 'Input for changing user password',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              oldPassword: {
+                type: 'string',
+                description: "The user's current password",
+              },
+              newPassword: {
+                type: 'string',
+                description: 'The new password to be set',
+              },
+            },
+            required: ['oldPassword', 'newPassword'],
+          },
+        },
+      },
+    })
+    passwordOptions: any,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+  ): Promise<object> {
+    const user = await this.customerRepository.findOne({
+      where: {
+        id: currentUser.id,
+      },
+    });
+
+    if (user) {
+      const passwordCheck = await this.hasher.comparePassword(
+        passwordOptions.oldPassword,
+        user.password,
+      );
+
+      if (passwordCheck) {
+        const encryptedPassword = await this.hasher.hashPassword(
+          passwordOptions.newPassword,
+        );
+        await this.customerRepository.updateById(user.id, {
+          password: encryptedPassword,
+        });
+        return {
+          success: true,
+          message: 'Password changed successfully',
+        };
+      } else {
+        throw new HttpErrors.BadRequest("Old password doesn't match");
+      }
+    } else {
+      throw new HttpErrors.BadRequest("Email doesn't exist");
+    }
+  }
 }
