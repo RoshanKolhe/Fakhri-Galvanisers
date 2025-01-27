@@ -62,7 +62,7 @@ export default function HeaderSimple() {
           }),
         }}
       >
-        <Logo />
+        <Logo disabledLink/>
 
         <Stack direction="row" alignItems="center" spacing={1}>
           <SettingsButton />

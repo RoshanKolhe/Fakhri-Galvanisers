@@ -19,7 +19,7 @@ export default function ModernRegisterView() {
       <Stack direction="row" justifyContent="center" spacing={0.5}>
         <Typography variant="body2"> Already have an account? </Typography>
 
-        <Link href={paths.auth.jwt.login} component={RouterLink} variant="subtitle2">
+        <Link href={paths.auth.jwt.customerLogin} component={RouterLink} variant="subtitle2">
           Sign in
         </Link>
       </Stack>
