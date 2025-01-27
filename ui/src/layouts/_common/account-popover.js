@@ -25,11 +25,18 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 const OPTIONS = [
   {
     label: 'Home',
+    permissions: ['super_admin', 'admin', 'customer'],
     linkTo: '/',
   },
   {
     label: 'Profile',
     linkTo: paths.dashboard.profile,
+    permissions: ['super_admin', 'admin'],
+  },
+  {
+    label: 'Profile',
+    linkTo: paths.dashboard.customerProfile,
+    permissions: ['customer'],
   },
 ];
 
@@ -59,6 +66,10 @@ export default function AccountPopover() {
     popover.onClose();
     router.push(path);
   };
+
+  const filteredOptions = OPTIONS.filter((option) =>
+    option.permissions.includes(user?.permissions[0])
+  );
 
   return (
     <>
@@ -103,7 +114,7 @@ export default function AccountPopover() {
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Stack sx={{ p: 1 }}>
-          {OPTIONS.map((option) => (
+          {filteredOptions.map((option) => (
             <MenuItem key={option.label} onClick={() => handleClickItem(option.linkTo)}>
               {option.label}
             </MenuItem>

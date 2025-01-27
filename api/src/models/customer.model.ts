@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
 
 @model()
 export class Customer extends Entity {
@@ -91,6 +91,26 @@ export class Customer extends Entity {
     type: 'date',
   })
   updatedAt?: Date;
+
+  @property({
+    type: 'date',
+  })
+  deletedAt?: Date;
+
+  @belongsTo(() => Customer, {name: 'creator'})
+  createdBy: number;
+
+  @belongsTo(() => Customer, {name: 'updater'})
+  updatedBy: number;
+
+  @belongsTo(() => Customer, {name: 'deleter'})
+  deletedBy: number;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isDeleted: boolean;
 
   constructor(data?: Partial<Customer>) {
     super(data);

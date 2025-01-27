@@ -149,7 +149,7 @@ export class UserController {
   ): Promise<{}> {
     const user = await this.userRepository.findOne({
       where: {
-        id: currnetUser.id,
+        email: currnetUser.email,
       },
     });
     const userData = _.omit(user, 'password');

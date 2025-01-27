@@ -238,7 +238,7 @@ export const _phoneNumbers = [
 
 // ----------------------------------------------------------------------
 
-export const _roles = ['Super Admin', 'Admin', 'Worker', 'Qc Admin'];
+export const _roles = ['Admin', 'Worker', 'Qc Admin'];
 
 // ----------------------------------------------------------------------
 

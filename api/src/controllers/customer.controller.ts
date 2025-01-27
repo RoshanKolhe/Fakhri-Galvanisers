@@ -23,6 +23,7 @@ import {
   requestBody,
   response,
   param,
+  patch,
 } from '@loopback/rest';
 import {Customer} from '../models';
 import {validateCredentials} from '../services/validator';
@@ -144,7 +145,7 @@ export class CustomerController {
   ): Promise<{}> {
     const user = await this.customerRepository.findOne({
       where: {
-        id: currnetUser.id,
+        email: currnetUser.email,
       },
     });
     const userData = _.omit(user, 'password');
@@ -324,5 +325,55 @@ export class CustomerController {
     } else {
       throw new HttpErrors.BadRequest("Email doesn't exist");
     }
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+  })
+  @patch('/api/customers/{id}')
+  @response(204, {
+    description: 'Customer PATCH success',
+  })
+  async updateById(
+    @param.path.number('id') id: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Customer, {partial: true}),
+        },
+      },
+    })
+    customer: Customer,
+    @inject(AuthenticationBindings.CURRENT_USER) currentCustomer: UserProfile,
+  ): Promise<any> {
+    // Fetch the user information before updating
+    const existingCustomer = await this.customerRepository.findById(id);
+    if (!existingCustomer) {
+      return;
+    }
+
+    if (customer.password) {
+      customer.password = await this.hasher.hashPassword(customer.password);
+    }
+
+    if (customer.email && customer.email !== existingCustomer.email) {
+      const emailExists = await this.customerRepository.findOne({
+        where: {email: customer.email},
+      });
+
+      if (emailExists) {
+        throw new HttpErrors.BadRequest('Email already exists');
+      }
+    }
+
+    if (customer) {
+      customer.updatedBy = currentCustomer.id;
+      await this.customerRepository.updateById(id, customer);
+    }
+
+    return Promise.resolve({
+      success: true,
+      message: `Customer profile updated successfully`,
+    });
   }
 }

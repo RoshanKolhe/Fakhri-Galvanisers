@@ -237,7 +237,7 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFTextField name="firstName" label="First Name" />
               <RHFTextField name="lastName" label="Last Name" />
               <RHFTextField name="email" label="Email Address" />
-              <RHFTextField name="phoneNumber" label="Phone Number" />
+              <RHFTextField type="number" name="phoneNumber" label="Phone Number" />
               <RHFTextField name="employeeId" label="Employee Id" />
 
               {!currentUser ? (
