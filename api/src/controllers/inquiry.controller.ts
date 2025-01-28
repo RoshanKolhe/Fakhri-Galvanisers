@@ -16,14 +16,19 @@ import {
   del,
   requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
 import {Inquiry} from '../models';
 import {InquiryRepository} from '../repositories';
+import {authenticate, AuthenticationBindings} from '@loopback/authentication';
+import {PermissionKeys} from '../authorization/permission-keys';
+import {inject} from '@loopback/core';
+import {UserProfile} from '@loopback/security';
 
 export class InquiryController {
   constructor(
     @repository(InquiryRepository)
-    public inquiryRepository : InquiryRepository,
+    public inquiryRepository: InquiryRepository,
   ) {}
 
   @post('/inquiries')
@@ -62,6 +67,14 @@ export class InquiryController {
   async find(
     @param.filter(Inquiry) filter?: Filter<Inquiry>,
   ): Promise<Inquiry[]> {
+    filter = {
+      ...filter,
+      where: {
+        ...filter?.where,
+        isDeleted: false,
+      },
+      include: [{relation: 'creator'}, {relation: 'updater'}],
+    };
     return this.inquiryRepository.find(filter);
   }
 
@@ -76,7 +89,8 @@ export class InquiryController {
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Inquiry, {exclude: 'where'}) filter?: FilterExcludingWhere<Inquiry>
+    @param.filter(Inquiry, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Inquiry>,
   ): Promise<Inquiry> {
     return this.inquiryRepository.findById(id, filter);
   }
@@ -99,11 +113,27 @@ export class InquiryController {
     await this.inquiryRepository.updateById(id, inquiry);
   }
 
+  @authenticate({
+    strategy: 'jwt',
+    options: {required: [PermissionKeys.SUPER_ADMIN]},
+  })
   @del('/inquiries/{id}')
   @response(204, {
     description: 'Inquiry DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.inquiryRepository.deleteById(id);
+  async deleteById(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.path.number('id') id: number,
+  ): Promise<void> {
+    const inquiry = await this.inquiryRepository.findById(id);
+    if (!inquiry) {
+      throw new HttpErrors.BadRequest('Inquiry Not Found');
+    }
+
+    await this.inquiryRepository.updateById(id, {
+      isDeleted: true,
+      deletedBy: currentUser.id,
+      deletedAt: new Date(),
+    });
   }
 }

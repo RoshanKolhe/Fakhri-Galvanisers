@@ -22,15 +22,19 @@ import axiosInstance from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export default function UserQuickEditForm({ currentUser, open, onClose, refreshUsers }) {
-  console.log(currentUser);
+export default function CustomerQuickEditForm({
+  currentCustomer,
+  open,
+  onClose,
+  refreshCustomers,
+}) {
+  console.log(currentCustomer);
   const { enqueueSnackbar } = useSnackbar();
 
-  const NewUserSchema = Yup.object().shape({
+  const NewCustomerSchema = Yup.object().shape({
     firstName: Yup.string().required('First Name is required'),
     lastName: Yup.string().required('Last Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    employeeId: Yup.string().required('Employee Id is required'),
     phoneNumber: Yup.string()
       .required('Phone number is required')
       .matches(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'),
@@ -38,34 +42,32 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
     address: Yup.string(),
     state: Yup.string(),
     city: Yup.string(),
-    role: Yup.string().required('Role is required'),
     zipCode: Yup.string(),
     avatarUrl: Yup.mixed().nullable(),
     isActive: Yup.boolean(),
+    gstNo: Yup.string(),
   });
 
   const defaultValues = useMemo(
     () => ({
-      firstName: currentUser?.firstName || '',
-      lastName: currentUser?.lastName || '',
-      role: currentUser?.permissions[0] || '',
-      dob: currentUser?.dob || '',
-      employeeId: currentUser?.employeeId || '',
-      email: currentUser?.email || '',
-      isActive: currentUser?.isActive ? '1' : '0' || '',
-
-      phoneNumber: currentUser?.phoneNumber || '',
-      address: currentUser?.fullAddress || '',
-      city: currentUser?.city || '',
-      state: currentUser?.state || '',
+      firstName: currentCustomer?.firstName || '',
+      lastName: currentCustomer?.lastName || '',
+      dob: currentCustomer?.dob || '',
+      email: currentCustomer?.email || '',
+      isActive: currentCustomer?.isActive ? '1' : '0' || '',
+      gstNo: currentCustomer?.gstNo || '',
+      phoneNumber: currentCustomer?.phoneNumber || '',
+      address: currentCustomer?.fullAddress || '',
+      city: currentCustomer?.city || '',
+      state: currentCustomer?.state || '',
       password: '',
       confirmPassword: '',
     }),
-    [currentUser]
+    [currentCustomer]
   );
 
   const methods = useForm({
-    resolver: yupResolver(NewUserSchema),
+    resolver: yupResolver(NewCustomerSchema),
     defaultValues,
   });
 
@@ -82,17 +84,16 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        permissions: [formData.role],
         phoneNumber: formData.phoneNumber,
-        isActive: formData.isActive,
+        isActive: formData.isActive ? 1 : 0,
         dob: formData.dob,
         fullAddress: formData.address,
         city: formData.city,
         state: formData.state,
-        employeeId: formData.employeeId,
+        gstNo: formData.gstNo,
       };
-      await axiosInstance.patch(`/api/users/${currentUser.id}`, inputData);
-      refreshUsers();
+      await axiosInstance.patch(`/api/customers/${currentCustomer.id}`, inputData);
+      refreshCustomers();
       reset();
       onClose();
       enqueueSnackbar('Update success!');
@@ -116,7 +117,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
         <DialogTitle>Quick Update</DialogTitle>
 
         <DialogContent>
-          {!currentUser?.isActive && (
+          {!currentCustomer?.isActive && (
             <Alert variant="outlined" severity="error" sx={{ mb: 3 }}>
               Account is In-Active
             </Alert>
@@ -145,7 +146,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
             <RHFTextField name="lastName" label="Last Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField type="number" name="phoneNumber" label="Phone Number" />
-            <RHFTextField name="employeeId" label="Employee Id" />
+            <RHFTextField name="gstNo" label="Gst No" />
 
             <Controller
               name="dob"
@@ -177,17 +178,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
             </RHFSelect>
             <RHFTextField name="city" label="City" />
             <RHFTextField name="address" label="Address" />
-            <RHFSelect fullWidth name="role" label="Role">
-              {[
-                { value: 'admin', name: 'Admin' },
-                { value: 'worker', name: 'Worker' },
-                { value: 'qc_admin', name: 'Qc Admin' },
-              ].map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.name}
-                </MenuItem>
-              ))}
-            </RHFSelect>
           </Box>
         </DialogContent>
 
@@ -205,9 +195,9 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
   );
 }
 
-UserQuickEditForm.propTypes = {
-  currentUser: PropTypes.object,
+CustomerQuickEditForm.propTypes = {
+  currentCustomer: PropTypes.object,
   onClose: PropTypes.func,
   open: PropTypes.bool,
-  refreshUsers: PropTypes.func,
+  refreshCustomers: PropTypes.func,
 };

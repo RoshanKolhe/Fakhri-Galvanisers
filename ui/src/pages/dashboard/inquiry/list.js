@@ -1,17 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 // sections
-import { CustomerListView } from 'src/sections/customer/view';
+import { InquiryListView } from 'src/sections/inquiry/view';
 
 // ----------------------------------------------------------------------
 
-export default function CustomerListPage() {
+export default function InquiryListPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Customer List</title>
+        <title> Dashboard: Inquiry List</title>
       </Helmet>
 
-      <CustomerListView />
+      <InquiryListView />
     </>
   );
 }

@@ -1,17 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 // sections
-import UserEditView from 'src/sections/user/view/user-edit-view';
+import CustomerEditView from 'src/sections/customer/view/customer-edit-view';
 
 // ----------------------------------------------------------------------
 
-export default function UserEditPage() {
+export default function CustomerEditPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: User Edit</title>
+        <title> Dashboard: Customer Edit</title>
       </Helmet>
 
-      <UserEditView />
+      <CustomerEditView />
     </>
   );
 }

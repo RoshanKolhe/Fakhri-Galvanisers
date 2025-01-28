@@ -43,4 +43,15 @@ export const endpoints = {
     search: '/api/user/search',
     getDashboradCounts: '/getDashboardCounts',
   },
+  customer: {
+    list: '/customer/list',
+    filterList: (filter) => `/customer/list?${filter}`,
+    details: (id) => `/customer/${id}`,
+  },
+  inquiry: {
+    list: '/inquiries',
+    filterList: (filter) => `/inquiries?${filter}`,
+    details: (id) => `/inquiries/${id}`,
+    search: '/inquiries/search',
+  },
 };

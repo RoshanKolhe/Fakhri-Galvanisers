@@ -25,13 +25,13 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
 // _mock
 import {
-  _roles,
   JOB_SKILL_OPTIONS,
   JOB_BENEFIT_OPTIONS,
   JOB_EXPERIENCE_OPTIONS,
   JOB_EMPLOYMENT_TYPE_OPTIONS,
   JOB_WORKING_SCHEDULE_OPTIONS,
 } from 'src/_mock';
+
 // assets
 import { countries } from 'src/assets/data';
 // components
@@ -45,6 +45,7 @@ import FormProvider, {
   RHFAutocomplete,
   RHFMultiCheckbox,
 } from 'src/components/hook-form';
+import { _roles } from 'src/utils/constants';
 
 // ----------------------------------------------------------------------
 

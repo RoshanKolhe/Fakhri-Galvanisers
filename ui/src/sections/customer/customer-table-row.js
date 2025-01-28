@@ -19,7 +19,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function UserTableRow({
+export default function CustomerTableRow({
   row,
   selected,
   onEditRow,
@@ -29,8 +29,7 @@ export default function UserTableRow({
   quickEdit,
   handleQuickEditRow,
 }) {
-  const { firstName, lastName, avatar, permissions, isActive, email, phoneNumber, employeeId } =
-    row;
+  const { firstName, lastName, avatar, gstNo, isActive, email, phoneNumber } = row;
 
   const confirm = useBoolean();
 
@@ -54,11 +53,8 @@ export default function UserTableRow({
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{employeeId}</TableCell>
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber}</TableCell>
-
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{permissions.toString()}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{gstNo}</TableCell>
 
         <TableCell>
           <Label
@@ -140,7 +136,7 @@ export default function UserTableRow({
   );
 }
 
-UserTableRow.propTypes = {
+CustomerTableRow.propTypes = {
   onDeleteRow: PropTypes.func,
   onEditRow: PropTypes.func,
   onViewRow: PropTypes.func,

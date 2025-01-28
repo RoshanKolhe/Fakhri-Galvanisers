@@ -78,7 +78,7 @@ export class Customer extends Entity {
 
   @property({
     type: 'boolean',
-    required: true,
+    default: true,
   })
   isEmailVerified: boolean;
 

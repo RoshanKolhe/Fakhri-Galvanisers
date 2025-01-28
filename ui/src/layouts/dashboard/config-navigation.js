@@ -20,10 +20,11 @@ const icon = (name) => (
 
 const ICONS = {
   job: icon('ic_job'),
-  blog: icon('ic_blog'),
+  inquiry: icon('ic_inquiry'),
   chat: icon('ic_chat'),
   mail: icon('ic_mail'),
   user: icon('ic_user'),
+  customer: icon('ic_customer'),
   file: icon('ic_file'),
   lock: icon('ic_lock'),
   tour: icon('ic_tour'),
@@ -73,6 +74,27 @@ export function useNavData() {
             children: [
               { title: t('list'), path: paths.dashboard.user.list, roles: ['super_admin'] },
               { title: t('create'), path: paths.dashboard.user.new, roles: ['super_admin'] },
+            ],
+          },
+          // CUSTOMER
+          {
+            title: t('customer'),
+            path: paths.dashboard.customer.root,
+            icon: ICONS.customer,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.customer.list, roles: ['super_admin'] },
+              { title: t('create'), path: paths.dashboard.customer.new, roles: ['super_admin'] },
+            ],
+          },
+          // INQUIRY
+          {
+            title: t('inquiry'),
+            path: paths.dashboard.inquiry.root,
+            icon: ICONS.inquiry,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.inquiry.list, roles: ['super_admin'] },
             ],
           },
         ],

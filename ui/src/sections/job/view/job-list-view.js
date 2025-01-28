@@ -13,7 +13,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 // _mock
 import {
   _jobs,
-  _roles,
   JOB_SORT_OPTIONS,
   JOB_BENEFIT_OPTIONS,
   JOB_EXPERIENCE_OPTIONS,
@@ -27,6 +26,7 @@ import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
+import { _roles } from 'src/utils/constants';
 import JobList from '../job-list';
 import JobSort from '../job-sort';
 import JobSearch from '../job-search';

@@ -37,14 +37,14 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
-import { useGetUsers } from 'src/api/user';
+import { useGetCustomers } from 'src/api/customer';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 import { _roles, USER_STATUS_OPTIONS } from 'src/utils/constants';
-import UserTableRow from '../user-table-row';
-import UserTableToolbar from '../user-table-toolbar';
-import UserTableFiltersResult from '../user-table-filters-result';
-import UserQuickEditForm from '../user-quick-edit-form';
+import CustomerTableRow from '../customer-table-row';
+import CustomerTableToolbar from '../customer-table-toolbar';
+import CustomerTableFiltersResult from '../customer-table-filters-result';
+import CustomerQuickEditForm from '../customer-quick-edit-form';
 
 // ----------------------------------------------------------------------
 
@@ -52,9 +52,8 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
-  { id: 'employeeId', label: 'Employee Id', width: 180 },
   { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-  { id: 'role', label: 'Role', width: 180 },
+  { id: 'gstNo', label: 'Gst No', width: 180 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
 ];
@@ -67,7 +66,7 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function UserListView() {
+export default function CustomerListView() {
   const table = useTable();
 
   const settings = useSettingsContext();
@@ -86,7 +85,7 @@ export default function UserListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { users, usersLoading, usersEmpty, refreshUsers } = useGetUsers();
+  const { customers, customersLoading, customersEmpty, refreshCustomers } = useGetCustomers();
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -119,22 +118,22 @@ export default function UserListView() {
   const handleDeleteRow = useCallback(
     async (id) => {
       try {
-        // Make API call to delete the user
-        const response = await axiosInstance.delete(`/user/${id}`);
+        // Make API call to delete the customer
+        const response = await axiosInstance.delete(`/customer/${id}`);
         if (response.status === 204) {
-          console.log('User deleted successfully');
-          enqueueSnackbar('User Deleted Successfully');
-          refreshUsers();
+          console.log('Customer deleted successfully');
+          enqueueSnackbar('Customer Deleted Successfully');
+          refreshCustomers();
           confirm.onFalse();
         }
       } catch (error) {
-        console.error('Error deleting user:', error.response?.data || error.message);
+        console.error('Error deleting customer:', error.response?.data || error.message);
         enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
           variant: 'error',
         });
       }
     },
-    [confirm, enqueueSnackbar, refreshUsers]
+    [confirm, enqueueSnackbar, refreshCustomers]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -150,14 +149,14 @@ export default function UserListView() {
 
   const handleEditRow = useCallback(
     (id) => {
-      router.push(paths.dashboard.user.edit(id));
+      router.push(paths.dashboard.customer.edit(id));
     },
     [router]
   );
 
   const handleViewRow = useCallback(
     (id) => {
-      router.push(paths.dashboard.user.view(id));
+      router.push(paths.dashboard.customer.view(id));
     },
     [router]
   );
@@ -182,30 +181,30 @@ export default function UserListView() {
   }, []);
 
   useEffect(() => {
-    if (users) {
-      // const updatedUsers = users.filter((obj) => !obj.permissions.includes('super_admin'));
-      setTableData(users);
+    if (customers) {
+      // const updatedCustomers = customers.filter((obj) => !obj.permissions.includes('super_admin'));
+      setTableData(customers);
     }
-  }, [users]);
+  }, [customers]);
 
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="User Management"
+          heading="Customer Management"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'User Management', href: paths.dashboard.user.list },
+            { name: 'Customer Management', href: paths.dashboard.customer.list },
             { name: 'List' },
           ]}
           action={
             <Button
               component={RouterLink}
-              href={paths.dashboard.user.new}
+              href={paths.dashboard.customer.new}
               variant="contained"
               startIcon={<Iconify icon="mingcute:add-line" />}
             >
-              New User
+              New Customer
             </Button>
           }
           sx={{
@@ -240,16 +239,16 @@ export default function UserListView() {
                     }
                   >
                     {tab.value === 'all' && tableData.length}
-                    {tab.value === '1' && tableData.filter((user) => user.isActive).length}
+                    {tab.value === '1' && tableData.filter((customer) => customer.isActive).length}
 
-                    {tab.value === '0' && tableData.filter((user) => !user.isActive).length}
+                    {tab.value === '0' && tableData.filter((customer) => !customer.isActive).length}
                   </Label>
                 }
               />
             ))}
           </Tabs>
 
-          <UserTableToolbar
+          <CustomerTableToolbar
             filters={filters}
             onFilters={handleFilters}
             //
@@ -257,7 +256,7 @@ export default function UserListView() {
           />
 
           {canReset && (
-            <UserTableFiltersResult
+            <CustomerTableFiltersResult
               filters={filters}
               onFilters={handleFilters}
               //
@@ -313,7 +312,7 @@ export default function UserListView() {
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
                     .map((row) => (
-                      <UserTableRow
+                      <CustomerTableRow
                         key={row.id}
                         row={row}
                         selected={table.selected.includes(row.id)}
@@ -321,8 +320,8 @@ export default function UserListView() {
                         onDeleteRow={() => handleDeleteRow(row.id)}
                         onEditRow={() => handleEditRow(row.id)}
                         onViewRow={() => handleViewRow(row.id)}
-                        handleQuickEditRow={(user) => {
-                          handleQuickEditRow(user);
+                        handleQuickEditRow={(customer) => {
+                          handleQuickEditRow(customer);
                         }}
                         quickEdit={quickEdit}
                       />
@@ -376,14 +375,14 @@ export default function UserListView() {
       />
 
       {quickEdit.value && quickEditRow && (
-        <UserQuickEditForm
-          currentUser={quickEditRow}
+        <CustomerQuickEditForm
+          currentCustomer={quickEditRow}
           open={quickEdit.value}
           onClose={() => {
             setQuickEditRow(null);
             quickEdit.onFalse();
           }}
-          refreshUsers={refreshUsers}
+          refreshCustomers={refreshCustomers}
         />
       )}
     </>
@@ -410,22 +409,22 @@ function applyFilter({ inputData, comparator, filters }) {
   inputData = stabilizedThis.map((el) => el[0]);
 
   if (name) {
-    inputData = inputData.filter((user) =>
-      Object.values(user).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
+    inputData = inputData.filter((customer) =>
+      Object.values(customer).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => (status === '1' ? user.isActive : !user.isActive));
+    inputData = inputData.filter((customer) => (status === '1' ? customer.isActive : !customer.isActive));
   }
 
   if (role.length) {
     inputData = inputData.filter(
-      (user) =>
-        user.permissions &&
-        user.permissions.some((userRole) => {
-          console.log(userRole);
-          const mappedRole = roleMapping[userRole];
+      (customer) =>
+        customer.permissions &&
+        customer.permissions.some((customerRole) => {
+          console.log(customerRole);
+          const mappedRole = roleMapping[customerRole];
           console.log('Mapped Role:', mappedRole); // Check the mapped role
           return mappedRole && role.includes(mappedRole);
         })

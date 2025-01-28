@@ -35,6 +35,17 @@ const UserAccountPage = lazy(() => import('src/pages/dashboard/user/account'));
 const CustomerAccountPage = lazy(() => import('src/pages/dashboard/customer/account'));
 const UserCreatePage = lazy(() => import('src/pages/dashboard/user/new'));
 const UserEditPage = lazy(() => import('src/pages/dashboard/user/edit'));
+const UserViewPage = lazy(() => import('src/pages/dashboard/user/view'));
+
+// CUSTOMER
+const CustomerListPage = lazy(() => import('src/pages/dashboard/customer/list'));
+const CustomerCreatePage = lazy(() => import('src/pages/dashboard/customer/new'));
+const CustomerEditPage = lazy(() => import('src/pages/dashboard/customer/edit'));
+const CustomerViewPage = lazy(() => import('src/pages/dashboard/customer/view'));
+
+// INQUIRY
+const InquiryListPage = lazy(() => import('src/pages/dashboard/inquiry/list'));
+
 // BLOG
 const BlogPostsPage = lazy(() => import('src/pages/dashboard/post/list'));
 const BlogPostPage = lazy(() => import('src/pages/dashboard/post/details'));
@@ -87,7 +98,25 @@ export const dashboardRoutes = [
           { path: 'list', element: <UserListPage /> },
           { path: 'new', element: <UserCreatePage /> },
           { path: ':id/edit', element: <UserEditPage /> },
+          { path: ':id/view', element: <UserViewPage /> },
           { path: 'account', element: <UserAccountPage /> },
+        ],
+      },
+      {
+        path: 'customer',
+        children: [
+          { element: <CustomerListPage />, index: true },
+          { path: 'list', element: <CustomerListPage /> },
+          { path: 'new', element: <CustomerCreatePage /> },
+          { path: ':id/edit', element: <CustomerEditPage /> },
+          { path: ':id/view', element: <CustomerViewPage /> },
+        ],
+      },
+      {
+        path: 'inquiry',
+        children: [
+          { element: <InquiryListPage />, index: true },
+          { path: 'list', element: <InquiryListPage /> },
         ],
       },
       {

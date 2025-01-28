@@ -362,3 +362,15 @@ export const states = [
 ];
 
 export const PERMISSION_KEY = 'permission';
+
+export const USER_STATUS_OPTIONS = [
+  { value: '1', label: 'Active' },
+  { value: '0', label: 'In-Active' },
+];
+
+export const INQUIRY_STATUS_OPTIONS = [
+  { value: 0, label: 'Incomplete' },
+  { value: 1, label: 'Complete' },
+];
+
+export const _roles = ['Admin', 'Worker', 'Qc Admin'];

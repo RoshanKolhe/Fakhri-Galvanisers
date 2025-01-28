@@ -87,7 +87,7 @@ export class CustomerController {
       }
 
       validateCredentials(userData);
-      // userData.permissions = [PermissionKeys.ADMIN];
+      userData.permissions = [PermissionKeys.CUSTOMER];
       userData.password = await this.hasher.hashPassword(userData.password);
       const savedUser = await this.customerRepository.create(userData, {
         transaction: tx,
