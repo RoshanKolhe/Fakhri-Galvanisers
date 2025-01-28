@@ -112,23 +112,23 @@ export default function UserTableToolbar({
         arrow="right-top"
         sx={{ width: 140 }}
       >
-        <MenuItem
+        {/* <MenuItem
           onClick={() => {
             popover.onClose();
           }}
         >
           <Iconify icon="solar:printer-minimalistic-bold" />
           Print
-        </MenuItem>
+        </MenuItem> */}
 
-        <MenuItem
+        {/* <MenuItem
           onClick={() => {
             popover.onClose();
           }}
         >
           <Iconify icon="solar:import-bold" />
           Import
-        </MenuItem>
+        </MenuItem> */}
 
         <MenuItem
           onClick={() => {
