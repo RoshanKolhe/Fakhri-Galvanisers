@@ -1,4 +1,11 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {
+  Entity,
+  model,
+  property,
+  belongsTo,
+  hasMany,
+} from '@loopback/repository';
+import {Quotation} from './quotation.model';
 
 @model()
 export class Customer extends Entity {
@@ -97,20 +104,44 @@ export class Customer extends Entity {
   })
   deletedAt?: Date;
 
-  @belongsTo(() => Customer, {name: 'creator'})
+  @property({
+    type: 'number',
+  })
   createdBy: number;
 
-  @belongsTo(() => Customer, {name: 'updater'})
+  @property({
+    type: 'string',
+  })
+  createdByType: string;
+
+  @property({
+    type: 'number',
+  })
   updatedBy: number;
 
-  @belongsTo(() => Customer, {name: 'deleter'})
+  @property({
+    type: 'string',
+  })
+  updatedByType: string;
+
+  @property({
+    type: 'number',
+  })
   deletedBy: number;
+
+  @property({
+    type: 'string',
+  })
+  deletedByType: string;
 
   @property({
     type: 'boolean',
     default: false,
   })
   isDeleted: boolean;
+
+  @hasMany(() => Quotation)
+  quotations: Quotation[];
 
   constructor(data?: Partial<Customer>) {
     super(data);

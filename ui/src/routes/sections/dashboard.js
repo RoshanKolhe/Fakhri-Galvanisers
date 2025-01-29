@@ -28,8 +28,6 @@ const CustomerViewPage = lazy(() => import('src/pages/dashboard/customer/view'))
 // INQUIRY
 const InquiryListPage = lazy(() => import('src/pages/dashboard/inquiry/list'));
 
-// TEST RENDER PAGE BY ROLE
-const PermissionDeniedPage = lazy(() => import('src/pages/dashboard/permission'));
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 

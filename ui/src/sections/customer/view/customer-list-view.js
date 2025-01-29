@@ -123,8 +123,8 @@ export default function CustomerListView() {
         if (response.status === 204) {
           console.log('Customer deleted successfully');
           enqueueSnackbar('Customer Deleted Successfully');
-          refreshCustomers();
           confirm.onFalse();
+          refreshCustomers();
         }
       } catch (error) {
         console.error('Error deleting customer:', error.response?.data || error.message);
@@ -137,6 +137,7 @@ export default function CustomerListView() {
   );
 
   const handleDeleteRows = useCallback(() => {
+    console.log('here');
     const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
     setTableData(deleteRows);
 
@@ -410,12 +411,16 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter((customer) =>
-      Object.values(customer).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
+      Object.values(customer).some((value) =>
+        String(value).toLowerCase().includes(name.toLowerCase())
+      )
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((customer) => (status === '1' ? customer.isActive : !customer.isActive));
+    inputData = inputData.filter((customer) =>
+      status === '1' ? customer.isActive : !customer.isActive
+    );
   }
 
   if (role.length) {

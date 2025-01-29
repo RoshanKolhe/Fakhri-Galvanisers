@@ -54,6 +54,7 @@ export class MyCustomerService implements UserService<Customer, Credentials> {
       phoneNumber: customer.phoneNumber,
       [securityId]: `${customer.id}`,
       permissions: customer.permissions,
+      userType: 'customer',
     };
   }
 }

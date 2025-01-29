@@ -24,6 +24,7 @@ import {
   response,
   param,
   patch,
+  del,
 } from '@loopback/rest';
 import {Customer} from '../models';
 import {validateCredentials} from '../services/validator';
@@ -52,6 +53,12 @@ export class CustomerController {
     public jwtService: JWTService,
   ) {}
 
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN],
+    },
+  })
   @post('/customer/register', {
     responses: {
       '200': {
@@ -73,6 +80,7 @@ export class CustomerController {
       },
     })
     userData: Omit<Customer, 'id'>,
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ) {
     const repo = new DefaultTransactionalRepository(Customer, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
@@ -89,6 +97,10 @@ export class CustomerController {
       validateCredentials(userData);
       userData.permissions = [PermissionKeys.CUSTOMER];
       userData.password = await this.hasher.hashPassword(userData.password);
+      userData.createdByType = 'admin';
+      userData.createdBy = currnetUser.id;
+      userData.updatedByType = 'admin';
+      userData.updatedBy = currnetUser.id;
       const savedUser = await this.customerRepository.create(userData, {
         transaction: tx,
       });
@@ -180,8 +192,13 @@ export class CustomerController {
   ): Promise<Customer[]> {
     filter = {
       ...filter,
+      where: {
+        ...filter?.where,
+        isDeleted: false,
+      },
       fields: {password: false},
     };
+    console.log(filter);
     return this.customerRepository.find(filter);
   }
 
@@ -304,6 +321,7 @@ export class CustomerController {
       },
     })
     passwordOptions: any,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<object> {
     const user = await this.customerRepository.findOne({
       where: {
@@ -315,9 +333,12 @@ export class CustomerController {
       const encryptedPassword = await this.hasher.hashPassword(
         passwordOptions.newPassword,
       );
-      await this.customerRepository.updateById(user.id, {
+      const inputData: Partial<Customer> = {
         password: encryptedPassword,
-      });
+        updatedBy: user.id,
+        updatedByType: currentUser.userType,
+      };
+      await this.customerRepository.updateById(user.id, inputData);
       return {
         success: true,
         message: 'Password updated successfully',
@@ -368,6 +389,7 @@ export class CustomerController {
 
     if (customer) {
       customer.updatedBy = currentCustomer.id;
+      customer.updatedByType = currentCustomer.userType;
       await this.customerRepository.updateById(id, customer);
     }
 
@@ -421,9 +443,12 @@ export class CustomerController {
         const encryptedPassword = await this.hasher.hashPassword(
           passwordOptions.newPassword,
         );
-        await this.customerRepository.updateById(user.id, {
+        const inputData: Partial<Customer> = {
           password: encryptedPassword,
-        });
+          updatedBy: currentUser.id,
+          updatedByType: currentUser.userType,
+        };
+        await this.customerRepository.updateById(user.id, inputData);
         return {
           success: true,
           message: 'Password changed successfully',
@@ -434,5 +459,30 @@ export class CustomerController {
     } else {
       throw new HttpErrors.BadRequest("Email doesn't exist");
     }
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {required: [PermissionKeys.SUPER_ADMIN]},
+  })
+  @del('/customer/{id}')
+  @response(204, {
+    description: 'User DELETE success',
+  })
+  async deleteById(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.path.number('id') id: number,
+  ): Promise<void> {
+    const customer = await this.customerRepository.findById(id);
+    if (!customer) {
+      throw new HttpErrors.BadRequest('Customer Not Found');
+    }
+
+    await this.customerRepository.updateById(id, {
+      isDeleted: true,
+      deletedBy: currentUser.id,
+      deletedByType: currentUser.userType,
+      deletedAt: new Date(),
+    });
   }
 }

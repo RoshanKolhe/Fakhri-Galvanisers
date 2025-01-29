@@ -53,6 +53,7 @@ export class MyUserService implements UserService<User, Credentials> {
       phoneNumber: user.phoneNumber,
       [securityId]: `${user.id}`,
       permissions: user.permissions,
+      userType: 'admin',
     };
   }
 }
