@@ -28,6 +28,18 @@ const CustomerViewPage = lazy(() => import('src/pages/dashboard/customer/view'))
 // INQUIRY
 const InquiryListPage = lazy(() => import('src/pages/dashboard/inquiry/list'));
 
+// QUOTATION
+const QuotationListPage = lazy(() => import('src/pages/dashboard/quotation/list'));
+const QuotationCreatePage = lazy(() => import('src/pages/dashboard/quotation/new'));
+const QuotationEditPage = lazy(() => import('src/pages/dashboard/quotation/edit'));
+const QuotationViewPage = lazy(() => import('src/pages/dashboard/quotation/view'));
+
+// HSNMASTER
+const HsnMasterListPage = lazy(() => import('src/pages/dashboard/hsnMaster/list'));
+const HsnMasterCreatePage = lazy(() => import('src/pages/dashboard/hsnMaster/new'));
+const HsnMasterEditPage = lazy(() => import('src/pages/dashboard/hsnMaster/edit'));
+const HsnMasterViewPage = lazy(() => import('src/pages/dashboard/hsnMaster/view'));
+
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 
@@ -75,6 +87,27 @@ export const dashboardRoutes = [
         children: [
           { element: <InquiryListPage />, index: true },
           { path: 'list', element: <InquiryListPage /> },
+        ],
+      },
+
+      {
+        path: 'quotation',
+        children: [
+          { element: <QuotationListPage />, index: true },
+          { path: 'list', element: <QuotationListPage /> },
+          { path: 'new', element: <QuotationCreatePage /> },
+          { path: ':id/edit', element: <QuotationEditPage /> },
+          { path: ':id/view', element: <QuotationViewPage /> },
+        ],
+      },
+      {
+        path: 'hsnMaster',
+        children: [
+          { element: <HsnMasterListPage />, index: true },
+          { path: 'list', element: <HsnMasterListPage /> },
+          { path: 'new', element: <HsnMasterCreatePage /> },
+          { path: ':id/edit', element: <HsnMasterEditPage /> },
+          { path: ':id/view', element: <HsnMasterViewPage /> },
         ],
       },
 

@@ -103,6 +103,20 @@ export const paths = {
       list: `${ROOTS.DASHBOARD}/inquiry/list`,
       edit: (id) => `${ROOTS.DASHBOARD}/inquiry/${id}/edit`,
     },
+    quotation: {
+      root: `${ROOTS.DASHBOARD}/quotation`,
+      new: `${ROOTS.DASHBOARD}/quotation/new`,
+      list: `${ROOTS.DASHBOARD}/quotation/list`,
+      edit: (id) => `${ROOTS.DASHBOARD}/quotation/${id}/edit`,
+    },
+
+    hsnMaster: {
+      root: `${ROOTS.DASHBOARD}/hsnMaster`,
+      new: `${ROOTS.DASHBOARD}/hsnMaster/new`,
+      list: `${ROOTS.DASHBOARD}/hsnMaster/list`,
+      edit: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/edit`,
+      view: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/view`,
+    },
     product: {
       root: `${ROOTS.DASHBOARD}/product`,
       new: `${ROOTS.DASHBOARD}/product/new`,

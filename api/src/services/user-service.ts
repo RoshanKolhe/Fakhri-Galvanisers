@@ -50,7 +50,6 @@ export class MyUserService implements UserService<User, Credentials> {
       id: `${user.id}`,
       name: `${user.firstName}`,
       email: user.email,
-      phoneNumber: user.phoneNumber,
       [securityId]: `${user.id}`,
       permissions: user.permissions,
       userType: 'admin',

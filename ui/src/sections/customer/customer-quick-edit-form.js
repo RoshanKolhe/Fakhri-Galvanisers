@@ -43,6 +43,7 @@ export default function CustomerQuickEditForm({
     state: Yup.string(),
     city: Yup.string(),
     zipCode: Yup.string(),
+    company: Yup.string(),
     avatarUrl: Yup.mixed().nullable(),
     isActive: Yup.boolean(),
     gstNo: Yup.string(),
@@ -55,6 +56,7 @@ export default function CustomerQuickEditForm({
       dob: currentCustomer?.dob || '',
       email: currentCustomer?.email || '',
       isActive: currentCustomer?.isActive ? '1' : '0' || '',
+      company: currentCustomer?.company || '',
       gstNo: currentCustomer?.gstNo || '',
       phoneNumber: currentCustomer?.phoneNumber || '',
       address: currentCustomer?.fullAddress || '',
@@ -90,6 +92,7 @@ export default function CustomerQuickEditForm({
         fullAddress: formData.address,
         city: formData.city,
         state: formData.state,
+        company: formData.company,
         gstNo: formData.gstNo,
       };
       await axiosInstance.patch(`/api/customers/${currentCustomer.id}`, inputData);
@@ -146,6 +149,7 @@ export default function CustomerQuickEditForm({
             <RHFTextField name="lastName" label="Last Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField type="number" name="phoneNumber" label="Phone Number" />
+            <RHFTextField name="company" label="Company" />
             <RHFTextField name="gstNo" label="Gst No" />
 
             <Controller

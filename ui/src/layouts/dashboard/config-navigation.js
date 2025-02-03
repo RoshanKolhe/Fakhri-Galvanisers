@@ -21,6 +21,8 @@ const icon = (name) => (
 const ICONS = {
   job: icon('ic_job'),
   inquiry: icon('ic_inquiry'),
+  hsnMaster: icon('ic_hsnMaster'),
+  quotation: icon('ic_quotation'),
   chat: icon('ic_chat'),
   mail: icon('ic_mail'),
   user: icon('ic_user'),
@@ -95,6 +97,50 @@ export function useNavData() {
             roles: ['super_admin'],
             children: [
               { title: t('list'), path: paths.dashboard.inquiry.list, roles: ['super_admin'] },
+            ],
+          },
+
+          // QUOTATION
+          {
+            title: t('quotation'),
+            path: paths.dashboard.quotation.root,
+            icon: ICONS.quotation,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.quotation.list,
+                roles: ['super_admin', 'customer'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.quotation.new,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        subheader: t('masters'),
+        items: [
+          // HSN MASTER
+          {
+            title: t('hsnMaster'),
+            path: paths.dashboard.hsnMaster.root,
+            icon: ICONS.hsnMaster,
+            roles: ['super_admin'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.hsnMaster.list,
+                roles: ['super_admin'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.hsnMaster.new,
+                roles: ['super_admin'],
+              },
             ],
           },
         ],

@@ -29,6 +29,11 @@ export class Customer extends Entity {
   @property({
     type: 'string',
   })
+  company: string;
+
+  @property({
+    type: 'string',
+  })
   dob: string;
 
   @property({
@@ -142,6 +147,11 @@ export class Customer extends Entity {
 
   @hasMany(() => Quotation)
   quotations: Quotation[];
+
+  @property({
+    type: 'number',
+  })
+  inquiryId?: number;
 
   constructor(data?: Partial<Customer>) {
     super(data);

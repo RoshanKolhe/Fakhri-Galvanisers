@@ -2,7 +2,9 @@ import {Constructor, inject, Getter} from '@loopback/core';
 import {
   DefaultCrudRepository,
   repository,
-  HasOneRepositoryFactory, BelongsToAccessor} from '@loopback/repository';
+  HasOneRepositoryFactory,
+  BelongsToAccessor,
+} from '@loopback/repository';
 import {FakhriGalvanisersDataSource} from '../datasources';
 import {User, UserRelations} from '../models';
 import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
@@ -20,7 +22,6 @@ export class UserRepository extends TimeStampRepositoryMixin<
     DefaultCrudRepository<User, typeof User.prototype.id, UserRelations>
   >
 >(DefaultCrudRepository) {
-
   public readonly creator: BelongsToAccessor<User, typeof User.prototype.id>;
 
   public readonly updater: BelongsToAccessor<User, typeof User.prototype.id>;
@@ -34,11 +35,20 @@ export class UserRepository extends TimeStampRepositoryMixin<
     protected userRepositoryGetter: Getter<UserRepository>,
   ) {
     super(User, dataSource);
-    this.deleter = this.createBelongsToAccessorFor('deleter', userRepositoryGetter,);
+    this.deleter = this.createBelongsToAccessorFor(
+      'deleter',
+      userRepositoryGetter,
+    );
     this.registerInclusionResolver('deleter', this.deleter.inclusionResolver);
-    this.updater = this.createBelongsToAccessorFor('updater', userRepositoryGetter,);
+    this.updater = this.createBelongsToAccessorFor(
+      'updater',
+      userRepositoryGetter,
+    );
     this.registerInclusionResolver('updater', this.updater.inclusionResolver);
-    this.creator = this.createBelongsToAccessorFor('creator', userRepositoryGetter,);
+    this.creator = this.createBelongsToAccessorFor(
+      'creator',
+      userRepositoryGetter,
+    );
     this.registerInclusionResolver('creator', this.creator.inclusionResolver);
   }
 }

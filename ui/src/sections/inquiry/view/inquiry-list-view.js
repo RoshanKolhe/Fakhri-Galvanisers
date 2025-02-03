@@ -44,6 +44,7 @@ import { useSnackbar } from 'notistack';
 import InquiryTableRow from '../inquiry-table-row';
 import InquiryTableToolbar from '../inquiry-table-toolbar';
 import InquiryTableFiltersResult from '../inquiry-table-filters-result';
+import InquiryToCustomerForm from '../inquiry-to-customer-form';
 
 // ----------------------------------------------------------------------
 
@@ -76,6 +77,10 @@ export default function InquiryListView() {
   const router = useRouter();
 
   const confirm = useBoolean();
+
+  const [quickEditRow, setQuickEditRow] = useState();
+
+  const quickEdit = useBoolean();
 
   const [tableData, setTableData] = useState([]);
 
@@ -152,6 +157,14 @@ export default function InquiryListView() {
     [router]
   );
 
+  const handleQuickEditRow = useCallback(
+    (row) => {
+      setQuickEditRow(row);
+      quickEdit.onTrue();
+    },
+    [quickEdit]
+  );
+
   const handleFilterStatus = useCallback(
     (event, newValue) => {
       handleFilters('status', newValue);
@@ -210,9 +223,10 @@ export default function InquiryListView() {
                     }
                   >
                     {tab.value === 'all' && tableData.length}
-                    {tab.value === 1 && tableData.filter((inquiry) => inquiry.status).length}
+                    {tab.value === 1 && tableData.filter((inquiry) => inquiry.status === 1).length}
 
-                    {tab.value === 0 && tableData.filter((inquiry) => !inquiry.status).length}
+                    {tab.value === 0 && tableData.filter((inquiry) => inquiry.status === 0).length}
+                    {tab.value === 2 && tableData.filter((inquiry) => inquiry.status === 2).length}
                   </Label>
                 }
               />
@@ -290,6 +304,10 @@ export default function InquiryListView() {
                         onSelectRow={() => table.onSelectRow(row.id)}
                         onDeleteRow={() => handleDeleteRow(row.id)}
                         onEditRow={() => handleEditRow(row.id)}
+                        handleQuickEditRow={(inquiry) => {
+                          handleQuickEditRow(inquiry);
+                        }}
+                        quickEdit={quickEdit}
                       />
                     ))}
 
@@ -339,6 +357,18 @@ export default function InquiryListView() {
           </Button>
         }
       />
+
+      {quickEdit.value && quickEditRow && (
+        <InquiryToCustomerForm
+          currentInquiry={quickEditRow}
+          open={quickEdit.value}
+          onClose={() => {
+            setQuickEditRow(null);
+            quickEdit.onFalse();
+          }}
+          refreshInquiry={refreshInquiries}
+        />
+      )}
     </>
   );
 }
@@ -371,7 +401,11 @@ function applyFilter({ inputData, comparator, filters }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((inquiry) => (status === 1 ? inquiry.status : !inquiry.status));
+    inputData = inputData.filter((inquiry) => {
+      if (status === 1) return inquiry.status === 1;
+      if (status === 2) return inquiry.status === 2;
+      return inquiry.status === 0;
+    });
   }
 
   if (role.length) {

@@ -371,6 +371,22 @@ export const USER_STATUS_OPTIONS = [
 export const INQUIRY_STATUS_OPTIONS = [
   { value: 0, label: 'Incomplete' },
   { value: 1, label: 'Complete' },
+  { value: 2, label: 'Converted' },
+];
+
+export const COMMON_STATUS_OPTIONS = [
+  { value: 1, label: 'Active' },
+  { value: 0, label: 'In-Active' },
+];
+
+export const RFQ_STATUS_OPTIONS = [
+  { value: 0, label: 'Draft' },
+  { value: 1, label: 'Approved' },
+  { value: 2, label: 'Pending Approval' },
+  { value: 3, label: 'Rejected' },
+  { value: 4, label: 'Created' },
 ];
 
 export const _roles = ['Admin', 'Worker', 'Qc Admin'];
+
+export const formatRFQId = (rfqId) => `RFQ${rfqId.toString().padStart(4, '0')}`;

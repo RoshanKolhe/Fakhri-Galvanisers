@@ -57,6 +57,7 @@ export default function CustomerNewEditForm({ currentCustomer }) {
     address: Yup.string(),
     state: Yup.string(),
     city: Yup.string(),
+    company: Yup.string(),
     gstNo: Yup.string(),
     avatarUrl: Yup.mixed().nullable(),
     isActive: Yup.boolean(),
@@ -74,6 +75,7 @@ export default function CustomerNewEditForm({ currentCustomer }) {
       address: currentCustomer?.fullAddress || '',
       city: currentCustomer?.city || '',
       state: currentCustomer?.state || '',
+      company: currentCustomer?.company || '',
       gstNo: currentCustomer?.gstNo || '',
       password: '',
       confirmPassword: '',
@@ -111,6 +113,7 @@ export default function CustomerNewEditForm({ currentCustomer }) {
         fullAddress: formData.address,
         city: formData.city,
         state: formData.state,
+        company: formData.company,
         gstNo: formData.gstNo,
       };
       if (formData.avatarUrl) {
@@ -224,6 +227,7 @@ export default function CustomerNewEditForm({ currentCustomer }) {
               <RHFTextField name="lastName" label="Last Name" />
               <RHFTextField name="email" label="Email Address" />
               <RHFTextField type="number" name="phoneNumber" label="Phone Number" />
+              <RHFTextField name="company" label="Company" />
               <RHFTextField name="gstNo" label="Gst No" />
 
               {!currentCustomer ? (

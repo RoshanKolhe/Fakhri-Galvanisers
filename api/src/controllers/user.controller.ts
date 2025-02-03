@@ -250,33 +250,36 @@ export class UserController {
     // Fetch the user information before updating
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
-      return;
+      throw new HttpErrors.NotFound('User not found');
     }
-
+  
+    // Hash password if it's being updated
     if (user.password) {
       user.password = await this.hasher.hashPassword(user.password);
     }
-
+  
+    // Validate email uniqueness only if email is being updated
     if (user.email && user.email !== existingUser.email) {
       const emailExists = await this.userRepository.findOne({
-        where: {email: user.email},
+        where: {email: user.email, id: {neq: id}}, // Exclude the current user
       });
-
+  
       if (emailExists) {
         throw new HttpErrors.BadRequest('Email already exists');
       }
     }
-
-    if (user) {
-      user.updatedBy = currentUser.id;
-      await this.userRepository.updateById(id, user);
-    }
-
-    return Promise.resolve({
+  
+    // Set updatedBy field
+    user.updatedBy = currentUser.id;
+  
+    await this.userRepository.updateById(id, user);
+  
+    return {
       success: true,
       message: `User profile updated successfully`,
-    });
+    };
   }
+  
 
   @post('/sendResetPasswordLink')
   async sendResetPasswordLink(

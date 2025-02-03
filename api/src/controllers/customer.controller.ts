@@ -370,7 +370,7 @@ export class CustomerController {
     // Fetch the user information before updating
     const existingCustomer = await this.customerRepository.findById(id);
     if (!existingCustomer) {
-      return;
+      throw new HttpErrors.NotFound('Customer not found');
     }
 
     if (customer.password) {
@@ -379,7 +379,7 @@ export class CustomerController {
 
     if (customer.email && customer.email !== existingCustomer.email) {
       const emailExists = await this.customerRepository.findOne({
-        where: {email: customer.email},
+        where: {email: customer.email, id: {neq: id}},
       });
 
       if (emailExists) {

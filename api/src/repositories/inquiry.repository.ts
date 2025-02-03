@@ -1,8 +1,14 @@
 import {Constructor, inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, BelongsToAccessor} from '@loopback/repository';
+import {
+  DefaultCrudRepository,
+  repository,
+  BelongsToAccessor,
+  HasOneRepositoryFactory,
+} from '@loopback/repository';
 import {FakhriGalvanisersDataSource} from '../datasources';
-import {Inquiry, InquiryRelations} from '../models';
+import {Inquiry, InquiryRelations, Customer} from '../models';
 import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
+import {CustomerRepository} from './customer.repository';
 
 export class InquiryRepository extends TimeStampRepositoryMixin<
   Inquiry,
@@ -15,23 +21,24 @@ export class InquiryRepository extends TimeStampRepositoryMixin<
     >
   >
 >(DefaultCrudRepository) {
-
-  public readonly creator: BelongsToAccessor<Inquiry, typeof Inquiry.prototype.id>;
-
-  public readonly updater: BelongsToAccessor<Inquiry, typeof Inquiry.prototype.id>;
-
-  public readonly deleter: BelongsToAccessor<Inquiry, typeof Inquiry.prototype.id>;
+  public readonly customer: HasOneRepositoryFactory<
+    Customer,
+    typeof Inquiry.prototype.id
+  >;
 
   constructor(
     @inject('datasources.fakhriGalvanisers')
-    dataSource: FakhriGalvanisersDataSource, @repository.getter('InquiryRepository') protected inquiryRepositoryGetter: Getter<InquiryRepository>,
+    dataSource: FakhriGalvanisersDataSource,
+    @repository.getter('InquiryRepository')
+    protected inquiryRepositoryGetter: Getter<InquiryRepository>,
+    @repository.getter('CustomerRepository')
+    protected customerRepositoryGetter: Getter<CustomerRepository>,
   ) {
     super(Inquiry, dataSource);
-    this.deleter = this.createBelongsToAccessorFor('deleter', inquiryRepositoryGetter,);
-    this.registerInclusionResolver('deleter', this.deleter.inclusionResolver);
-    this.updater = this.createBelongsToAccessorFor('updater', inquiryRepositoryGetter,);
-    this.registerInclusionResolver('updater', this.updater.inclusionResolver);
-    this.creator = this.createBelongsToAccessorFor('creator', inquiryRepositoryGetter,);
-    this.registerInclusionResolver('creator', this.creator.inclusionResolver);
+    this.customer = this.createHasOneRepositoryFactoryFor(
+      'customer',
+      customerRepositoryGetter,
+    );
+    this.registerInclusionResolver('customer', this.customer.inclusionResolver);
   }
 }

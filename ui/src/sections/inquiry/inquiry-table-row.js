@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 // @mui
 import Button from '@mui/material/Button';
@@ -18,7 +19,14 @@ import { Box, Collapse, Paper, Stack } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
-export default function InquiryTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
+export default function InquiryTableRow({
+  row,
+  selected,
+  onEditRow,
+  onSelectRow,
+  onDeleteRow,
+  handleQuickEditRow,
+}) {
   const {
     firstName,
     lastName,
@@ -73,8 +81,16 @@ export default function InquiryTableRow({ row, selected, onEditRow, onSelectRow,
       </TableCell>
 
       <TableCell>
-        <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>
-          {status ? 'Complete' : 'Incomplete'}
+        <Label
+          variant="soft"
+          color={
+            (status === 1 && 'success') ||
+            (status === 2 && 'success') ||
+            (!status && 'error') ||
+            'default'
+          }
+        >
+          {status === 1 ? 'Complete' : status === 2 ? 'Converted' : 'Incomplete'}
         </Label>
       </TableCell>
 
@@ -161,19 +177,18 @@ export default function InquiryTableRow({ row, selected, onEditRow, onSelectRow,
 
       {materials && materials.length > 0 ? renderSecondary : null}
 
-      <CustomPopover
-        open={popover.open}
-        onClose={popover.onClose}
-        arrow="right-top"
-      >
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-          }}
-        >
-          <Iconify icon="mdi:account-convert" />
-          Convert to Customer
-        </MenuItem>
+      <CustomPopover open={popover.open} onClose={popover.onClose} arrow="right-top">
+        {status !== 2 ? (
+          <MenuItem
+            onClick={() => {
+              handleQuickEditRow(row);
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="mdi:account-convert" />
+            Convert to Customer
+          </MenuItem>
+        ) : null}
         <MenuItem
           onClick={() => {
             confirm.onTrue();
@@ -207,4 +222,5 @@ InquiryTableRow.propTypes = {
   onSelectRow: PropTypes.func,
   row: PropTypes.object,
   selected: PropTypes.bool,
+  handleQuickEditRow: PropTypes.func,
 };

@@ -37,7 +37,7 @@ export class Quotation extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status?: number; // 0: draft, 1:approved , 2:pending approval, 3:rejected
 
   @property({
     type: 'string',

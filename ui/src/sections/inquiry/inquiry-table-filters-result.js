@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 // @mui
 import Box from '@mui/material/Box';
@@ -43,7 +44,13 @@ export default function InquiryTableFiltersResult({
           <Block label="Status:">
             <Chip
               size="small"
-              label={filters.status === 1 ? 'Complete' : 'Incomplete'}
+              label={
+                filters.status === 1
+                  ? 'Complete'
+                  : filters.status === 2
+                  ? 'Converted'
+                  : 'Incomplete'
+              }
               onDelete={handleRemoveStatus}
             />
           </Block>

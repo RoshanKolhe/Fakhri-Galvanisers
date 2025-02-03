@@ -51,12 +51,13 @@ export class JWTService {
     try {
       const decryptedToken = await verifyAsync(token, 'mushroom');
       userProfile = Object.assign(
-        {id: '', name: '', [securityId]: '', permissions: ''},
+        {id: '', name: '', [securityId]: '', permissions: '',userType:''},
         {
           id: decryptedToken.id,
           name: decryptedToken.name,
           [securityId]: decryptedToken.id,
           permissions: decryptedToken.permissions,
+          userType:decryptedToken.userType,
         },
       );
     } catch (error) {

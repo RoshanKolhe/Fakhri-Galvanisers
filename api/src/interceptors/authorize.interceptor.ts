@@ -58,11 +58,15 @@ export class AuthorizeInterceptor implements Provider<Interceptor> {
       const requiredPermissions = this.metaData[0]?.options?.required;
       const currentUserData = await this.getCurrentUser();
       console.log(currentUserData);
+
+      if (currentUserData.permissions.includes('super_admin')) {
+        return await next();
+      }
       const results = intersection(
         currentUserData.permissions,
         requiredPermissions,
       );
-      if (results.length !== requiredPermissions.length) {
+      if (results.length === 0) {
         throw new HttpErrors.Forbidden('INVALID ACCESS');
       }
       const result = await next();
