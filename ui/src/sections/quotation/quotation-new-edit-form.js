@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -19,21 +19,47 @@ import { useRouter } from 'src/routes/hook';
 // components
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFTextField, RHFAutocomplete, RHFSelect } from 'src/components/hook-form';
-import { Autocomplete, Box, MenuItem, TableCell, TableRow, TextField } from '@mui/material';
+import FormProvider, {
+  RHFTextField,
+  RHFAutocomplete,
+  RHFSelect,
+  RHFUpload,
+} from 'src/components/hook-form';
+import {
+  Autocomplete,
+  Box,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  MenuItem,
+  TableCell,
+  TableRow,
+  TextField,
+} from '@mui/material';
 import axiosInstance from 'src/utils/axios';
 import { useGetHsnMasters } from 'src/api/hsnMaster';
 import { useAuthContext } from 'src/auth/hooks';
 import { fCurrency } from 'src/utils/format-number';
+import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useBoolean } from 'src/hooks/use-boolean';
+import { current } from '@reduxjs/toolkit';
+import { formatRFQId } from 'src/utils/constants';
+import Label from 'src/components/label';
 
 // ----------------------------------------------------------------------
 
 export default function QuotationNewEditForm({ currentQuotation }) {
   const router = useRouter();
   const [customerOptions, setCustomerOptions] = useState([]);
-  const [status, setStatus] = useState(null);
-
+  const [rejectReason, setRejectReason] = useState('');
+  const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const confirm = useBoolean();
+  const poDocModal = useBoolean();
+  const [rejectError, setRejectError] = useState(false);
+  const [poDoc, setPoDoc] = useState(false);
 
   const { user } = useAuthContext();
   const isAdmin = user
@@ -43,7 +69,9 @@ export default function QuotationNewEditForm({ currentQuotation }) {
   const { hsnMasters, hsnMastersLoading, hsnMastersEmpty, refreshQuotations } = useGetHsnMasters();
 
   const NewQuotationSchema = Yup.object().shape({
-    customerName: Yup.object().nullable(),
+    customerName: isAdmin
+      ? Yup.object().required('Customer Name is Required')
+      : Yup.object().nullable(),
     firstname: Yup.string(),
     lastName: Yup.string(),
     gstNo: Yup.string(),
@@ -53,7 +81,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       .of(
         Yup.object().shape({
           materialType: Yup.string().required('Material type is required'),
-          quantity: Yup.number().required('Quantity in  required'),
+          quantity: Yup.number().required('Quantity is  required'),
           billingUnit: Yup.string().required('Billing Unit is required'),
           hsnNo: isAdmin ? Yup.object().required('Hsn is required') : Yup.object().nullable(),
           microns: Yup.number().required('Microns is required'),
@@ -172,7 +200,6 @@ export default function QuotationNewEditForm({ currentQuotation }) {
   };
 
   const totals = calculateTotals(materials);
-  console.log(totals);
 
   const onSubmit = handleSubmit(async (formData) => {
     try {
@@ -227,12 +254,9 @@ export default function QuotationNewEditForm({ currentQuotation }) {
   };
 
   const calculatePriceAfterTax = (index) => {
-    console.log(index);
     const pricePerUnit = parseFloat(materials[index]?.pricePerUnit) || 0;
     const quantity = parseFloat(materials[index]?.quantity) || 0;
     const tax = parseFloat(materials[index]?.tax) || 0;
-
-    console.log(pricePerUnit, quantity);
 
     if (pricePerUnit && quantity) {
       const totalPrice = pricePerUnit * quantity;
@@ -245,12 +269,113 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     }
   };
 
+  const handleDrop = useCallback(
+    async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      console.log(file);
+      // const newFile = Object.assign(file, {
+      //   preview: URL.createObjectURL(file),
+      // });
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post('/files', formData);
+        const { data } = response;
+        console.log(data);
+        setPoDoc(data?.files[0]);
+        setValue('poDoc', data?.files[0].fileUrl, {
+          shouldValidate: true,
+        });
+      }
+    },
+    [setValue]
+  );
+
+  const handleRemoveFile = useCallback(() => {
+    setValue('poDoc', null);
+  }, [setValue]);
+
+  // const handleSaveDraft = async () => {
+  //   try {
+  //     const isValidDraft = await methods.trigger(['customerName']);
+  //     if (!isValidDraft) {
+  //       console.error('Validation failed:', methods.formState.errors);
+  //       // eslint-disable-next-line no-useless-return
+  //       return;
+  //     }
+  //     const draftDetails = methods.getValues();
+  //     const inputData = {
+  //       ...draftDetails,
+  //       status: 0,
+  //     };
+  //     await axiosInstance.post('/quotations', inputData);
+  //     reset();
+  //     enqueueSnackbar('Draft Saved Successfully');
+  //     router.push(paths.dashboard.quotation.list);
+  //   } catch (error) {
+  //     console.error('Error saving user details:', error);
+  //     enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+  //       variant: 'error',
+  //     });
+  //   }
+  // };
+
+  const handleQuoteRejection = async () => {
+    setLoading(true);
+    try {
+      const inputData = {
+        rejectedReason: rejectReason,
+        status: 3,
+      };
+      await axiosInstance.patch(`/quotations/${currentQuotation.id}`, inputData);
+      enqueueSnackbar('Quotation Rejected Successfully');
+      setRejectError(false);
+      confirm.onFalse();
+    } catch (error) {
+      console.error('Error saving user details:', error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+      confirm.onFalse();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveQuotation = async () => {
+    setLoading(true);
+    try {
+      const inputData = {
+        status: 1,
+      };
+      if (poDoc) {
+        inputData.poDoc = poDoc;
+      }
+      await axiosInstance.patch(`/quotations/${currentQuotation.id}`, inputData);
+      poDocModal.onFalse();
+      enqueueSnackbar('Quotation Approved Successfully');
+    } catch (error) {
+      console.error('Error saving user details:', error);
+      poDocModal.onFalse();
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderMaterialDetailsForm = (
     <Stack spacing={3} mt={2}>
       {fields.map((item, index) => (
         <Stack key={item.id} alignItems="flex-end" spacing={1.5}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
-            <RHFTextField name={`materials[${index}].materialType`} label="Material Type" />
+            <RHFTextField
+              name={`materials[${index}].materialType`}
+              label="Material Type"
+              disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
+            />
 
             <RHFTextField
               type="number"
@@ -260,8 +385,13 @@ export default function QuotationNewEditForm({ currentQuotation }) {
                 setValue(`materials[${index}].quantity`, e.target.value);
                 calculatePriceAfterTax(index);
               }}
+              disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
             />
-            <RHFSelect name={`materials[${index}].billingUnit`} label="Billing Unit">
+            <RHFSelect
+              name={`materials[${index}].billingUnit`}
+              label="Billing Unit"
+              disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
+            >
               <MenuItem key="kg" value="kg">
                 Kg
               </MenuItem>
@@ -303,6 +433,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
                     sx={{
                       width: '100%',
                     }}
+                    disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
                   />
                 )}
               />
@@ -319,17 +450,21 @@ export default function QuotationNewEditForm({ currentQuotation }) {
               />
             ) : null}
 
-            <RHFTextField name={`materials[${index}].microns`} label="Microns" />
+            <RHFTextField
+              name={`materials[${index}].microns`}
+              label="Microns"
+              disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
+            />
 
             {isAdmin || values.materials[index].pricePerUnit ? (
               <RHFTextField
                 name={`materials[${index}].pricePerUnit`}
                 label="Price Per Unit"
                 onChange={(e) => {
-                  console.log(`here-${e.target.value}`);
                   setValue(`materials[${index}].pricePerUnit`, e.target.value);
                   calculatePriceAfterTax(index);
                 }}
+                disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
               />
             ) : null}
 
@@ -341,44 +476,46 @@ export default function QuotationNewEditForm({ currentQuotation }) {
               />
             ) : null}
           </Stack>
-
-          <Button
-            size="small"
-            color="error"
-            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
-            onClick={() => remove(index)}
-          >
-            Remove
-          </Button>
+          {!isAdmin && currentQuotation && currentQuotation?.status !== 4 ? null : (
+            <Button
+              size="small"
+              color="error"
+              startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+              onClick={() => remove(index)}
+            >
+              Remove
+            </Button>
+          )}
         </Stack>
       ))}
-
-      <Stack
-        spacing={3}
-        direction={{ xs: 'column', md: 'row' }}
-        alignItems={{ xs: 'flex-end', md: 'center' }}
-      >
-        <Button
-          size="small"
-          color="primary"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={() =>
-            append({
-              materialType: '',
-              quantity: null,
-              billingUnit: '',
-              hsnNo: null,
-              microns: 0,
-              tax: 0,
-              pricePerUnit: 0,
-              priceAfterTax: 0,
-            })
-          }
-          sx={{ flexShrink: 0 }}
+      {!isAdmin && currentQuotation && currentQuotation?.status !== 4 ? null : (
+        <Stack
+          spacing={3}
+          direction={{ xs: 'column', md: 'row' }}
+          alignItems={{ xs: 'flex-end', md: 'center' }}
         >
-          Add Item
-        </Button>
-      </Stack>
+          <Button
+            size="small"
+            color="primary"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={() =>
+              append({
+                materialType: '',
+                quantity: null,
+                billingUnit: '',
+                hsnNo: null,
+                microns: 0,
+                tax: 0,
+                pricePerUnit: 0,
+                priceAfterTax: 0,
+              })
+            }
+            sx={{ flexShrink: 0 }}
+          >
+            Add Item
+          </Button>
+        </Stack>
+      )}
     </Stack>
   );
 
@@ -427,89 +564,253 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       setValue('customerName', currentQuotation.customer);
     }
   }, [currentQuotation, setValue]);
-
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Grid container spacing={3}>
-        <Grid xs={12} md={12}>
-          <Card sx={{ p: 3 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                {isAdmin ? (
-                  <RHFAutocomplete
-                    name="customerName"
-                    label="Customer Name"
-                    onInputChange={(event) => fetchCustomers(event)}
-                    options={customerOptions}
-                    getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
-                    filterOptions={(x) => x}
-                    renderInput={(params) => <TextField {...params} label="Customer Name" />}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        <div>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {`${option?.firstName} ${option?.lastName}`}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {option.email}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {option.phoneNumber}
-                          </Typography>
-                        </div>
-                      </li>
-                    )}
-                  />
+    <>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <Grid container spacing={3}>
+          <Grid xs={12} md={12}>
+            <Card sx={{ p: 3 }}>
+              {currentQuotation ? (
+                <Stack direction="row" justifyContent="space-between" spacing={2}>
+                  <Typography variant="h5" gutterBottom>
+                    {currentQuotation && formatRFQId(currentQuotation?.id)}
+                    <Label
+                      color={
+                        (currentQuotation?.status === 1 && 'success') ||
+                        (currentQuotation?.status === 3 && 'error') ||
+                        (currentQuotation?.status === 2 && 'warning') ||
+                        (currentQuotation?.status === 3 && 'warning') ||
+                        'warning'
+                      }
+                      sx={{ marginLeft: '10px' }}
+                    >
+                      {(currentQuotation?.status === 1 && 'Approved') ||
+                        (currentQuotation?.status === 2 && 'Pending Approval') ||
+                        (currentQuotation?.status === 3 && 'Rejected') ||
+                        (currentQuotation?.status === 4 && 'Created')}
+                    </Label>
+                  </Typography>
+
+                  {currentQuotation && currentQuotation?.poDoc && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() =>
+                        window.open(currentQuotation.poDoc.fileUrl, '_blank', 'noopener,noreferrer')
+                      }
+                    >
+                      View Doc
+                    </Button>
+                  )}
+                </Stack>
+              ) : null}
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  {isAdmin ? (
+                    <RHFAutocomplete
+                      name="customerName"
+                      label="Customer Name"
+                      onInputChange={(event) => fetchCustomers(event)}
+                      options={customerOptions}
+                      getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
+                      filterOptions={(x) => x}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      renderOption={(props, option) => (
+                        <li {...props}>
+                          <div>
+                            <Typography variant="subtitle2" fontWeight="bold">
+                              {`${option?.firstName} ${option?.lastName}`}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {option.email}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {option.phoneNumber}
+                            </Typography>
+                          </div>
+                        </li>
+                      )}
+                    />
+                  ) : null}
+                </Grid>
+                <Grid item xs={12} sm={6} />
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="firstName" label="First Name" disabled />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="lastName" label="Last Name" disabled />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="phoneNumber" label="Contact Details" disabled />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="company" label="Company" disabled />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <RHFTextField name="gstNo" label="Gst No" disabled />
+                </Grid>
+              </Grid>
+              {renderMaterialDetailsForm}
+              <Grid container spacing={2} mt={2}>
+                <Grid item xs={12} sm={12}>
+                  {isAdmin || values.adminNote ? (
+                    <RHFTextField
+                      name="adminNote"
+                      label="Admin Note"
+                      multiline
+                      rows={3}
+                      disabled={!isAdmin}
+                    />
+                  ) : null}
+                </Grid>
+                <Grid item xs={12} sm={12}>
+                  <RHFTextField name="customerNote" label="Customer Note" multiline rows={3} />
+                </Grid>
+              </Grid>
+              {currentQuotation ? renderTotal : null}
+              <Stack
+                justifyContent="end"
+                direction={{ xs: 'column', sm: 'row' }} // Column on mobile, Row on larger screens
+                spacing={2}
+                sx={{ mt: 3, width: '100%' }} // Ensures full width usage
+              >
+                {/* {!currentQuotation || (currentQuotation && currentQuotation.status === 0) ? (
+      <LoadingButton
+        type="button"
+        variant="outlined"
+        loading={isSubmitting}
+        onClick={() => {
+          handleSaveDraft();
+        }}
+      >
+        Save Draft
+      </LoadingButton>
+    ) : null} */}
+                {isAdmin ||
+                !currentQuotation ||
+                (currentQuotation && currentQuotation?.status === 4) ? (
+                  <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                    Send Quotation
+                  </LoadingButton>
                 ) : null}
-              </Grid>
-              <Grid item xs={12} sm={6} />
-              <Grid item xs={12} sm={6}>
-                <RHFTextField name="firstName" label="First Name" disabled />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <RHFTextField name="lastName" label="Last Name" disabled />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <RHFTextField name="phoneNumber" label="Contact Details" disabled />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <RHFTextField name="company" label="Company" disabled />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <RHFTextField name="gstNo" label="Gst No" disabled />
-              </Grid>
-            </Grid>
-            {renderMaterialDetailsForm}
-            <Grid container spacing={2} mt={2}>
-              <Grid item xs={12} sm={12}>
-                {isAdmin || values.adminNote ? (
-                  <RHFTextField
-                    name="adminNote"
-                    label="Admin Note"
-                    multiline
-                    rows={3}
-                    disabled={!isAdmin}
-                  />
+
+                {!isAdmin && currentQuotation && currentQuotation?.status !== 4 ? (
+                  <Button
+                    color="error"
+                    variant="contained"
+                    startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+                    onClick={() => {
+                      console.log('remove');
+                      confirm.onTrue();
+                    }}
+                    disabled={currentQuotation?.status === 3}
+                  >
+                    Reject Quote
+                  </Button>
                 ) : null}
-              </Grid>
-              <Grid item xs={12} sm={12}>
-                <RHFTextField name="customerNote" label="Customer Note" multiline rows={3} />
-              </Grid>
-            </Grid>
-            {renderTotal}
-            <Stack justifyContent="end" direction="row" spacing={2} sx={{ mt: 3 }}>
-              <LoadingButton type="button" variant="outlined" loading={isSubmitting}>
-                Save Draft
-              </LoadingButton>
-              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                Send Quotation
-              </LoadingButton>
-            </Stack>
-          </Card>
+                {!isAdmin && currentQuotation && currentQuotation?.status !== 4 ? (
+                  <Button
+                    color="success"
+                    variant="contained"
+                    startIcon={<Iconify icon="ic:baseline-whatsapp" />}
+                    onClick={() => {
+                      console.log('contact');
+                    }}
+                  >
+                    Contact Hylite
+                  </Button>
+                ) : null}
+                {!isAdmin && currentQuotation && currentQuotation?.status !== 4 ? (
+                  <LoadingButton
+                    type="button"
+                    variant="contained"
+                    loading={loading}
+                    disabled={currentQuotation?.status === 1}
+                    onClick={() => {
+                      poDocModal.onTrue();
+                    }}
+                  >
+                    Approve Quote
+                  </LoadingButton>
+                ) : null}
+              </Stack>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
-    </FormProvider>
+        <Dialog fullWidth maxWidth="sm" open={poDocModal.value} onClose={poDocModal.onFalse}>
+          <DialogContent sx={{ typography: 'body2' }}>
+            <RHFUpload
+              sx={{ marginTop: '30px' }}
+              name="poDoc"
+              maxSize={3145728}
+              onDrop={handleDrop}
+              onDelete={handleRemoveFile}
+            />
+          </DialogContent>
+
+          <DialogActions>
+            <Button variant="outlined" color="inherit" onClick={poDocModal.onFalse}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                handleApproveQuotation();
+              }}
+            >
+              Submit
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </FormProvider>
+      <ConfirmDialog
+        open={confirm.value}
+        onClose={confirm.onFalse}
+        title={
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:bell-bing-bold" />
+            <span>Wait! Let’s Talk Before You Decide.</span>
+          </Stack>
+        }
+        content={
+          <Stack spacing={2}>
+            <span>Got concerns? Request a callback, and we will address them right away!</span>
+            <TextField
+              label="Reason for rejection"
+              variant="outlined"
+              fullWidth
+              multiline
+              minRows={3}
+              value={rejectReason}
+              onChange={(e) => {
+                setRejectReason(e.target.value);
+                if (rejectError) setRejectError(false);
+              }}
+              error={rejectError}
+              helperText={rejectError ? 'Please provide a reason for rejection.' : ''}
+            />
+          </Stack>
+        }
+        action={
+          <LoadingButton
+            variant="contained"
+            color="error"
+            loading={loading}
+            onClick={() => {
+              if (!rejectReason.trim()) {
+                setRejectError(true);
+                return;
+              }
+              handleQuoteRejection();
+            }}
+          >
+            Reject Quote
+          </LoadingButton>
+        }
+      />
+    </>
   );
 }
 

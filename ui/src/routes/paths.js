@@ -108,6 +108,7 @@ export const paths = {
       new: `${ROOTS.DASHBOARD}/quotation/new`,
       list: `${ROOTS.DASHBOARD}/quotation/list`,
       edit: (id) => `${ROOTS.DASHBOARD}/quotation/${id}/edit`,
+      view: (id) => `${ROOTS.DASHBOARD}/quotation/${id}/view`,
     },
 
     hsnMaster: {

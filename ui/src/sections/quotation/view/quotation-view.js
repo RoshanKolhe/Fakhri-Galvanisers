@@ -9,6 +9,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
 import { useGetQuotation } from 'src/api/quotation';
 
+import { formatRFQId } from 'src/utils/constants';
 import QuotationViewForm from '../quotation-view-form';
 
 // ----------------------------------------------------------------------
@@ -36,9 +37,7 @@ export default function QuotationView() {
             href: paths.dashboard.quotation.root,
           },
           {
-            name: `${currentQuotation?.firstName} ${
-              currentQuotation?.lastName ? currentQuotation?.lastName : ''
-            }`,
+            name: formatRFQId(id),
           },
         ]}
         sx={{

@@ -428,9 +428,13 @@ function applyFilter({ inputData, comparator, filters }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((quotation) =>
-      status === '1' ? quotation.isActive : !quotation.isActive
-    );
+    inputData = inputData.filter((quotation) => {
+      if (status === 1) return quotation.status === 1;
+      if (status === 2) return quotation.status === 2;
+      if (status === 3) return quotation.status === 3;
+      if (status === 4) return quotation.status === 4;
+      return quotation.status === 0;
+    });
   }
 
   if (role.length) {

@@ -174,8 +174,13 @@ export class QuotationController {
       },
     })
     quotation: Quotation,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<void> {
-    await this.quotationRepository.updateById(id, quotation);
+    await this.quotationRepository.updateById(id, {
+      ...quotation,
+      updatedBy: currentUser.id,
+      updatedByType: currentUser.userType,
+    });
   }
 
   @del('/quotations/{id}')
