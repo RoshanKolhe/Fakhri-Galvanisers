@@ -1,9 +1,8 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import {Customer} from './customer.model';
-import {Challan} from './challan.model';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Quotation} from './quotation.model';
 
 @model()
-export class Quotation extends Entity {
+export class Challan extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -11,23 +10,35 @@ export class Quotation extends Entity {
   })
   id?: number;
 
-  @belongsTo(() => Customer)
-  customerId: number;
+  @property({
+    type: 'string',
+  })
+  vehicleNumber: string;
+
+  @property({
+    type: 'number',
+  })
+  grossWeight: number;
+
+  @property({
+    type: 'number',
+  })
+  tareWeight: number;
+
+  @property({
+    type: 'number',
+  })
+  netWeight: number;
+
+  @property({
+    type: 'string',
+  })
+  poNumber: string;
 
   @property.array(Object, {
     name: 'materials',
   })
   materials: Object[];
-
-  @property({
-    type: 'string',
-  })
-  customerNote: string;
-
-  @property({
-    type: 'string',
-  })
-  adminNote: string;
 
   @property({
     type: 'string',
@@ -38,17 +49,7 @@ export class Quotation extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number; // 0: draft, 1:approved , 2:pending approval, 3:rejected, 4:created
-
-  @property({
-    type: 'string',
-  })
-  rejectedReason: string;
-
-  @property({
-    type: 'object',
-  })
-  poDoc?: object;
+  status?: number;
 
   @property({
     type: 'date',
@@ -101,16 +102,16 @@ export class Quotation extends Entity {
   })
   isDeleted: boolean;
 
-  @hasOne(() => Challan)
-  challan: Challan;
+  @belongsTo(() => Quotation)
+  quotationId: number;
 
-  constructor(data?: Partial<Quotation>) {
+  constructor(data?: Partial<Challan>) {
     super(data);
   }
 }
 
-export interface QuotationRelations {
+export interface ChallanRelations {
   // describe navigational properties here
 }
 
-export type QuotationWithRelations = Quotation & QuotationRelations;
+export type ChallanWithRelations = Challan & ChallanRelations;

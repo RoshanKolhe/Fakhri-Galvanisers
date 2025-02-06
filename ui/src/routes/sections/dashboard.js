@@ -40,6 +40,12 @@ const HsnMasterCreatePage = lazy(() => import('src/pages/dashboard/hsnMaster/new
 const HsnMasterEditPage = lazy(() => import('src/pages/dashboard/hsnMaster/edit'));
 const HsnMasterViewPage = lazy(() => import('src/pages/dashboard/hsnMaster/view'));
 
+// CHALLAN
+const ChallanListPage = lazy(() => import('src/pages/dashboard/challan/list'));
+const ChallanCreatePage = lazy(() => import('src/pages/dashboard/challan/new'));
+const ChallanEditPage = lazy(() => import('src/pages/dashboard/challan/edit'));
+const ChallanViewPage = lazy(() => import('src/pages/dashboard/challan/view'));
+
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 
@@ -108,6 +114,16 @@ export const dashboardRoutes = [
           { path: 'new', element: <HsnMasterCreatePage /> },
           { path: ':id/edit', element: <HsnMasterEditPage /> },
           { path: ':id/view', element: <HsnMasterViewPage /> },
+        ],
+      },
+      {
+        path: 'challan',
+        children: [
+          { element: <ChallanListPage />, index: true },
+          { path: 'list', element: <ChallanListPage /> },
+          { path: 'new', element: <ChallanCreatePage /> },
+          { path: ':id/edit', element: <ChallanEditPage /> },
+          { path: ':id/view', element: <ChallanViewPage /> },
         ],
       },
 

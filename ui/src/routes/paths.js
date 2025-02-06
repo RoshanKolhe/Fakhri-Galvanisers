@@ -118,6 +118,13 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/edit`,
       view: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/view`,
     },
+    challan: {
+      root: `${ROOTS.DASHBOARD}/challan`,
+      new: `${ROOTS.DASHBOARD}/challan/new`,
+      list: `${ROOTS.DASHBOARD}/challan/list`,
+      edit: (id) => `${ROOTS.DASHBOARD}/challan/${id}/edit`,
+      view: (id) => `${ROOTS.DASHBOARD}/challan/${id}/view`,
+    },
     product: {
       root: `${ROOTS.DASHBOARD}/product`,
       new: `${ROOTS.DASHBOARD}/product/new`,

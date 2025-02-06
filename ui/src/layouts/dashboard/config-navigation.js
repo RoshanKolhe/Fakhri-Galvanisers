@@ -22,6 +22,7 @@ const ICONS = {
   job: icon('ic_job'),
   inquiry: icon('ic_inquiry'),
   hsnMaster: icon('ic_hsnMaster'),
+  challan: icon('ic_challan'),
   quotation: icon('ic_quotation'),
   chat: icon('ic_chat'),
   mail: icon('ic_mail'),
@@ -115,6 +116,25 @@ export function useNavData() {
               {
                 title: t('create'),
                 path: paths.dashboard.quotation.new,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+          // CHALLAN
+          {
+            title: t('challan'),
+            path: paths.dashboard.challan.root,
+            icon: ICONS.challan,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.challan.list,
+                roles: ['super_admin', 'customer'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.challan.new,
                 roles: ['super_admin', 'customer'],
               },
             ],

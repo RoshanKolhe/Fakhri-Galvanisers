@@ -3,3 +3,5 @@ export * from './customer.model';
 export * from './inquiry.model';
 export * from './quotation.model';
 export * from './hsn-master.model';
+export * from './challan.model';
+export * from './order.model';

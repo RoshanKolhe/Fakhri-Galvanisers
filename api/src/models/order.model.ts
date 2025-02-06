@@ -1,9 +1,7 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import {Customer} from './customer.model';
-import {Challan} from './challan.model';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Quotation extends Entity {
+export class Order extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -11,44 +9,33 @@ export class Quotation extends Entity {
   })
   id?: number;
 
-  @belongsTo(() => Customer)
-  customerId: number;
-
-  @property.array(Object, {
-    name: 'materials',
+  @property({
+    type: 'string',
+    required: true,
   })
-  materials: Object[];
+  orderId: string;
+
+  @property({
+    type: 'boolean',
+    required: true,
+  })
+  isPaid: boolean;
+
+  @property({
+    type: 'object',
+  })
+  paymentDoc?: object;
 
   @property({
     type: 'string',
   })
-  customerNote: string;
-
-  @property({
-    type: 'string',
-  })
-  adminNote: string;
-
-  @property({
-    type: 'string',
-  })
-  remark: string;
+  remark?: string;
 
   @property({
     type: 'number',
     default: 0,
   })
-  status?: number; // 0: draft, 1:approved , 2:pending approval, 3:rejected, 4:created
-
-  @property({
-    type: 'string',
-  })
-  rejectedReason: string;
-
-  @property({
-    type: 'object',
-  })
-  poDoc?: object;
+  status?: number;
 
   @property({
     type: 'date',
@@ -101,16 +88,13 @@ export class Quotation extends Entity {
   })
   isDeleted: boolean;
 
-  @hasOne(() => Challan)
-  challan: Challan;
-
-  constructor(data?: Partial<Quotation>) {
+  constructor(data?: Partial<Order>) {
     super(data);
   }
 }
 
-export interface QuotationRelations {
+export interface OrderRelations {
   // describe navigational properties here
 }
 
-export type QuotationWithRelations = Quotation & QuotationRelations;
+export type OrderWithRelations = Order & OrderRelations;

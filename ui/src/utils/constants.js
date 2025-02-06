@@ -380,7 +380,7 @@ export const COMMON_STATUS_OPTIONS = [
 ];
 
 export const RFQ_STATUS_OPTIONS = [
-  { value: 0, label: 'Draft' },
+  // { value: 0, label: 'Draft' },
   { value: 1, label: 'Approved' },
   { value: 2, label: 'Pending Approval' },
   { value: 3, label: 'Rejected' },
@@ -390,3 +390,4 @@ export const RFQ_STATUS_OPTIONS = [
 export const _roles = ['Admin', 'Worker', 'Qc Admin'];
 
 export const formatRFQId = (rfqId) => `RFQ${rfqId.toString().padStart(4, '0')}`;
+export const formatChallanId = (challanId) => `CHLN${challanId.toString().padStart(4, '0')}`;

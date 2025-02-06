@@ -5,3 +5,5 @@ export * from './customer.controller';
 export * from './inquiry.controller';
 export * from './quotation.controller';
 export * from './hsn-master.controller';
+export * from './challan.controller';
+export * from './order.controller';
