@@ -40,6 +40,12 @@ const HsnMasterCreatePage = lazy(() => import('src/pages/dashboard/hsnMaster/new
 const HsnMasterEditPage = lazy(() => import('src/pages/dashboard/hsnMaster/edit'));
 const HsnMasterViewPage = lazy(() => import('src/pages/dashboard/hsnMaster/view'));
 
+// PROCESSES
+const ProcessesListPage = lazy(() => import('src/pages/dashboard/processes/list'));
+const ProcessesCreatePage = lazy(() => import('src/pages/dashboard/processes/new'));
+const ProcessesEditPage = lazy(() => import('src/pages/dashboard/processes/edit'));
+const ProcessesViewPage = lazy(() => import('src/pages/dashboard/processes/view'));
+
 // CHALLAN
 const ChallanListPage = lazy(() => import('src/pages/dashboard/challan/list'));
 const ChallanCreatePage = lazy(() => import('src/pages/dashboard/challan/new'));
@@ -114,6 +120,16 @@ export const dashboardRoutes = [
           { path: 'new', element: <HsnMasterCreatePage /> },
           { path: ':id/edit', element: <HsnMasterEditPage /> },
           { path: ':id/view', element: <HsnMasterViewPage /> },
+        ],
+      },
+      {
+        path: 'processes',
+        children: [
+          { element: <ProcessesListPage />, index: true },
+          { path: 'list', element: <ProcessesListPage /> },
+          { path: 'new', element: <ProcessesCreatePage /> },
+          { path: ':id/edit', element: <ProcessesEditPage /> },
+          { path: ':id/view', element: <ProcessesViewPage /> },
         ],
       },
       {

@@ -18,12 +18,14 @@ import {
   response,
 } from '@loopback/rest';
 import {Order} from '../models';
-import {OrderRepository} from '../repositories';
+import {ChallanRepository, OrderRepository} from '../repositories';
 
 export class OrderController {
   constructor(
     @repository(OrderRepository)
-    public orderRepository : OrderRepository,
+    public orderRepository: OrderRepository,
+    @repository(ChallanRepository)
+    public challanRepository: ChallanRepository,
   ) {}
 
   @post('/orders')
@@ -59,9 +61,7 @@ export class OrderController {
       },
     },
   })
-  async find(
-    @param.filter(Order) filter?: Filter<Order>,
-  ): Promise<Order[]> {
+  async find(@param.filter(Order) filter?: Filter<Order>): Promise<Order[]> {
     return this.orderRepository.find(filter);
   }
 
@@ -76,7 +76,8 @@ export class OrderController {
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Order, {exclude: 'where'}) filter?: FilterExcludingWhere<Order>
+    @param.filter(Order, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Order>,
   ): Promise<Order> {
     return this.orderRepository.findById(id, filter);
   }

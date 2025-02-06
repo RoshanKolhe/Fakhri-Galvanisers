@@ -1,9 +1,7 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import {Quotation} from './quotation.model';
-import {Order} from './order.model';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Challan extends Entity {
+export class Processes extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -13,44 +11,20 @@ export class Challan extends Entity {
 
   @property({
     type: 'string',
+    required: true,
   })
-  vehicleNumber: string;
-
-  @property({
-    type: 'number',
-  })
-  grossWeight: number;
-
-  @property({
-    type: 'number',
-  })
-  tareWeight: number;
-
-  @property({
-    type: 'number',
-  })
-  netWeight: number;
+  name: string;
 
   @property({
     type: 'string',
   })
-  poNumber: string;
-
-  @property.array(Object, {
-    name: 'materials',
-  })
-  materials: Object[];
-
-  @property({
-    type: 'string',
-  })
-  remark: string;
+  description?: string;
 
   @property({
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status: number;
 
   @property({
     type: 'date',
@@ -103,19 +77,13 @@ export class Challan extends Entity {
   })
   isDeleted: boolean;
 
-  @belongsTo(() => Quotation)
-  quotationId: number;
-
-  @hasOne(() => Order)
-  order: Order;
-
-  constructor(data?: Partial<Challan>) {
+  constructor(data?: Partial<Processes>) {
     super(data);
   }
 }
 
-export interface ChallanRelations {
+export interface ProcessesRelations {
   // describe navigational properties here
 }
 
-export type ChallanWithRelations = Challan & ChallanRelations;
+export type ProcessesWithRelations = Processes & ProcessesRelations;

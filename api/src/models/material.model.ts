@@ -1,9 +1,7 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
-import {Quotation} from './quotation.model';
-import {Order} from './order.model';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Challan extends Entity {
+export class Material extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -13,44 +11,48 @@ export class Challan extends Entity {
 
   @property({
     type: 'string',
+    required: true,
   })
-  vehicleNumber: string;
-
-  @property({
-    type: 'number',
-  })
-  grossWeight: number;
-
-  @property({
-    type: 'number',
-  })
-  tareWeight: number;
-
-  @property({
-    type: 'number',
-  })
-  netWeight: number;
+  materialType: string;
 
   @property({
     type: 'string',
+    required: true,
   })
-  poNumber: string;
-
-  @property.array(Object, {
-    name: 'materials',
-  })
-  materials: Object[];
+  hsnCode: string;
 
   @property({
-    type: 'string',
+    type: 'number',
+    required: true,
   })
-  remark: string;
+  totalQuantity: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  microns: number;
+
+  @property({
+    type: 'date',
+  })
+  startDate?: Date;
+
+  @property({
+    type: 'date',
+  })
+  endDate?: Date;
 
   @property({
     type: 'number',
     default: 0,
   })
   status?: number;
+
+  @property({
+    type: 'string',
+  })
+  remark?: string;
 
   @property({
     type: 'date',
@@ -103,19 +105,13 @@ export class Challan extends Entity {
   })
   isDeleted: boolean;
 
-  @belongsTo(() => Quotation)
-  quotationId: number;
-
-  @hasOne(() => Order)
-  order: Order;
-
-  constructor(data?: Partial<Challan>) {
+  constructor(data?: Partial<Material>) {
     super(data);
   }
 }
 
-export interface ChallanRelations {
+export interface MaterialRelations {
   // describe navigational properties here
 }
 
-export type ChallanWithRelations = Challan & ChallanRelations;
+export type MaterialWithRelations = Material & MaterialRelations;

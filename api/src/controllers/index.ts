@@ -7,3 +7,4 @@ export * from './quotation.controller';
 export * from './hsn-master.controller';
 export * from './challan.controller';
 export * from './order.controller';
+export * from './processes.controller';

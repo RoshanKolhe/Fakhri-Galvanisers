@@ -22,6 +22,7 @@ const ICONS = {
   job: icon('ic_job'),
   inquiry: icon('ic_inquiry'),
   hsnMaster: icon('ic_hsnMaster'),
+  processes: icon('ic_processes'),
   challan: icon('ic_challan'),
   quotation: icon('ic_quotation'),
   chat: icon('ic_chat'),
@@ -79,6 +80,7 @@ export function useNavData() {
               { title: t('create'), path: paths.dashboard.user.new, roles: ['super_admin'] },
             ],
           },
+
           // CUSTOMER
           {
             title: t('customer'),
@@ -90,6 +92,7 @@ export function useNavData() {
               { title: t('create'), path: paths.dashboard.customer.new, roles: ['super_admin'] },
             ],
           },
+
           // INQUIRY
           {
             title: t('inquiry'),
@@ -120,6 +123,7 @@ export function useNavData() {
               },
             ],
           },
+
           // CHALLAN
           {
             title: t('challan'),
@@ -159,6 +163,26 @@ export function useNavData() {
               {
                 title: t('create'),
                 path: paths.dashboard.hsnMaster.new,
+                roles: ['super_admin'],
+              },
+            ],
+          },
+
+          // PROCESSES
+          {
+            title: t('processes'),
+            path: paths.dashboard.processes.root,
+            icon: ICONS.processes,
+            roles: ['super_admin'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.processes.list,
+                roles: ['super_admin'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.processes.new,
                 roles: ['super_admin'],
               },
             ],

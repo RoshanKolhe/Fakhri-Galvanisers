@@ -5,3 +5,5 @@ export * from './quotation.model';
 export * from './hsn-master.model';
 export * from './challan.model';
 export * from './order.model';
+export * from './material.model';
+export * from './processes.model';

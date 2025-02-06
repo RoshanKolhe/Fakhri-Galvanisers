@@ -5,3 +5,4 @@ export * from './quotation.repository';
 export * from './hsn-master.repository';
 export * from './challan.repository';
 export * from './order.repository';
+export * from './processes.repository';
