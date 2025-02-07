@@ -1,5 +1,12 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {
+  Entity,
+  model,
+  property,
+  belongsTo,
+  hasMany,
+} from '@loopback/repository';
 import {Challan} from './challan.model';
+import {Material} from './material.model';
 
 @model()
 export class Order extends Entity {
@@ -8,24 +15,48 @@ export class Order extends Entity {
     id: true,
     generated: true,
   })
-  id?: number;
+  id: number;
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  orderId: string;
+  orderId?: string;
 
   @property({
     type: 'boolean',
-    required: true,
+    default: false,
   })
-  isPaid: boolean;
+  isPaid?: boolean;
 
   @property({
     type: 'object',
   })
   paymentDoc?: object;
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  challanImages?: object[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  poImages?: object[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  vehicleImages?: object[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  materialImages?: object[];
 
   @property({
     type: 'string',
@@ -92,6 +123,8 @@ export class Order extends Entity {
   @belongsTo(() => Challan)
   challanId: number;
 
+  @hasMany(() => Material)
+  materials: Material[];
 
   constructor(data?: Partial<Order>) {
     super(data);

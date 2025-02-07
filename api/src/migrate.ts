@@ -16,6 +16,8 @@ export async function migrate(args: string[]) {
       'HsnMaster',
       'Challan',
       'Processes',
+      'Order',
+      'Material',
     ],
   });
 
