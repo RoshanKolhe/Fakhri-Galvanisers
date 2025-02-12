@@ -7,3 +7,5 @@ export * from './challan.repository';
 export * from './order.repository';
 export * from './processes.repository';
 export * from './material.repository';
+export * from './material-user.repository';
+export * from './material-process.repository';

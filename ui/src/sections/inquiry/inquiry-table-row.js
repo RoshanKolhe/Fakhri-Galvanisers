@@ -140,8 +140,8 @@ export default function InquiryTableRow({
               }}
             >
               <Box>Material Type</Box>
-              <Box>Quantity (Nos)</Box>
-              <Box>Quantity (Kg)</Box>
+              <Box>Quantity</Box>
+              <Box>Billing Unit</Box>
               <Box>Microns</Box>
             </Stack>
 
@@ -160,8 +160,8 @@ export default function InquiryTableRow({
                 }}
               >
                 <Box>{item?.materialType}</Box>
-                <Box>{item?.quantityInNos}</Box>
-                <Box>{item?.quantityInKg}</Box>
+                <Box>{item?.quantity}</Box>
+                <Box>{item?.billingUnit}</Box>
                 <Box>{item?.microns}</Box>
               </Stack>
             ))}

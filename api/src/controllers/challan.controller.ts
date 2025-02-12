@@ -110,7 +110,14 @@ export class ChallanController {
         ...filter?.where,
         isDeleted: false,
       },
-      include: ['quotation'],
+      include: [
+        {
+          relation: 'quotation',
+          scope: {
+            include: [{relation: 'customer'}],
+          },
+        },
+      ],
     };
     return this.challanRepository.find(filter);
   }
@@ -141,7 +148,14 @@ export class ChallanController {
   ): Promise<Challan> {
     filter = {
       ...filter,
-      include: ['quotation'],
+      include: [
+        {
+          relation: 'quotation',
+          scope: {
+            include: [{relation: 'customer'}],
+          },
+        },
+      ],
     };
     return this.challanRepository.findById(id, filter);
   }

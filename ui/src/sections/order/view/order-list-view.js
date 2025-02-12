@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 // @mui
 import { alpha } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
@@ -14,8 +14,6 @@ import TableContainer from '@mui/material/TableContainer';
 // routes
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
-// _mock
-import { _orders, ORDER_STATUS_OPTIONS } from 'src/_mock';
 // utils
 import { fTimestamp } from 'src/utils/format-time';
 // hooks
@@ -38,6 +36,8 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetOrders } from 'src/api/order';
+import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
 import OrderTableRow from '../order-table-row';
 import OrderTableToolbar from '../order-table-toolbar';
 import OrderTableFiltersResult from '../order-table-filters-result';
@@ -47,11 +47,10 @@ import OrderTableFiltersResult from '../order-table-filters-result';
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...ORDER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
-  { id: 'orderNumber', label: 'Order', width: 116 },
+  { id: 'orderId', label: 'Order', width: 116 },
   { id: 'name', label: 'Customer' },
   { id: 'createdAt', label: 'Date', width: 140 },
-  { id: 'totalQuantity', label: 'Items', width: 120, align: 'center' },
-  { id: 'totalAmount', label: 'Price', width: 140 },
+  { id: 'materials', label: 'Materials', width: 120, align: 'center' },
   { id: 'status', label: 'Status', width: 110 },
   { id: '', width: 88 },
 ];
@@ -66,7 +65,7 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 export default function OrderListView() {
-  const table = useTable({ defaultOrderBy: 'orderNumber' });
+  const table = useTable({ defaultOrderBy: 'orderId' });
 
   const settings = useSettingsContext();
 
@@ -74,9 +73,11 @@ export default function OrderListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(_orders);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
+
+  const { orders, ordersLoading, ordersEmpty, refreshOrders } = useGetOrders();
 
   const dateError =
     filters.startDate && filters.endDate
@@ -152,6 +153,12 @@ export default function OrderListView() {
     [handleFilters]
   );
 
+  useEffect(() => {
+    if (orders) {
+      setTableData(orders);
+    }
+  }, [orders]);
+
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -194,22 +201,23 @@ export default function OrderListView() {
                       ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
                     }
                     color={
-                      (tab.value === 'completed' && 'success') ||
-                      (tab.value === 'pending' && 'warning') ||
-                      (tab.value === 'cancelled' && 'error') ||
+                      (tab.value === 0 && 'success') ||
+                      (tab.value === 1 && 'warning') ||
+                      (tab.value === 2 && 'info') ||
+                      (tab.value === 3 && 'secondary') ||
+                      (tab.value === 4 && 'warning') ||
+                      (tab.value === 5 && 'error') ||
                       'default'
                     }
                   >
-                    {tab.value === 'all' && _orders.length}
-                    {tab.value === 'completed' &&
-                      _orders.filter((order) => order.status === 'completed').length}
+                    {tab.value === 'all' && orders.length}
+                    {tab.value === 0 && orders.filter((order) => order.status === 0).length}
 
-                    {tab.value === 'pending' &&
-                      _orders.filter((order) => order.status === 'pending').length}
-                    {tab.value === 'cancelled' &&
-                      _orders.filter((order) => order.status === 'cancelled').length}
-                    {tab.value === 'refunded' &&
-                      _orders.filter((order) => order.status === 'refunded').length}
+                    {tab.value === 1 && orders.filter((order) => order.status === 1).length}
+                    {tab.value === 2 && orders.filter((order) => order.status === 2).length}
+                    {tab.value === 3 && orders.filter((order) => order.status === 3).length}
+                    {tab.value === 4 && orders.filter((order) => order.status === 4).length}
+                    {tab.value === 5 && orders.filter((order) => order.status === 5).length}
                   </Label>
                 }
               />
@@ -228,9 +236,7 @@ export default function OrderListView() {
             <OrderTableFiltersResult
               filters={filters}
               onFilters={handleFilters}
-              //
               onResetFilters={handleResetFilters}
-              //
               results={dataFiltered.length}
               sx={{ p: 2.5, pt: 0 }}
             />
@@ -358,8 +364,9 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   if (name) {
     inputData = inputData.filter(
       (order) =>
-        order.orderNumber.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        order.customer.name.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        order.orderId.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        order.customer.firstName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        order.customer.lastName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
         order.customer.email.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }

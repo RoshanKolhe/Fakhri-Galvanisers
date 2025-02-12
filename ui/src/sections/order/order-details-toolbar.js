@@ -26,6 +26,12 @@ export default function OrderDetailsToolbar({
 }) {
   const popover = usePopover();
 
+  const getStatusLabel = (currentStatus) => {
+    const foundStatus = statusOptions.find((res) => res.value === currentStatus);
+    if (foundStatus) return foundStatus.label;
+    return 'Unknown Status';
+  };
+
   return (
     <>
       <Stack
@@ -46,13 +52,21 @@ export default function OrderDetailsToolbar({
               <Label
                 variant="soft"
                 color={
-                  (status === 'completed' && 'success') ||
-                  (status === 'pending' && 'warning') ||
-                  (status === 'cancelled' && 'error') ||
+                  (status === 0 && 'success') ||
+                  (status === 1 && 'warning') ||
+                  (status === 2 && 'info') ||
+                  (status === 3 && 'secondary') ||
+                  (status === 4 && 'warning') ||
+                  (status === 5 && 'error') ||
                   'default'
                 }
               >
-                {status}
+                {(status === 1 && 'In Process') ||
+                  (status === 2 && 'Material Ready') ||
+                  (status === 3 && 'Awaiting Payment') ||
+                  (status === 4 && 'Ready To dispatch') ||
+                  (status === 5 && 'Cancelled') ||
+                  (status === 0 && 'Material Received')}
               </Label>
             </Stack>
 
@@ -75,11 +89,12 @@ export default function OrderDetailsToolbar({
             endIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
             onClick={popover.onOpen}
             sx={{ textTransform: 'capitalize' }}
+            disabled
           >
-            {status}
+            {getStatusLabel(status)}
           </Button>
 
-          <Button
+          {/* <Button
             color="inherit"
             variant="outlined"
             startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}
@@ -89,7 +104,7 @@ export default function OrderDetailsToolbar({
 
           <Button color="inherit" variant="contained" startIcon={<Iconify icon="solar:pen-bold" />}>
             Edit
-          </Button>
+          </Button> */}
         </Stack>
       </Stack>
 
@@ -118,9 +133,9 @@ export default function OrderDetailsToolbar({
 
 OrderDetailsToolbar.propTypes = {
   backLink: PropTypes.string,
-  createdAt: PropTypes.instanceOf(Date),
+  createdAt: PropTypes.string,
   onChangeStatus: PropTypes.func,
   orderNumber: PropTypes.string,
-  status: PropTypes.string,
+  status: PropTypes.number,
   statusOptions: PropTypes.array,
 };

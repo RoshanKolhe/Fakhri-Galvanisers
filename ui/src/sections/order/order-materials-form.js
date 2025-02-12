@@ -1,0 +1,463 @@
+/* eslint-disable no-nested-ternary */
+import PropTypes from 'prop-types';
+import * as Yup from 'yup';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import Card from '@mui/material/Card';
+import Grid from '@mui/material/Unstable_Grid2';
+import { useSnackbar } from 'src/components/snackbar';
+import FormProvider, { RHFAutocomplete, RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { useAuthContext } from 'src/auth/hooks';
+import { formatRFQId, MATERIAL_STATUS_OPTIONS } from 'src/utils/constants';
+import { Button, Chip, Divider, MenuItem, Stack, Typography } from '@mui/material';
+import axiosInstance from 'src/utils/axios';
+import { LoadingButton } from '@mui/lab';
+import { useRouter } from 'src/routes/hook';
+import { paths } from 'src/routes/paths';
+import OrderLotProcessModal from './order-lot-process-modal';
+
+// ----------------------------------------------------------------------
+
+export default function OrderMaterialForm({ currentOrder }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
+  const [userOptions, setUserOptions] = useState([]);
+  const [processOptions, setProcessOptions] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState(null);
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setModalData(null); // Clear modal data on close
+  };
+
+  const handleJobCardClick = (material) => {
+    setModalData({
+      processes: material.processes, // Pass the processes for the material
+      noOfLots: material.noOfLots, // Pass the number of lots
+      totalQuantity: material.totalQuantity, // Pass the total quantity
+      materialName: material.materialType, // Pass the material name
+      orderId: material.orderId, // Pass the order ID
+      microns: material.microns, // Pass the microns
+    });
+    setModalOpen(true); // Open the modal
+  };
+
+  const { user } = useAuthContext();
+  const isAdmin = user
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    : false;
+
+  const NewOrderMaterialSchema = Yup.object().shape({
+    firstname: Yup.string(),
+    lastName: Yup.string(),
+    rfqRef: Yup.string(),
+    company: Yup.string(),
+    materials: Yup.array().of(
+      Yup.object().shape({
+        materialType: Yup.string().required('Material type is required'),
+        totalQuantity: Yup.number().required('Quantity is  required'),
+        startDate: Yup.string()
+          .required('Start Date is required')
+          .test('valid-start', 'Start Date cannot be after End Date', (value, context) => {
+            const { endDate } = context.parent;
+            return !endDate || new Date(value) <= new Date(endDate);
+          }),
+
+        endDate: Yup.string()
+          .required('End Date is required')
+          .test('valid-end', 'End Date cannot be before Start Date', (value, context) => {
+            const { startDate } = context.parent;
+            return !startDate || new Date(value) >= new Date(startDate);
+          }),
+        microns: Yup.number().required('Microns is required'),
+        status: Yup.string().required('Status is required'),
+        noOfLots: Yup.number()
+          .required('No Of Lots is required')
+          .min(1, 'Value must be greater than 0'),
+        remark: Yup.string(),
+        users: Yup.array().min(1, 'Must have at least 1 Worker'),
+        processes: Yup.array().min(1, 'Must have at least 1 Process'),
+      })
+    ),
+  });
+
+  const defaultValues = useMemo(
+    () => ({
+      firstName: currentOrder ? currentOrder?.customer?.firstName : '',
+      lastName: currentOrder ? currentOrder?.customer?.lastName : '',
+      rfqRef: currentOrder ? formatRFQId(currentOrder?.challan?.quotationId) : '',
+      company: currentOrder ? currentOrder?.customer?.company : !isAdmin ? user?.company : '',
+      materials: currentOrder?.materials?.length
+        ? currentOrder.materials.map((material) => ({
+            id: material.id || '',
+            materialType: material.materialType || '',
+            microns: material.microns || 0,
+            totalQuantity: material.totalQuantity || null,
+            startDate: material.startDate ? new Date(material.startDate) : '',
+            endDate: material.endDate ? new Date(material.endDate) : '',
+            remark: material.remark || '',
+            status: material.status !== undefined && material.status !== null ? material.status : 0,
+            noOfLots: material.noOfLots || 0,
+            users: material.users || [],
+            processes: material.processes || [],
+          }))
+        : [],
+    }),
+    [currentOrder, isAdmin, user]
+  );
+
+  const methods = useForm({
+    resolver: yupResolver(NewOrderMaterialSchema),
+    defaultValues,
+  });
+
+  const {
+    reset,
+    watch,
+    control,
+    setValue,
+    handleSubmit,
+    formState: { isSubmitting, errors },
+  } = methods;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'materials',
+  });
+
+  const values = watch();
+
+  console.log(values);
+
+  const onSubmit = handleSubmit(async (formData) => {
+    try {
+      console.info('DATA', formData);
+
+      const inputData = {
+        materials: formData.materials,
+      };
+      const { data } = await axiosInstance.patch(`/orders/${currentOrder.id}`, inputData);
+      console.log(data);
+      enqueueSnackbar('Order Details Updated Successfully');
+      router.push(paths.dashboard.order.root);
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+    }
+  });
+
+  const fetchUsers = async (event) => {
+    try {
+      if (event && event?.target?.value && event.target.value.length >= 3) {
+        const filter = {
+          where: {
+            or: [
+              { email: { like: `%${event.target.value}%` } },
+              { firstName: { like: `%${event.target.value}%` } },
+              { lastName: { like: `%${event.target.value}%` } },
+              { phoneNumber: { like: `%${event.target.value}%` } },
+            ],
+          },
+        };
+        const filterString = encodeURIComponent(JSON.stringify(filter));
+        const { data } = await axiosInstance.get(`/api/users/list?filter=${filterString}`);
+        setUserOptions(data);
+      } else {
+        setUserOptions([]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchProcesses = async (event) => {
+    try {
+      if (event && event?.target?.value && event.target.value.length >= 3) {
+        const filter = {
+          where: {
+            or: [{ name: { like: `%${event.target.value}%` } }],
+          },
+        };
+        const filterString = encodeURIComponent(JSON.stringify(filter));
+        const { data } = await axiosInstance.get(`/processes?filter=${filterString}`);
+        setProcessOptions(data);
+      } else {
+        setProcessOptions([]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const renderMaterialDetailsForm = (
+    <Stack spacing={3} mt={2}>
+      {fields.map((item, index) => (
+        <Stack key={item.id} spacing={1.5} sx={{ width: '100%' }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <RHFTextField
+                name={`materials[${index}].id`}
+                label="id"
+                disabled
+                sx={{ display: 'none' }}
+              />
+              <RHFTextField
+                name={`materials[${index}].materialType`}
+                label="Material Type"
+                disabled
+                fullWidth
+              />
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <RHFTextField
+                type="number"
+                name={`materials[${index}].totalQuantity`}
+                label="Quantity"
+                onChange={(e) => {
+                  setValue(`materials[${index}].totalQuantity`, e.target.value);
+                }}
+                disabled
+                fullWidth
+              />
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <RHFTextField
+                name={`materials[${index}].microns`}
+                label="Microns"
+                disabled
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name={`materials[${index}].startDate`}
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="Start Date"
+                    value={new Date(field.value)}
+                    onChange={(newValue) => {
+                      field.onChange(newValue);
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name={`materials[${index}].endDate`}
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="End Date"
+                    value={new Date(field.value)}
+                    onChange={(newValue) => {
+                      field.onChange(newValue);
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFSelect name={`materials[${index}].status`} label="Material Status">
+                {MATERIAL_STATUS_OPTIONS.map((status) => (
+                  <MenuItem key={status.value} value={status.value}>
+                    {status.label}
+                  </MenuItem>
+                ))}
+              </RHFSelect>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Stack spacing={0} sx={{ position: 'relative' }}>
+                <RHFTextField
+                  type="number"
+                  name={`materials[${index}].noOfLots`}
+                  label="No Of Lots"
+                  fullWidth
+                />
+
+                {/** Job Card Button outside the TextField */}
+                <Button
+                  variant="text"
+                  sx={{
+                    textTransform: 'none',
+                    alignSelf: 'flex-end',
+                    color: '#0000FF',
+                  }}
+                  onClick={() => {
+                    if (values.materials[index].noOfLots <= 0) {
+                      enqueueSnackbar('No of Lots should be greater than 0', {
+                        variant: 'error',
+                      });
+                      return;
+                    }
+                    if (values.materials[index].processes.length <= 0) {
+                      enqueueSnackbar('Please Select at least one process', {
+                        variant: 'error',
+                      });
+                      return;
+                    }
+                    handleJobCardClick(values.materials[index]);
+                  }}
+                >
+                  Job Card
+                </Button>
+              </Stack>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFAutocomplete
+                multiple
+                name={`materials[${index}].users`}
+                label="Assign Workers"
+                onInputChange={(event) => fetchUsers(event)}
+                options={userOptions || []}
+                getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
+                filterOptions={(x) => x}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {`${option?.firstName} ${option?.lastName}`}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {option.email}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {option.phoneNumber}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                renderTags={(selected, getTagProps) =>
+                  selected.map((option, tagIndex) => (
+                    <Chip
+                      {...getTagProps({ tagIndex })}
+                      key={option.id}
+                      label={`${option.firstName} ${option.lastName}`}
+                      size="small"
+                      color="info"
+                      variant="soft"
+                    />
+                  ))
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFAutocomplete
+                multiple
+                name={`materials[${index}].processes`}
+                label="Processes"
+                onInputChange={(event) => fetchProcesses(event)}
+                options={processOptions || []}
+                getOptionLabel={(option) => `${option?.name}` || ''}
+                filterOptions={(x) => x}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {`${option?.name}`}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                renderTags={(selected, getTagProps) =>
+                  selected.map((option, tagIndex) => (
+                    <Chip
+                      {...getTagProps({ tagIndex })}
+                      key={option.id}
+                      label={`${option.name}`}
+                      size="small"
+                      color="info"
+                      variant="soft"
+                    />
+                  ))
+                }
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <RHFTextField name={`materials[${index}].remark`} multiline rows={3} label="Remark" />
+            </Grid>
+          </Grid>
+          {index < fields.length - 1 && <Divider sx={{ my: 2, borderStyle: 'dashed' }} />}
+        </Stack>
+      ))}
+    </Stack>
+  );
+
+  useEffect(() => {
+    if (currentOrder) {
+      reset(defaultValues);
+    }
+  }, [currentOrder, defaultValues, reset]);
+
+  return (
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Grid container spacing={3}>
+        <Grid xs={12} md={12}>
+          <Card sx={{ p: 3 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <RHFTextField name="firstName" label="Customer First Name" disabled />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <RHFTextField name="lastName" label="Customer Last Name" disabled />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <RHFTextField name="company" label="Company" disabled />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <RHFTextField name="rfqRef" label="RFQ Reference" disabled />
+              </Grid>
+              <Grid item xs={12}>
+                {renderMaterialDetailsForm}
+              </Grid>
+              <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                  Save
+                </LoadingButton>
+              </Stack>
+            </Grid>
+          </Card>
+        </Grid>
+      </Grid>
+      {modalOpen && (
+        <OrderLotProcessModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          processes={modalData?.processes}
+          noOfLots={modalData?.noOfLots}
+          totalQuantity={modalData?.totalQuantity}
+          materialName={modalData?.materialName}
+          orderId={modalData?.orderId}
+          microns={modalData?.microns}
+        />
+      )}
+    </FormProvider>
+  );
+}
+
+OrderMaterialForm.propTypes = {
+  currentOrder: PropTypes.object,
+};

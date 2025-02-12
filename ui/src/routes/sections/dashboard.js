@@ -52,6 +52,10 @@ const ChallanCreatePage = lazy(() => import('src/pages/dashboard/challan/new'));
 const ChallanEditPage = lazy(() => import('src/pages/dashboard/challan/edit'));
 const ChallanViewPage = lazy(() => import('src/pages/dashboard/challan/view'));
 
+// ORDER
+const OrderListPage = lazy(() => import('src/pages/dashboard/order/list'));
+const OrderDetailsPage = lazy(() => import('src/pages/dashboard/order/details'));
+
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 
@@ -140,6 +144,15 @@ export const dashboardRoutes = [
           { path: 'new', element: <ChallanCreatePage /> },
           { path: ':id/edit', element: <ChallanEditPage /> },
           { path: ':id/view', element: <ChallanViewPage /> },
+        ],
+      },
+
+      {
+        path: 'order',
+        children: [
+          { element: <OrderListPage />, index: true },
+          { path: 'list', element: <OrderListPage /> },
+          { path: ':id', element: <OrderDetailsPage /> },
         ],
       },
 

@@ -6,6 +6,7 @@ import {
   hasMany,
 } from '@loopback/repository';
 import {Quotation} from './quotation.model';
+import {Order} from './order.model';
 
 @model()
 export class Customer extends Entity {
@@ -152,6 +153,9 @@ export class Customer extends Entity {
     type: 'number',
   })
   inquiryId?: number;
+
+  @hasMany(() => Order)
+  orders: Order[];
 
   constructor(data?: Partial<Customer>) {
     super(data);

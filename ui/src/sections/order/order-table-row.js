@@ -26,7 +26,7 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 // ----------------------------------------------------------------------
 
 export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, onDeleteRow }) {
-  const { items, status, orderNumber, createdAt, customer, totalQuantity, subTotal } = row;
+  const { materials, status, orderId, createdAt, customer } = row;
 
   const confirm = useBoolean();
 
@@ -50,15 +50,19 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
             },
           }}
         >
-          {orderNumber}
+          {orderId}
         </Box>
       </TableCell>
 
       <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-        <Avatar alt={customer.name} src={customer.avatarUrl} sx={{ mr: 2 }} />
+        <Avatar
+          alt={`${customer?.firstName} ${customer?.lastName ? customer?.lastName : ''}`}
+          src={customer?.avatar?.fileUrl}
+          sx={{ mr: 2 }}
+        />
 
         <ListItemText
-          primary={customer.name}
+          primary={`${customer?.firstName} ${customer?.lastName ? customer?.lastName : ''}`}
           secondary={customer.email}
           primaryTypographyProps={{ typography: 'body2' }}
           secondaryTypographyProps={{ component: 'span', color: 'text.disabled' }}
@@ -78,21 +82,27 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
         />
       </TableCell>
 
-      <TableCell align="center"> {totalQuantity} </TableCell>
-
-      <TableCell> {fCurrency(subTotal)} </TableCell>
+      <TableCell align="center"> {materials.length} </TableCell>
 
       <TableCell>
         <Label
           variant="soft"
           color={
-            (status === 'completed' && 'success') ||
-            (status === 'pending' && 'warning') ||
-            (status === 'cancelled' && 'error') ||
+            (status === 0 && 'success') ||
+            (status === 1 && 'warning') ||
+            (status === 2 && 'info') ||
+            (status === 3 && 'secondary') ||
+            (status === 4 && 'warning') ||
+            (status === 5 && 'error') ||
             'default'
           }
         >
-          {status}
+          {(status === 1 && 'In Process') ||
+            (status === 2 && 'Material Ready') ||
+            (status === 3 && 'Awaiting Payment') ||
+            (status === 4 && 'Ready To dispatch') ||
+            (status === 5 && 'Cancelled') ||
+            (status === 0 && 'Material Received')}
         </Label>
       </TableCell>
 
@@ -126,11 +136,31 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
           sx={{ bgcolor: 'background.neutral' }}
         >
           <Stack component={Paper} sx={{ m: 1.5 }}>
-            {items.map((item) => (
+            {/* Add headings for the secondary row */}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{
+                p: (theme) => theme.spacing(1, 2, 1, 1),
+                bgcolor: 'action.hover',
+                fontWeight: 'bold',
+                borderBottom: (theme) => `solid 2px ${theme.palette.background.neutral}`,
+              }}
+            >
+              <Box>Material Type</Box>
+              <Box>Quantity</Box>
+              <Box>Hsn Code</Box>
+              <Box>Microns</Box>
+            </Stack>
+
+            {/* Map over materials to render rows */}
+            {materials?.map((item) => (
               <Stack
                 key={item.id}
                 direction="row"
                 alignItems="center"
+                justifyContent="space-between"
                 sx={{
                   p: (theme) => theme.spacing(1.5, 2, 1.5, 1.5),
                   '&:not(:last-of-type)': {
@@ -138,28 +168,10 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
                   },
                 }}
               >
-                <Avatar
-                  src={item.coverUrl}
-                  variant="rounded"
-                  sx={{ width: 48, height: 48, mr: 2 }}
-                />
-
-                <ListItemText
-                  primary={item.name}
-                  secondary={item.sku}
-                  primaryTypographyProps={{
-                    typography: 'body2',
-                  }}
-                  secondaryTypographyProps={{
-                    component: 'span',
-                    color: 'text.disabled',
-                    mt: 0.5,
-                  }}
-                />
-
-                <Box>x{item.quantity}</Box>
-
-                <Box sx={{ width: 110, textAlign: 'right' }}>{fCurrency(item.price)}</Box>
+                <Box>{item?.materialType}</Box>
+                <Box>{item?.totalQuantity}</Box>
+                <Box>{item?.hsnCode}</Box>
+                <Box>{item?.microns}</Box>
               </Stack>
             ))}
           </Stack>

@@ -129,7 +129,6 @@ export function useNavData() {
             title: t('challan'),
             path: paths.dashboard.challan.root,
             icon: ICONS.challan,
-            roles: ['super_admin', 'customer'],
             children: [
               {
                 title: t('list'),
@@ -141,6 +140,17 @@ export function useNavData() {
                 path: paths.dashboard.challan.new,
                 roles: ['super_admin', 'customer'],
               },
+            ],
+          },
+
+          // ORDER
+          {
+            title: t('order'),
+            path: paths.dashboard.order.root,
+            icon: ICONS.order,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.order.root, roles: ['super_admin'] }, 
             ],
           },
         ],

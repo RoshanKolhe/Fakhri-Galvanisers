@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 // @mui
 import Timeline from '@mui/lab/Timeline';
@@ -14,10 +15,12 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 // utils
 import { fDateTime } from 'src/utils/format-time';
+import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
 
 // ----------------------------------------------------------------------
 
-export default function OrderDetailsHistory({ history }) {
+export default function OrderDetailsHistory({ history = [], order }) {
+  console.log(history);
   const renderSummary = (
     <Stack
       spacing={2}
@@ -34,19 +37,15 @@ export default function OrderDetailsHistory({ history }) {
     >
       <Stack spacing={0.5}>
         <Box sx={{ color: 'text.disabled' }}>Order time</Box>
-        {fDateTime(history.orderTime)}
+        {order && fDateTime(order?.createdAt)}
       </Stack>
       <Stack spacing={0.5}>
         <Box sx={{ color: 'text.disabled' }}>Payment time</Box>
-        {fDateTime(history.orderTime)}
-      </Stack>
-      <Stack spacing={0.5}>
-        <Box sx={{ color: 'text.disabled' }}>Delivery time for the carrier</Box>
-        {fDateTime(history.orderTime)}
+        {order && fDateTime(order?.createdAt)}
       </Stack>
       <Stack spacing={0.5}>
         <Box sx={{ color: 'text.disabled' }}>Completion time</Box>
-        {fDateTime(history.orderTime)}
+        {order && fDateTime(order?.createdAt)}
       </Stack>
     </Stack>
   );
@@ -62,23 +61,33 @@ export default function OrderDetailsHistory({ history }) {
         },
       }}
     >
-      {history.timeline.map((item, index) => {
-        const firstTimeline = index === 0;
+      {ORDER_STATUS_OPTIONS.map((status, index) => {
+        const timelineStep = history && history.find((step) => step.id === status.value);
+        const isCompleted = timelineStep !== undefined;
+        const isCurrentStep = isCompleted && index === history.length - 1;
+        const isNextStep = index === history.length;
 
-        const lastTimeline = index === history.timeline.length - 1;
+        let color = 'grey';
+
+        if (isCompleted || isCurrentStep) {
+          color = 'success';
+        } else if (isNextStep) {
+          color = 'warning';
+        }
 
         return (
-          <TimelineItem key={item.title}>
+          <TimelineItem key={status.value}>
             <TimelineSeparator>
-              <TimelineDot color={(firstTimeline && 'primary') || 'grey'} />
-              {lastTimeline ? null : <TimelineConnector />}
+              <TimelineDot color={color} />
+              {index !== ORDER_STATUS_OPTIONS.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
 
             <TimelineContent>
-              <Typography variant="subtitle2">{item.title}</Typography>
-
+              <Typography variant="subtitle2" fontWeight={isCurrentStep ? 'bold' : 'normal'}>
+                {status.label}
+              </Typography>
               <Box sx={{ color: 'text.disabled', typography: 'caption', mt: 0.5 }}>
-                {fDateTime(item.time)}
+                {timelineStep ? new Date(timelineStep.time).toLocaleString() : ''}
               </Box>
             </TimelineContent>
           </TimelineItem>
@@ -89,7 +98,7 @@ export default function OrderDetailsHistory({ history }) {
 
   return (
     <Card>
-      <CardHeader title="History" />
+      <CardHeader title="Status" />
       <Stack
         spacing={3}
         alignItems={{ md: 'flex-start' }}
@@ -105,5 +114,6 @@ export default function OrderDetailsHistory({ history }) {
 }
 
 OrderDetailsHistory.propTypes = {
-  history: PropTypes.object,
+  history: PropTypes.array,
+  order: PropTypes.object,
 };

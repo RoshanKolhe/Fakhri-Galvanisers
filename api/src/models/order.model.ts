@@ -7,6 +7,7 @@ import {
 } from '@loopback/repository';
 import {Challan} from './challan.model';
 import {Material} from './material.model';
+import {Customer} from './customer.model';
 
 @model()
 export class Order extends Entity {
@@ -70,6 +71,12 @@ export class Order extends Entity {
   status?: number;
 
   @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  timeline?: object[];
+
+  @property({
     type: 'date',
   })
   createdAt?: Date;
@@ -125,6 +132,9 @@ export class Order extends Entity {
 
   @hasMany(() => Material)
   materials: Material[];
+
+  @belongsTo(() => Customer)
+  customerId: number;
 
   constructor(data?: Partial<Order>) {
     super(data);

@@ -1,3 +1,5 @@
+import { _mock } from 'src/_mock';
+
 export const states = [
   {
     id: '64801d78b256d628c606f57c',
@@ -385,6 +387,20 @@ export const RFQ_STATUS_OPTIONS = [
   { value: 2, label: 'Pending Approval' },
   { value: 3, label: 'Rejected' },
   { value: 4, label: 'Created' },
+];
+
+export const ORDER_STATUS_OPTIONS = [
+  { value: 0, label: 'Material Received' },
+  { value: 1, label: 'In Process' },
+  { value: 2, label: 'Material Ready' },
+  { value: 3, label: 'Awaiting Payment' },
+  { value: 4, label: 'Ready To dispatch' },
+];
+
+export const MATERIAL_STATUS_OPTIONS = [
+  { value: 0, label: 'Pending' },
+  { value: 1, label: 'In Process' },
+  { value: 2, label: 'Completed' },
 ];
 
 export const _roles = ['Admin', 'Worker', 'Qc Admin'];

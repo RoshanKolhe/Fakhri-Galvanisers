@@ -58,6 +58,11 @@ export const endpoints = {
     filterList: (filter) => `/hsn-masters?${filter}`,
     details: (id) => `/hsn-masters/${id}`,
   },
+  order: {
+    list: '/orders',
+    filterList: (filter) => `/orders?${filter}`,
+    details: (id) => `/orders/${id}`,
+  },
   processes: {
     list: '/processes',
     filterList: (filter) => `/processes?${filter}`,

@@ -12,8 +12,8 @@ import Stepper from '@mui/material/Stepper';
 import LoadingButton from '@mui/lab/LoadingButton';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
-import { Stack, IconButton, Grid } from '@mui/material';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { Stack, IconButton, Grid, MenuItem } from '@mui/material';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import Iconify from 'src/components/iconify';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
@@ -46,8 +46,8 @@ export default function LinearAlternativeLabel() {
       .of(
         Yup.object().shape({
           materialType: Yup.string().required('Material type is required'),
-          quantityInNos: Yup.number().required('Quantity in Nos is required'),
-          quantityInKg: Yup.number().required('Quantity in Kg is required'),
+          quantity: Yup.number().required('Quantity in Nos is required'),
+          billingUnit: Yup.string().required('Billing Unit is required'),
           microns: Yup.number().required('Microns is required'),
         })
       )
@@ -63,9 +63,7 @@ export default function LinearAlternativeLabel() {
     gstIn: '',
     designation: '',
     address: '',
-    materials: [
-      { materialType: '', quantityInNos: undefined, quantityInKg: undefined, microns: undefined },
-    ],
+    materials: [{ materialType: '', quantity: undefined, billingUnit: '', microns: undefined }],
   };
 
   const methods = useForm({
@@ -209,16 +207,19 @@ export default function LinearAlternativeLabel() {
           <Grid item xs={12} sm={3}>
             <RHFTextField
               type="number"
-              name={`materials[${index}].quantityInNos`}
+              name={`materials[${index}].quantity`}
               label="Quantity (Nos)"
             />
           </Grid>
           <Grid item xs={12} sm={3}>
-            <RHFTextField
-              type="number"
-              name={`materials[${index}].quantityInKg`}
-              label="Quantity (Kg)"
-            />
+            <RHFSelect name={`materials[${index}].billingUnit`} label="Billing Unit">
+              <MenuItem key="kg" value="kg">
+                Kg
+              </MenuItem>
+              <MenuItem key="nos" value="nos">
+                Nos
+              </MenuItem>
+            </RHFSelect>
           </Grid>
           <Grid item xs={12} sm={2}>
             <RHFTextField name={`materials[${index}].microns`} label="Microns" />

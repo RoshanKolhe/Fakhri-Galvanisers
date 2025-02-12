@@ -7,3 +7,5 @@ export * from './challan.model';
 export * from './order.model';
 export * from './material.model';
 export * from './processes.model';
+export * from './material-user.model';
+export * from './material-process.model';

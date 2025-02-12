@@ -81,18 +81,24 @@ export class OrderController {
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
     try {
       const {materials, ...orderWithoutMaterials} = orderData;
-      const createdOrder = await this.orderRepository.create(
-        {
-          ...orderWithoutMaterials,
-          createdBy: currnetUser.id,
-          createdByType: currnetUser.userType,
-          updatedBy: currnetUser.id,
-          updatedByType: currnetUser.userType,
-        },
-        {
-          transaction: tx,
-        },
-      );
+      const inputData: Partial<Order> = {
+        ...orderWithoutMaterials,
+        status: 1,
+        timeline: [
+          {
+            id: 1,
+            title: 'Material Received',
+            time: new Date(),
+          },
+        ],
+        createdBy: currnetUser.id,
+        createdByType: currnetUser.userType,
+        updatedBy: currnetUser.id,
+        updatedByType: currnetUser.userType,
+      };
+      const createdOrder = await this.orderRepository.create(inputData, {
+        transaction: tx,
+      });
 
       const formattedOrderId = `ORD${createdOrder.id.toString().padStart(5, '0')}`;
       await this.orderRepository.updateById(
@@ -111,7 +117,7 @@ export class OrderController {
           totalQuantity: material.quantity,
           materialType: material.materialType,
           orderId: createdOrder.id,
-          status: 1,
+          status: 0,
           createdBy: currnetUser.id,
           createdByType: currnetUser.userType,
           updatedBy: currnetUser.id,
@@ -154,7 +160,11 @@ export class OrderController {
         ...filter?.where,
         isDeleted: false,
       },
-      include: [{relation: 'materials'}],
+      include: [
+        {relation: 'materials'},
+        {relation: 'customer'},
+        {relation: 'challan'},
+      ],
     };
     return this.orderRepository.find(filter);
   }
@@ -178,7 +188,31 @@ export class OrderController {
   ): Promise<Order> {
     filter = {
       ...filter,
-      include: [{relation: 'materials'}],
+      include: [
+        {
+          relation: 'materials',
+          scope: {
+            include: [
+              {
+                relation: 'users',
+                scope: {
+                  fields: {
+                    password: false,
+                    otp: false,
+                    otpExpireAt: false,
+                    permissions: false,
+                  },
+                },
+              },
+              {
+                relation: 'processes',
+              },
+            ],
+          },
+        },
+        {relation: 'customer'},
+        {relation: 'challan'},
+      ],
     };
     return this.orderRepository.findById(id, filter);
   }
@@ -214,7 +248,7 @@ export class OrderController {
       },
     })
     orderData: Partial<Omit<Order, 'id' | 'orderId'>> & {materials?: object[]},
-  ): Promise<Order> {
+  ): Promise<any> {
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
 
@@ -239,30 +273,64 @@ export class OrderController {
       );
 
       if (materials && materials.length > 0) {
-        // Remove old materials for this order
-        await this.materialRepository.deleteAll({orderId}, {transaction: tx});
+        for (const material of materials) {
+          const materialId = material.id;
 
-        // Add new/updated materials
-        const mappedMaterials = materials.map((material: any) => ({
-          microns: material.microns,
-          hsnCode: material.hsnNo.hsnCode,
-          totalQuantity: material.quantity,
-          materialType: material.materialType,
-          orderId: orderId,
-          status: 1,
-          createdBy: currentUser.id,
-          createdByType: currentUser.userType,
-          updatedBy: currentUser.id,
-          updatedByType: currentUser.userType,
-        }));
+          await this.materialRepository.updateById(
+            materialId,
+            {
+              startDate: material.startDate,
+              endDate: material.endDate,
+              status: material.status,
+              noOfLots: material.noOfLots,
+              remark: material.remark,
+            },
+            {transaction: tx},
+          );
 
-        await this.materialRepository.createAll(mappedMaterials, {
-          transaction: tx,
-        });
+          for (const process of material.processes) {
+            await this.materialRepository
+              .processes(materialId)
+              .link(process.id, {transaction: tx});
+          }
+
+          // Update or insert assigned workers
+          for (const worker of material.users) {
+            await this.materialRepository
+              .users(materialId)
+              .link(worker.id, {transaction: tx});
+          }
+        }
       }
 
       await tx.commit();
-      return this.orderRepository.findById(orderId, {include: ['materials']});
+      return this.orderRepository.findById(orderId, {
+        include: [
+          {
+            relation: 'materials',
+            scope: {
+              include: [
+                {
+                  relation: 'users',
+                  scope: {
+                    fields: {
+                      password: false,
+                      otp: false,
+                      otpExpireAt: false,
+                      permissions: false,
+                    },
+                  },
+                },
+                {
+                  relation: 'processes',
+                },
+              ],
+            },
+          },
+          {relation: 'customer'},
+          {relation: 'challan'},
+        ],
+      });
     } catch (err) {
       await tx.rollback();
       throw err;

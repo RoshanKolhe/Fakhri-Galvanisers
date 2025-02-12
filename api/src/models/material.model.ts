@@ -1,5 +1,9 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
 import {Order} from './order.model';
+import {User} from './user.model';
+import {MaterialUser} from './material-user.model';
+import {Processes} from './processes.model';
+import {MaterialProcess} from './material-process.model';
 
 @model()
 export class Material extends Entity {
@@ -27,6 +31,12 @@ export class Material extends Entity {
     required: true,
   })
   totalQuantity: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  noOfLots: number;
 
   @property({
     type: 'number',
@@ -108,6 +118,12 @@ export class Material extends Entity {
 
   @belongsTo(() => Order)
   orderId: number;
+
+  @hasMany(() => User, {through: {model: () => MaterialUser}})
+  users: User[];
+
+  @hasMany(() => Processes, {through: {model: () => MaterialProcess}})
+  processes: Processes[];
 
   constructor(data?: Partial<Material>) {
     super(data);
