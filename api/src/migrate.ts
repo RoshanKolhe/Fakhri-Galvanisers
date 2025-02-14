@@ -20,6 +20,8 @@ export async function migrate(args: string[]) {
       'Material',
       'MaterialUser',
       'MaterialProcess',
+      'Lots',
+      'LotProcesses',
     ],
   });
 

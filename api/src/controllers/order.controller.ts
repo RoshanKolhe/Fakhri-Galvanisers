@@ -23,6 +23,8 @@ import {
 import {Material, Order} from '../models';
 import {
   ChallanRepository,
+  LotProcessesRepository,
+  LotsRepository,
   MaterialRepository,
   OrderRepository,
 } from '../repositories';
@@ -42,6 +44,10 @@ export class OrderController {
     public materialRepository: MaterialRepository,
     @repository(ChallanRepository)
     public challanRepository: ChallanRepository,
+    @repository(LotsRepository)
+    public lotsRepository: LotsRepository,
+    @repository(LotProcessesRepository)
+    public lotProcessesRepository: LotProcessesRepository,
   ) {}
 
   @authenticate({
@@ -185,7 +191,8 @@ export class OrderController {
     @param.path.number('id') id: number,
     @param.filter(Order, {exclude: 'where'})
     filter?: FilterExcludingWhere<Order>,
-  ): Promise<Order> {
+  ): Promise<any> {
+    // Include relations like materials, users, processes, etc.
     filter = {
       ...filter,
       include: [
@@ -193,20 +200,9 @@ export class OrderController {
           relation: 'materials',
           scope: {
             include: [
-              {
-                relation: 'users',
-                scope: {
-                  fields: {
-                    password: false,
-                    otp: false,
-                    otpExpireAt: false,
-                    permissions: false,
-                  },
-                },
-              },
-              {
-                relation: 'processes',
-              },
+              {relation: 'users'},
+              {relation: 'processes'},
+              {relation: 'lots', scope: {include: ['processes']}},
             ],
           },
         },
@@ -214,7 +210,46 @@ export class OrderController {
         {relation: 'challan'},
       ],
     };
-    return this.orderRepository.findById(id, filter);
+
+    const order: any = await this.orderRepository.findById(id, filter);
+    const lotProcesses: any = await this.lotProcessesRepository.find({
+      where: {
+        lotsId: {
+          inq: order.materials.flatMap(
+            (material: any) => material.lots?.map((lot: any) => lot.id) || [],
+          ),
+        },
+      },
+    });
+    if (lotProcesses && lotProcesses.length) {
+      order.materials = order.materials.map((material: any) => {
+        if (material.lots && material.lots.length > 0) {
+          material.lots = material.lots.map((lot: any) => {
+            const matchingLotProcess = lotProcesses.filter(
+              (lotProcess: any) => lotProcess.lotsId === lot.id,
+            );
+
+            // Modify lot processes
+            lot.processes = lot.processes.map((process: any) => {
+              const matchedProcess = matchingLotProcess.find(
+                (lp: any) => lp.processesId === process.id,
+              );
+              if (matchedProcess) {
+                process.duration = matchedProcess.duration;
+                process.timeTaken = matchedProcess.timeTaken;
+                process.lotProcessesStatus = matchedProcess.status;
+              }
+              return {...process};
+            });
+            return {...lot};
+          });
+
+          return {...material};
+        }
+        return material;
+      });
+    }
+    return order;
   }
 
   @authenticate({
@@ -238,7 +273,7 @@ export class OrderController {
                 title: 'UpdateOrder',
                 partial: true, // Allows partial updates
               }).definitions?.UpdateOrder?.properties,
-              materials: {
+              materialsData: {
                 type: 'array',
                 items: {type: 'object'}, // Accepts materials array
               },
@@ -247,13 +282,13 @@ export class OrderController {
         },
       },
     })
-    orderData: Partial<Omit<Order, 'id' | 'orderId'>> & {materials?: object[]},
+    orderData: Partial<Omit<Order, 'id' | 'orderId'>> & {materialsData?: any[]},
   ): Promise<any> {
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
 
     try {
-      const {materials, ...orderWithoutMaterials} = orderData;
+      const {materialsData, ...orderWithoutMaterials} = orderData;
 
       // Ensure the order exists
       const existingOrder = await this.orderRepository.findById(orderId);
@@ -272,8 +307,8 @@ export class OrderController {
         {transaction: tx},
       );
 
-      if (materials && materials.length > 0) {
-        for (const material of materials) {
+      if (materialsData && materialsData.length > 0) {
+        for (const material of materialsData) {
           const materialId = material.id;
 
           await this.materialRepository.updateById(
@@ -287,6 +322,25 @@ export class OrderController {
             },
             {transaction: tx},
           );
+          const existingProcesses = await this.materialRepository
+            .processes(materialId)
+            .find();
+
+          if (existingProcesses.length > 0) {
+            await this.materialRepository
+              .processes(materialId)
+              .unlinkAll({transaction: tx});
+          }
+
+          const existingUsers = await this.materialRepository
+            .users(materialId)
+            .find();
+
+          if (existingUsers.length > 0) {
+            await this.materialRepository
+              .users(materialId)
+              .unlinkAll({transaction: tx});
+          }
 
           for (const process of material.processes) {
             await this.materialRepository
@@ -299,6 +353,66 @@ export class OrderController {
             await this.materialRepository
               .users(materialId)
               .link(worker.id, {transaction: tx});
+          }
+          const materialLots = await this.lotsRepository.find({
+            where: {
+              materialId: materialId,
+            },
+            include: ['processes'],
+          });
+          for (const lot of material.lots) {
+            if (material.status === 0) {
+              if (materialLots && materialLots.length > 0) {
+                for (const materialLot of materialLots) {
+                  if (materialLot.lotNumber === lot.lotNumber) {
+                    await this.lotsRepository.updateById(materialLot.id, {
+                      quantity: lot.quantity,
+                    });
+                    for (const lotProcess of materialLot.processes) {
+                      const foundLotFromMaterial = lot.processes.find(
+                        (res: any) => res.processId === lotProcess.id,
+                      );
+                      console.log(foundLotFromMaterial);
+                      console.log(lotProcess.id);
+                      if (foundLotFromMaterial) {
+                        await this.lotProcessesRepository.updateAll(
+                          {
+                            duration: foundLotFromMaterial.duration,
+                          },
+                          {
+                            lotsId: materialLot.id,
+                            processesId: foundLotFromMaterial.processId,
+                          },
+                          {transaction: tx},
+                        );
+                      }
+                    }
+                  }
+                }
+              } else {
+                const savedLot = await this.lotsRepository.create(
+                  {
+                    lotNumber: lot.lotNumber.toString(),
+                    materialId: materialId,
+                    quantity: lot.quantity,
+                    status: 0,
+                  },
+                  {transaction: tx},
+                );
+
+                for (const processData of lot.processes) {
+                  await this.lotProcessesRepository.create(
+                    {
+                      lotsId: savedLot.id,
+                      processesId: processData.processId,
+                      duration: processData.duration,
+                      status: 0,
+                    },
+                    {transaction: tx},
+                  );
+                }
+              }
+            }
           }
         }
       }
@@ -335,6 +449,57 @@ export class OrderController {
       await tx.rollback();
       throw err;
     }
+  }
+
+  @post('/orders/getJobCard')
+  async getJobCard(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              materialId: {type: 'number'},
+            },
+            required: ['materialId'],
+          },
+        },
+      },
+    })
+    requestData: {
+      materialId: number;
+    },
+  ) {
+    const {materialId} = requestData;
+    const lots = await this.lotsRepository.find({
+      where: {
+        materialId: materialId,
+      },
+    });
+
+    const mappedLots = await Promise.all(
+      lots.map(async res => {
+        const lotProcessesData = await this.lotProcessesRepository.find({
+          where: {
+            lotsId: res.id,
+          },
+        });
+
+        if (lotProcessesData.length > 0) {
+          return lotProcessesData.map(lotProcess => ({
+            ...res,
+            processes: {
+              duration: lotProcess.duration,
+              timeTaken: lotProcess.timeTaken,
+            },
+          }));
+        } else {
+          return res; // Keep original lot if no processes found
+        }
+      }),
+    );
+
+    return mappedLots;
   }
 
   @del('/orders/{id}')

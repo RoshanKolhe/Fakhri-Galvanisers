@@ -9,3 +9,5 @@ export * from './material.model';
 export * from './processes.model';
 export * from './material-user.model';
 export * from './material-process.model';
+export * from './lots.model';
+export * from './lot-processes.model';

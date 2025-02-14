@@ -1,20 +1,25 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-plusplus */
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import {
   Modal,
   Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
+  Grid,
+  Typography,
   TableContainer,
+  Table,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
+  Checkbox,
+  Button,
   TextField,
-  Typography,
 } from '@mui/material';
-import PropTypes from 'prop-types';
 import { TimePicker } from '@mui/x-date-pickers';
+import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'src/components/snackbar';
 
 export default function OrderLotProcessModal({
   open,
@@ -23,41 +28,173 @@ export default function OrderLotProcessModal({
   noOfLots,
   totalQuantity,
   materialName,
+  materialId,
   orderId,
   microns,
+  customer,
+  jobCardLots,
+  setJobCardLots,
 }) {
-  console.log(processes);
-  const [times, setTimes] = useState(Array(processes.length).fill('')); // Store the time inputs for each process
+  console.log(jobCardLots);
+  const { enqueueSnackbar } = useSnackbar();
   const [lots, setLots] = useState([]);
+  console.log(lots);
+  const [times, setTimes] = useState([]);
+  console.log(times);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [bulkTime, setBulkTime] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  // Divide total quantity into equal lots, handling odd remainders
   useEffect(() => {
-    const baseQuantity = Math.floor(totalQuantity / noOfLots);
-    const remainder = totalQuantity % noOfLots;
+    initializeLots(noOfLots, totalQuantity, jobCardLots);
+  }, [noOfLots, totalQuantity, jobCardLots]);
 
-    const lotArray = Array(noOfLots).fill(baseQuantity);
-    for (let i = 0; i < remainder; i++) {
-      lotArray[i] += 1;
+  const initializeLots = (count, totalQty, existingLots = []) => {
+    try {
+      console.log(existingLots.length);
+      const foundMaterial = existingLots.find((res) => res.materialId === materialId);
+
+      if (foundMaterial && foundMaterial.lots.length > 0) {
+        // Use existing lots data if available
+        const newLots = foundMaterial.lots.map((lot) => ({
+          lotNumber: lot.lotNumber,
+          quantity: lot.quantity,
+          processes: lot.processes || [], // Assuming processes can be an empty array if not available
+        }));
+
+        setLots(newLots);
+        // Assuming `processes` array should be initialized in the `times` state
+        const newTimes = foundMaterial.lots.map((lot) =>
+          lot.processes.map((process) => new Date(process.duration))
+        );
+        setTimes(newTimes);
+      } else {
+        console.log('here');
+        const baseQty = Math.floor(totalQty / count);
+        const remainder = totalQty % count;
+
+        const newLots = Array(count)
+          .fill(null)
+          .map((_, i) => ({
+            lotNumber: i + 1,
+            quantity: baseQty + (i < remainder ? 1 : 0),
+          }));
+
+        setLots(newLots);
+        setTimes(Array(count).fill([])); // Assuming `times` needs to be an empty array initially
+      }
+    } catch (err) {
+      console.log(err);
     }
+  };
 
-    setLots(lotArray);
-  }, [noOfLots, totalQuantity]);
+  const handleQuantityChange = (index, value) => {
+    const newLots = [...lots];
+    newLots[index].quantity = parseInt(value, 10) || 0;
+    setLots(newLots);
+  };
 
   const handleTimeChange = (lotIndex, processIndex, newTime) => {
     const updatedTimes = [...times];
-    if (!updatedTimes[lotIndex]) updatedTimes[lotIndex] = [];
+    updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
     updatedTimes[lotIndex][processIndex] = newTime;
+    setTimes(updatedTimes);
+
+    // Clear error if a valid time is set
+    setErrors((prevErrors) => {
+      const newErrors = { ...prevErrors };
+      if (newErrors[lotIndex]) {
+        delete newErrors[lotIndex][processIndex];
+        if (Object.keys(newErrors[lotIndex]).length === 0) {
+          delete newErrors[lotIndex]; // Remove lot-level error if empty
+        }
+      }
+      return newErrors;
+    });
+  };
+  const handleRowSelect = (index) => {
+    setSelectedRows((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRows.length === lots.length) {
+      setSelectedRows([]); // Unselect all
+    } else {
+      setSelectedRows(lots.map((_, index) => index)); // Select all
+    }
+  };
+  const applyBulkTime = () => {
+    if (!bulkTime) return;
+
+    const updatedTimes = [...times];
+    selectedRows.forEach((lotIndex) => {
+      updatedTimes[lotIndex] = processes.map(() => bulkTime);
+    });
+
     setTimes(updatedTimes);
   };
 
-  const handleSubmit = () => {
-    if (times.every((time) => time)) {
-      // Submit logic here
-      console.log('Submitting...', times);
-    }
-  };
+  const sumQuantitiesReducer = (total, lot) => total + (lot.quantity || 0);
 
-  const isSubmitDisabled = times.includes('');
+  const handleSubmit = async () => {
+    const newErrors = {};
+    let hasErrors = false;
+
+    // Validate times for each lot
+    lots.forEach((lot, lotIndex) => {
+      processes.forEach((_, processIndex) => {
+        if (!times[lotIndex] || !times[lotIndex][processIndex]) {
+          hasErrors = true;
+          if (!newErrors[lotIndex]) newErrors[lotIndex] = {};
+          newErrors[lotIndex][processIndex] = 'Time is required';
+        }
+      });
+    });
+
+    if (hasErrors) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+
+    const lotsTotalQuantity = lots.reduce(sumQuantitiesReducer, 0);
+    if (lotsTotalQuantity !== totalQuantity) {
+      enqueueSnackbar('Lots Total Quantity Should match Material Total Quantity', {
+        variant: 'error',
+      });
+      return;
+    }
+    console.log(lotsTotalQuantity);
+    const submissionData = lots.map((lot, index) => ({
+      lotNumber: lot.lotNumber,
+      quantity: lot.quantity,
+      processes:
+        times[index]?.map((time, processIndex) => ({
+          processId: processes[processIndex].id,
+          duration: time,
+        })) || [],
+    }));
+
+    // Check if materialId already exists in jobCardLots
+    const existingJobCardLotIndex = jobCardLots.findIndex((lot) => lot.materialId === materialId);
+
+    if (existingJobCardLotIndex >= 0) {
+      // If materialId exists, update the existing entry
+      const updatedJobCardLots = [...jobCardLots];
+      updatedJobCardLots[existingJobCardLotIndex] = {
+        materialId,
+        lots: submissionData,
+      };
+      setJobCardLots(updatedJobCardLots);
+    } else {
+      // If materialId doesn't exist, add new entry
+      setJobCardLots((prevLots) => [...prevLots, { materialId, lots: submissionData }]);
+    }
+
+    onClose();
+  };
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -72,31 +209,102 @@ export default function OrderLotProcessModal({
           p: 4,
           boxShadow: 24,
           borderRadius: 2,
+          height: '600px',
+          overflowY: 'auto',
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          Material Details: {materialName} (Order ID: {orderId})
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          Microns: {microns}
-        </Typography>
+        <Grid container>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>Order Id:</strong> {orderId}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>Customer:</strong> {customer?.firstName} {customer?.lastName}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>Material:</strong> {materialName}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>Microns:</strong> {microns}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>Total Quantity:</strong> {totalQuantity}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="body1">
+              <strong>No of Lots:</strong> {noOfLots}
+            </Typography>
+          </Grid>
+        </Grid>
 
-        <TableContainer sx={{ maxHeight: 400 }}>
+        {selectedRows.length > 0 && (
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              backgroundColor: '#f5f5f5',
+              padding: '10px',
+              marginTop: '15px',
+              borderRadius: '5px',
+            }}
+          >
+            <Grid item xs={3}>
+              <Typography variant="body1">Apply Bulk Time:</Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <TimePicker
+                value={bulkTime}
+                onChange={(newTime) => setBulkTime(newTime)}
+                views={['minutes', 'seconds']}
+                format="mm:ss"
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <Button variant="contained" color="primary" onClick={applyBulkTime}>
+                Apply to Selected
+              </Button>
+            </Grid>
+          </Grid>
+        )}
+
+        <TableContainer sx={{ maxHeight: 400, marginTop: '20px' }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedRows.length === lots.length && lots.length > 0}
+                    indeterminate={selectedRows.length > 0 && selectedRows.length < lots.length}
+                    onChange={toggleSelectAll}
+                  />
+                </TableCell>
                 <TableCell>Lot</TableCell>
                 {processes.map((process, index) => (
                   <TableCell key={index}>{process.name}</TableCell>
                 ))}
                 <TableCell>Quantity</TableCell>
-                <TableCell>Microns</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {lots.map((lot, lotIndex) => (
                 <TableRow key={lotIndex}>
-                  <TableCell>{`Lot ${lotIndex + 1}`}</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedRows.includes(lotIndex)}
+                      onChange={() => handleRowSelect(lotIndex)}
+                    />
+                  </TableCell>
+                  <TableCell>{`Lot${lot.lotNumber}`}</TableCell>
                   {processes.map((process, processIndex) => (
                     <TableCell key={processIndex}>
                       <TimePicker
@@ -104,40 +312,30 @@ export default function OrderLotProcessModal({
                         onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
                         views={['minutes', 'seconds']}
                         format="mm:ss"
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            sx={{
-                              input: {
-                                padding: 0,
-                                textAlign: 'center',
-                                border: 'none',
-                              },
-                              '.MuiOutlinedInput-root': {
-                                '& fieldset': { display: 'none' },
-                              },
-                              '.MuiSvgIcon-root': { display: 'none' },
-                            }}
-                          />
-                        )}
+                        renderInput={(params) => <TextField {...params} />}
+                        slotProps={{
+                          textField: {
+                            error: Boolean(errors?.[lotIndex]?.[processIndex]),
+                            helperText: errors?.[lotIndex]?.[processIndex] || '',
+                          },
+                        }}
+                        sx={{ minWidth: '140px' }}
                       />
                     </TableCell>
                   ))}
-                  <TableCell>{lot}</TableCell>
-                  <TableCell>{microns}</TableCell>
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      value={lot.quantity}
+                      onChange={(e) => handleQuantityChange(lotIndex, e.target.value)}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
-
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={handleSubmit}
-          disabled={isSubmitDisabled}
-        >
+        <Button variant="contained" sx={{ mt: 2, ml: 2 }} onClick={handleSubmit}>
           Submit
         </Button>
       </Box>
@@ -148,10 +346,14 @@ export default function OrderLotProcessModal({
 OrderLotProcessModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  processes: PropTypes.arrayOf(PropTypes.string).isRequired,
+  processes: PropTypes.arrayOf(PropTypes.object).isRequired,
   noOfLots: PropTypes.number.isRequired,
   totalQuantity: PropTypes.number.isRequired,
   materialName: PropTypes.string.isRequired,
   orderId: PropTypes.string.isRequired,
+  materialId: PropTypes.number.isRequired,
   microns: PropTypes.number.isRequired,
+  customer: PropTypes.object.isRequired,
+  jobCardLots: PropTypes.array,
+  setJobCardLots: PropTypes.func,
 };

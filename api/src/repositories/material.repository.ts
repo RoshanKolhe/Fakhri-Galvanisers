@@ -1,13 +1,14 @@
 import {Constructor, inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, BelongsToAccessor, HasManyThroughRepositoryFactory} from '@loopback/repository';
+import {DefaultCrudRepository, repository, BelongsToAccessor, HasManyThroughRepositoryFactory, HasManyRepositoryFactory} from '@loopback/repository';
 import {FakhriGalvanisersDataSource} from '../datasources';
-import {Material, MaterialRelations, Order, User, MaterialUser, Processes, MaterialProcess} from '../models';
+import {Material, MaterialRelations, Order, User, MaterialUser, Processes, MaterialProcess, Lots} from '../models';
 import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
 import {OrderRepository} from './order.repository';
 import {MaterialUserRepository} from './material-user.repository';
 import {UserRepository} from './user.repository';
 import {MaterialProcessRepository} from './material-process.repository';
 import {ProcessesRepository} from './processes.repository';
+import {LotsRepository} from './lots.repository';
 
 export class MaterialRepository extends TimeStampRepositoryMixin<
   Material,
@@ -33,11 +34,15 @@ export class MaterialRepository extends TimeStampRepositoryMixin<
           typeof Material.prototype.id
         >;
 
+  public readonly lots: HasManyRepositoryFactory<Lots, typeof Material.prototype.id>;
+
   constructor(
     @inject('datasources.fakhriGalvanisers')
-    dataSource: FakhriGalvanisersDataSource, @repository.getter('OrderRepository') protected orderRepositoryGetter: Getter<OrderRepository>, @repository.getter('MaterialUserRepository') protected materialUserRepositoryGetter: Getter<MaterialUserRepository>, @repository.getter('UserRepository') protected userRepositoryGetter: Getter<UserRepository>, @repository.getter('MaterialProcessRepository') protected materialProcessRepositoryGetter: Getter<MaterialProcessRepository>, @repository.getter('ProcessesRepository') protected processesRepositoryGetter: Getter<ProcessesRepository>,
+    dataSource: FakhriGalvanisersDataSource, @repository.getter('OrderRepository') protected orderRepositoryGetter: Getter<OrderRepository>, @repository.getter('MaterialUserRepository') protected materialUserRepositoryGetter: Getter<MaterialUserRepository>, @repository.getter('UserRepository') protected userRepositoryGetter: Getter<UserRepository>, @repository.getter('MaterialProcessRepository') protected materialProcessRepositoryGetter: Getter<MaterialProcessRepository>, @repository.getter('ProcessesRepository') protected processesRepositoryGetter: Getter<ProcessesRepository>, @repository.getter('LotsRepository') protected lotsRepositoryGetter: Getter<LotsRepository>,
   ) {
     super(Material, dataSource);
+    this.lots = this.createHasManyRepositoryFactoryFor('lots', lotsRepositoryGetter,);
+    this.registerInclusionResolver('lots', this.lots.inclusionResolver);
     this.processes = this.createHasManyThroughRepositoryFactoryFor('processes', processesRepositoryGetter, materialProcessRepositoryGetter,);
     this.registerInclusionResolver('processes', this.processes.inclusionResolver);
     this.users = this.createHasManyThroughRepositoryFactoryFor('users', userRepositoryGetter, materialUserRepositoryGetter,);

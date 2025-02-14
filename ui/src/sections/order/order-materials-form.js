@@ -25,6 +25,7 @@ export default function OrderMaterialForm({ currentOrder }) {
   const router = useRouter();
   const [userOptions, setUserOptions] = useState([]);
   const [processOptions, setProcessOptions] = useState([]);
+  const [jobCardLots, setJobCardLots] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
 
@@ -35,12 +36,14 @@ export default function OrderMaterialForm({ currentOrder }) {
 
   const handleJobCardClick = (material) => {
     setModalData({
-      processes: material.processes, // Pass the processes for the material
-      noOfLots: material.noOfLots, // Pass the number of lots
-      totalQuantity: material.totalQuantity, // Pass the total quantity
-      materialName: material.materialType, // Pass the material name
-      orderId: material.orderId, // Pass the order ID
-      microns: material.microns, // Pass the microns
+      processes: material.processes,
+      noOfLots: material.noOfLots,
+      totalQuantity: material.totalQuantity,
+      materialName: material.materialType,
+      materialId: material.id,
+      orderId: currentOrder.orderId,
+      microns: material.microns,
+      customer: currentOrder.customer,
     });
     setModalOpen(true); // Open the modal
   };
@@ -73,7 +76,7 @@ export default function OrderMaterialForm({ currentOrder }) {
             return !startDate || new Date(value) >= new Date(startDate);
           }),
         microns: Yup.number().required('Microns is required'),
-        status: Yup.string().required('Status is required'),
+        status: Yup.number().required('Status is required'),
         noOfLots: Yup.number()
           .required('No Of Lots is required')
           .min(1, 'Value must be greater than 0'),
@@ -129,14 +132,21 @@ export default function OrderMaterialForm({ currentOrder }) {
 
   const values = watch();
 
-  console.log(values);
-
   const onSubmit = handleSubmit(async (formData) => {
     try {
-      console.info('DATA', formData);
-
+      const updatedMaterials = formData.materials.map((material) => {
+        const jobCardMaterial = jobCardLots.find((lot) => lot.materialId === material.id);
+        if (jobCardMaterial) {
+          return {
+            ...material,
+            lots: [...(material.lots || []), ...jobCardMaterial.lots],
+          };
+        }
+        return material;
+      });
+      console.info('DATA', updatedMaterials);
       const inputData = {
-        materials: formData.materials,
+        materialsData: updatedMaterials,
       };
       const { data } = await axiosInstance.patch(`/orders/${currentOrder.id}`, inputData);
       console.log(data);
@@ -279,7 +289,7 @@ export default function OrderMaterialForm({ currentOrder }) {
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFSelect name={`materials[${index}].status`} label="Material Status">
+              <RHFSelect name={`materials[${index}].status`} label="Material Status" disabled>
                 {MATERIAL_STATUS_OPTIONS.map((status) => (
                   <MenuItem key={status.value} value={status.value}>
                     {status.label}
@@ -412,6 +422,25 @@ export default function OrderMaterialForm({ currentOrder }) {
     }
   }, [currentOrder, defaultValues, reset]);
 
+  useEffect(() => {
+    if (currentOrder) {
+      const transformedOrder = currentOrder.materials.map((material) => ({
+        materialId: material.id,
+        lots:
+          material.lots?.map((lot) => ({
+            lotNumber: lot.lotNumber,
+            quantity: lot.quantity,
+            processes: lot.processes.map((process) => ({
+              processId: process.id,
+              duration: process.duration,
+            })),
+          })) || [],
+      }));
+      console.log(transformedOrder);
+      setJobCardLots(transformedOrder);
+    }
+  }, [currentOrder]);
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
@@ -451,7 +480,11 @@ export default function OrderMaterialForm({ currentOrder }) {
           totalQuantity={modalData?.totalQuantity}
           materialName={modalData?.materialName}
           orderId={modalData?.orderId}
+          materialId={modalData?.materialId}
           microns={modalData?.microns}
+          customer={modalData?.customer}
+          jobCardLots={jobCardLots}
+          setJobCardLots={setJobCardLots}
         />
       )}
     </FormProvider>

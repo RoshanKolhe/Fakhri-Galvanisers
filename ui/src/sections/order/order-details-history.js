@@ -20,7 +20,6 @@ import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
 // ----------------------------------------------------------------------
 
 export default function OrderDetailsHistory({ history = [], order }) {
-  console.log(history);
   const renderSummary = (
     <Stack
       spacing={2}

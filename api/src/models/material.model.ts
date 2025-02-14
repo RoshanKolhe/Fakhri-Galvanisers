@@ -4,6 +4,7 @@ import {User} from './user.model';
 import {MaterialUser} from './material-user.model';
 import {Processes} from './processes.model';
 import {MaterialProcess} from './material-process.model';
+import {Lots} from './lots.model';
 
 @model()
 export class Material extends Entity {
@@ -124,6 +125,9 @@ export class Material extends Entity {
 
   @hasMany(() => Processes, {through: {model: () => MaterialProcess}})
   processes: Processes[];
+
+  @hasMany(() => Lots)
+  lots: Lots[];
 
   constructor(data?: Partial<Material>) {
     super(data);
