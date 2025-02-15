@@ -313,6 +313,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                     textTransform: 'none',
                     alignSelf: 'flex-end',
                     color: '#0000FF',
+                    fontWeight: 400,
                   }}
                   onClick={() => {
                     if (values.materials[index].noOfLots <= 0) {
@@ -432,7 +433,9 @@ export default function OrderMaterialForm({ currentOrder }) {
             quantity: lot.quantity,
             processes: lot.processes.map((process) => ({
               processId: process.id,
-              duration: process.duration,
+              duration: process.processesDetails.duration,
+              status: process.processesDetails.status,
+              timeTaken: process.processesDetails?.timeTaken,
             })),
           })) || [],
       }));

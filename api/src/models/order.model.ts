@@ -68,7 +68,7 @@ export class Order extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status?: number; // 0 : Material Received,1:In Process, 2:Material Ready,3:Awaiting Payment,4:Ready ToDispatch,5:Cancelled
 
   @property({
     type: 'array',

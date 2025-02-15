@@ -192,7 +192,7 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
         arrow="right-top"
         sx={{ width: 140 }}
       >
-        <MenuItem
+        {/* <MenuItem
           onClick={() => {
             confirm.onTrue();
             popover.onClose();
@@ -201,7 +201,7 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
         >
           <Iconify icon="solar:trash-bin-trash-bold" />
           Delete
-        </MenuItem>
+        </MenuItem> */}
 
         <MenuItem
           onClick={() => {

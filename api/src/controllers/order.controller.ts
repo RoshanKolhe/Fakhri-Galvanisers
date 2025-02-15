@@ -20,12 +20,13 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {Material, Order} from '../models';
+import {LotProcesses, Material, Order} from '../models';
 import {
   ChallanRepository,
   LotProcessesRepository,
   LotsRepository,
   MaterialRepository,
+  MaterialUserRepository,
   OrderRepository,
 } from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
@@ -42,6 +43,8 @@ export class OrderController {
     public orderRepository: OrderRepository,
     @repository(MaterialRepository)
     public materialRepository: MaterialRepository,
+    @repository(MaterialUserRepository)
+    public materialUserRepository: MaterialUserRepository,
     @repository(ChallanRepository)
     public challanRepository: ChallanRepository,
     @repository(LotsRepository)
@@ -92,7 +95,7 @@ export class OrderController {
         status: 1,
         timeline: [
           {
-            id: 1,
+            id: 0,
             title: 'Material Received',
             time: new Date(),
           },
@@ -235,9 +238,7 @@ export class OrderController {
                 (lp: any) => lp.processesId === process.id,
               );
               if (matchedProcess) {
-                process.duration = matchedProcess.duration;
-                process.timeTaken = matchedProcess.timeTaken;
-                process.lotProcessesStatus = matchedProcess.status;
+                process['processesDetails'] = matchedProcess;
               }
               return {...process};
             });
@@ -372,8 +373,6 @@ export class OrderController {
                       const foundLotFromMaterial = lot.processes.find(
                         (res: any) => res.processId === lotProcess.id,
                       );
-                      console.log(foundLotFromMaterial);
-                      console.log(lotProcess.id);
                       if (foundLotFromMaterial) {
                         await this.lotProcessesRepository.updateAll(
                           {
@@ -451,6 +450,9 @@ export class OrderController {
     }
   }
 
+  @authenticate({
+    strategy: 'jwt',
+  })
   @post('/orders/getJobCard')
   async getJobCard(
     @requestBody({
@@ -502,11 +504,275 @@ export class OrderController {
     return mappedLots;
   }
 
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER],
+    },
+  })
+  @post('/orders/getWorkerWiseJobs')
+  async getWorkerJobCard(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+  ) {
+    const userId = currentUser.id;
+
+    // Step 1: Get material IDs assigned to this user from junction table
+    const assignedMaterials = await this.materialUserRepository.find({
+      where: {userId: userId},
+    });
+
+    // Extract material IDs
+    const materialIds = assignedMaterials.map(record => record.materialId);
+
+    if (materialIds.length === 0) {
+      return []; // No materials assigned to this user
+    }
+
+    // Step 2: Fetch materials by their IDs and include related orders
+    const materials = await this.materialRepository.find({
+      where: {id: {inq: materialIds}}, // Filter materials by IDs
+      include: [{relation: 'order'}], // Include order details
+    });
+
+    return materials;
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER],
+    },
+  })
+  @post('/orders/getWorkerMaterialLotAndProcess')
+  async getWorkerMaterialLotAndProcess(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              materialId: {type: 'number'},
+            },
+            required: ['materialId'],
+          },
+        },
+      },
+    })
+    requestData: {
+      materialId: number;
+    },
+  ) {
+    const materialWithLots = await this.materialRepository.findById(
+      requestData.materialId,
+      {
+        include: [
+          {relation: 'order'},
+          {relation: 'lots', scope: {include: ['processes']}},
+        ],
+      },
+    );
+    const lotProcesses: any = await this.lotProcessesRepository.find({
+      where: {
+        lotsId: {
+          inq: materialWithLots.lots?.map((lot: any) => lot.id) || [],
+        },
+      },
+    });
+    if (materialWithLots.lots && materialWithLots.lots.length > 0) {
+      materialWithLots.lots = materialWithLots.lots.map((lot: any) => {
+        const matchingLotProcess = lotProcesses.filter(
+          (lotProcess: any) => lotProcess.lotsId === lot.id,
+        );
+
+        // Modify lot processes
+        lot.processes = lot.processes.map((process: any) => {
+          const matchedProcess = matchingLotProcess.find(
+            (lp: any) => lp.processesId === process.id,
+          );
+          if (matchedProcess) {
+            process['processesDetails'] = matchedProcess;
+          }
+          return {...process};
+        });
+        return {...lot};
+      });
+    }
+    return {...materialWithLots};
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER],
+    },
+  })
+  @post('/orders/{id}/updateLotProcess')
+  async updateLotProcess(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              lotsId: {type: 'number'},
+              processesId: {type: 'number'},
+              processData: {
+                type: 'object',
+                properties: {
+                  timeTaken: {type: 'string', format: 'date-time'},
+                  status: {
+                    type: 'number',
+                  },
+                },
+              },
+            },
+            required: ['lotsId', 'processesId'],
+          },
+        },
+      },
+    })
+    requestData: {
+      lotsId: number;
+      processesId: number;
+      processData: {
+        timeTaken?: string;
+        status?: number;
+      };
+    },
+    @param.path.number('id') orderId: number,
+  ): Promise<any> {
+    const repo = new DefaultTransactionalRepository(Order, this.dataSource);
+    const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
+    try {
+      const {lotsId, processesId, processData} = requestData;
+
+      const updateData: Partial<LotProcesses> = {};
+      updateData.status = processData?.status ? processData.status : 1;
+
+      if (processData?.timeTaken) {
+        updateData.timeTaken = processData.timeTaken;
+        updateData.status = 2;
+      }
+
+      await this.lotProcessesRepository.updateAll(
+        updateData,
+        {
+          lotsId: lotsId,
+          processesId: processesId,
+        },
+        {transaction: tx},
+      );
+      tx.commit();
+      await this.updateOrderAndMaterialStatus(orderId);
+      return Promise.resolve({
+        status: 1,
+        msg: 'Lot process Updated Successfully',
+      });
+    } catch (err) {
+      await tx.rollback();
+      throw err;
+    }
+  }
+
   @del('/orders/{id}')
   @response(204, {
     description: 'Order DELETE success',
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.orderRepository.deleteById(id);
+  }
+
+  async updateOrderAndMaterialStatus(orderId: number): Promise<void> {
+    // Fetch all materials related to the order
+    const order = await this.orderRepository.findById(orderId);
+    const materials = await this.materialRepository.find({
+      where: {orderId},
+      include: [{relation: 'lots'}],
+    });
+
+    let allMaterialsCompleted = true;
+
+    for (const material of materials) {
+      let allLotsCompleted = true;
+      let materialInProgress = false;
+
+      // Fetch all lot IDs for this material
+      const lotIds = material.lots.map(lot => lot.id);
+      if (lotIds.length === 0) continue;
+
+      // Fetch lot processes separately using lotIds from the junction table
+      const lotProcesses: any = await this.lotProcessesRepository.find({
+        where: {lotsId: {inq: lotIds}},
+      });
+
+      // Group lot processes by lotId
+      const lotProcessMap = new Map<number, any[]>();
+      for (const process of lotProcesses) {
+        if (!lotProcessMap.has(process.lotsId)) {
+          lotProcessMap.set(process.lotsId, []);
+        }
+        lotProcessMap.get(process.lotsId)?.push(process);
+      }
+
+      for (const lot of material.lots) {
+        const processes: any = lot.id ? lotProcessMap.get(lot.id) : [];
+        let allProcessesCompleted = true;
+        let lotInProgress = false;
+
+        for (const process of processes) {
+          if (process.status === 1) {
+            lotInProgress = true;
+            allProcessesCompleted = false;
+          } else if (process.status !== 2) {
+            allProcessesCompleted = false;
+          }
+        }
+
+        // Update lot status
+        const lotStatus = lotInProgress ? 1 : allProcessesCompleted ? 2 : 0;
+        await this.lotsRepository.updateById(lot.id, {status: lotStatus});
+
+        if (lotStatus === 1) materialInProgress = true;
+        if (lotStatus !== 2) allLotsCompleted = false;
+      }
+
+      // Update material status
+      const materialStatus = materialInProgress ? 1 : allLotsCompleted ? 2 : 0;
+      await this.materialRepository.updateById(material.id, {
+        status: materialStatus,
+      });
+
+      if (materialStatus !== 2) allMaterialsCompleted = false;
+    }
+
+    // Update order status
+    const orderStatus = allMaterialsCompleted ? 2 : 1;
+    const orderTimeline = order.timeline || [];
+    const statusTimelineMap = {
+      1: {id: 1, title: 'In Process'},
+      2: {id: 2, title: 'Material Ready'},
+    };
+
+    if (orderStatus in statusTimelineMap) {
+      const newEntry = {
+        id: statusTimelineMap[orderStatus].id,
+        title: statusTimelineMap[orderStatus].title,
+        time: new Date().toISOString(),
+      };
+
+      // Check if the entry already exists
+      const isAlreadyPresent = orderTimeline.some(
+        (entry: any) => entry.id === newEntry.id,
+      );
+
+      if (!isAlreadyPresent) {
+        orderTimeline.push(newEntry);
+      }
+    }
+
+    await this.orderRepository.updateById(orderId, {
+      status: orderStatus,
+      timeline: orderTimeline,
+    });
   }
 }

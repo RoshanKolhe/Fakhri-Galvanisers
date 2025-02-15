@@ -64,23 +64,20 @@ export default function OrderDetailsHistory({ history = [], order }) {
         const timelineStep = history && history.find((step) => step.id === status.value);
         const isCompleted = timelineStep !== undefined;
         const isCurrentStep = isCompleted && index === history.length - 1;
-        const isNextStep = index === history.length;
-
+  
         let color = 'grey';
-
+  
         if (isCompleted || isCurrentStep) {
           color = 'success';
-        } else if (isNextStep) {
-          color = 'warning';
-        }
-
+        } 
+  
         return (
           <TimelineItem key={status.value}>
             <TimelineSeparator>
               <TimelineDot color={color} />
               {index !== ORDER_STATUS_OPTIONS.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
-
+  
             <TimelineContent>
               <Typography variant="subtitle2" fontWeight={isCurrentStep ? 'bold' : 'normal'}>
                 {status.label}
@@ -94,6 +91,7 @@ export default function OrderDetailsHistory({ history = [], order }) {
       })}
     </Timeline>
   );
+  
 
   return (
     <Card>

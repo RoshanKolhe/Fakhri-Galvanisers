@@ -38,9 +38,7 @@ export default function OrderLotProcessModal({
   console.log(jobCardLots);
   const { enqueueSnackbar } = useSnackbar();
   const [lots, setLots] = useState([]);
-  console.log(lots);
   const [times, setTimes] = useState([]);
-  console.log(times);
   const [selectedRows, setSelectedRows] = useState([]);
   const [bulkTime, setBulkTime] = useState(null);
   const [errors, setErrors] = useState({});
@@ -257,7 +255,7 @@ export default function OrderLotProcessModal({
               borderRadius: '5px',
             }}
           >
-            <Grid item xs={3}>
+            <Grid item xs={4} sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body1">Apply Bulk Time:</Typography>
             </Grid>
             <Grid item xs={4}>
@@ -269,7 +267,7 @@ export default function OrderLotProcessModal({
                 renderInput={(params) => <TextField {...params} />}
               />
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={4} sx={{ display: 'flex', alignItems: 'center' }}>
               <Button variant="contained" color="primary" onClick={applyBulkTime}>
                 Apply to Selected
               </Button>
