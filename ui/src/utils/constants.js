@@ -407,3 +407,10 @@ export const _roles = ['Admin', 'Worker', 'Qc Admin'];
 
 export const formatRFQId = (rfqId) => `RFQ${rfqId.toString().padStart(4, '0')}`;
 export const formatChallanId = (challanId) => `CHLN${challanId.toString().padStart(4, '0')}`;
+export const formatTime = (isoString) => {
+  const date = new Date(isoString);
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};

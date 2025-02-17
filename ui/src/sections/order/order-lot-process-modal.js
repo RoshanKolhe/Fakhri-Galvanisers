@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-plusplus */
 import { useState, useEffect } from 'react';
@@ -16,10 +17,12 @@ import {
   Checkbox,
   Button,
   TextField,
+  Stack,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
+import { formatTime } from 'src/utils/constants';
 
 export default function OrderLotProcessModal({
   open,
@@ -39,6 +42,8 @@ export default function OrderLotProcessModal({
   const { enqueueSnackbar } = useSnackbar();
   const [lots, setLots] = useState([]);
   const [times, setTimes] = useState([]);
+  console.log('times', times);
+
   const [selectedRows, setSelectedRows] = useState([]);
   const [bulkTime, setBulkTime] = useState(null);
   const [errors, setErrors] = useState({});
@@ -57,14 +62,20 @@ export default function OrderLotProcessModal({
         const newLots = foundMaterial.lots.map((lot) => ({
           lotNumber: lot.lotNumber,
           quantity: lot.quantity,
-          processes: lot.processes || [], // Assuming processes can be an empty array if not available
+          processes: lot.processes || [],
+          status: lot.status,
         }));
 
         setLots(newLots);
         // Assuming `processes` array should be initialized in the `times` state
         const newTimes = foundMaterial.lots.map((lot) =>
-          lot.processes.map((process) => new Date(process.duration))
+          lot.processes.map((process) => ({
+            duration: new Date(process.duration),
+            status: process.status,
+            timeTaken: new Date(process.timeTaken),
+          }))
         );
+
         setTimes(newTimes);
       } else {
         console.log('here');
@@ -95,7 +106,7 @@ export default function OrderLotProcessModal({
   const handleTimeChange = (lotIndex, processIndex, newTime) => {
     const updatedTimes = [...times];
     updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
-    updatedTimes[lotIndex][processIndex] = newTime;
+    updatedTimes[lotIndex][processIndex].duration = newTime;
     setTimes(updatedTimes);
 
     // Clear error if a valid time is set
@@ -118,9 +129,13 @@ export default function OrderLotProcessModal({
 
   const toggleSelectAll = () => {
     if (selectedRows.length === lots.length) {
-      setSelectedRows([]); // Unselect all
+      setSelectedRows([]);
     } else {
-      setSelectedRows(lots.map((_, index) => index)); // Select all
+      const filteredIndexes = lots
+        .map((lot, index) => (lot.processes.some((process) => process.status !== 2) ? index : null))
+        .filter((index) => index !== null);
+
+      setSelectedRows(filteredIndexes);
     }
   };
   const applyBulkTime = () => {
@@ -164,18 +179,20 @@ export default function OrderLotProcessModal({
       });
       return;
     }
-    console.log(lotsTotalQuantity);
     const submissionData = lots.map((lot, index) => ({
       lotNumber: lot.lotNumber,
       quantity: lot.quantity,
+      status: lot.status,
       processes:
-        times[index]?.map((time, processIndex) => ({
+        times[index]?.map((process, processIndex) => ({
           processId: processes[processIndex].id,
-          duration: time,
+          duration: process.duration,
+          timeTaken: process?.timeTaken ? process.timeTaken : null,
+          status: process?.status ? process.status : 0,
         })) || [],
     }));
-
-    // Check if materialId already exists in jobCardLots
+    console.log('submissionData', submissionData);
+    // Check if materialId; already exists in jobCardLots
     const existingJobCardLotIndex = jobCardLots.findIndex((lot) => lot.materialId === materialId);
 
     if (existingJobCardLotIndex >= 0) {
@@ -192,6 +209,24 @@ export default function OrderLotProcessModal({
     }
 
     onClose();
+  };
+  console.log('processes', processes);
+
+  const getFontColor = (process) => {
+    if (!process?.duration || !process?.timeTaken) {
+      return 'gray'; // Default color if values are missing
+    }
+
+    const durationTime = new Date(process.duration).getMinutes();
+    const timeTakenTime = new Date(process.timeTaken).getMinutes();
+
+    if (timeTakenTime > durationTime) {
+      return 'red'; // Time taken is greater than duration
+    }
+    if (timeTakenTime < durationTime) {
+      return 'yellow'; // Time taken is less than duration
+    }
+    return 'green'; // Time taken is equal to duration
   };
 
   return (
@@ -300,25 +335,65 @@ export default function OrderLotProcessModal({
                     <Checkbox
                       checked={selectedRows.includes(lotIndex)}
                       onChange={() => handleRowSelect(lotIndex)}
+                      disabled={lot.status !== 0}
                     />
                   </TableCell>
                   <TableCell>{`Lot${lot.lotNumber}`}</TableCell>
                   {processes.map((process, processIndex) => (
                     <TableCell key={processIndex}>
-                      <TimePicker
-                        value={times[lotIndex]?.[processIndex] || null}
-                        onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
-                        views={['minutes', 'seconds']}
-                        format="mm:ss"
-                        renderInput={(params) => <TextField {...params} />}
-                        slotProps={{
-                          textField: {
-                            error: Boolean(errors?.[lotIndex]?.[processIndex]),
-                            helperText: errors?.[lotIndex]?.[processIndex] || '',
-                          },
-                        }}
-                        sx={{ minWidth: '140px' }}
-                      />
+                      {times[lotIndex]?.[processIndex].status === 1 ? (
+                        <TimePicker
+                          value={times[lotIndex]?.[processIndex].duration || null}
+                          onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
+                          views={['minutes', 'seconds']}
+                          format="mm:ss"
+                          renderInput={(params) => <TextField {...params} />}
+                          slotProps={{
+                            textField: {
+                              error: Boolean(errors?.[lotIndex]?.[processIndex]),
+                              helperText: errors?.[lotIndex]?.[processIndex] || '',
+                            },
+                          }}
+                          sx={{ minWidth: '140px' }}
+                        />
+                      ) : times[lotIndex]?.[processIndex].status === 2 ? (
+                        <Stack direction="column" spacing={1}>
+                          {/* Duration Time */}
+                          <Typography variant="body2" color="textSecondary">
+                            Duration:{' '}
+                            <strong>{formatTime(times[lotIndex]?.[processIndex]?.duration)}</strong>
+                          </Typography>
+
+                          {/* Time Taken with Dynamic Color */}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: getFontColor(times[lotIndex]?.[processIndex]),
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            Time Taken:{' '}
+                            <strong>
+                              {formatTime(times[lotIndex]?.[processIndex]?.timeTaken)}
+                            </strong>
+                          </Typography>
+                        </Stack>
+                      ) : (
+                        <TimePicker
+                          value={times[lotIndex]?.[processIndex].duration || null}
+                          onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
+                          views={['minutes', 'seconds']}
+                          format="mm:ss"
+                          renderInput={(params) => <TextField {...params} />}
+                          slotProps={{
+                            textField: {
+                              error: Boolean(errors?.[lotIndex]?.[processIndex]),
+                              helperText: errors?.[lotIndex]?.[processIndex] || '',
+                            },
+                          }}
+                          sx={{ minWidth: '140px' }}
+                        />
+                      )}
                     </TableCell>
                   ))}
                   <TableCell>
@@ -326,6 +401,7 @@ export default function OrderLotProcessModal({
                       type="number"
                       value={lot.quantity}
                       onChange={(e) => handleQuantityChange(lotIndex, e.target.value)}
+                      disabled={lot.status !== 0}
                     />
                   </TableCell>
                 </TableRow>

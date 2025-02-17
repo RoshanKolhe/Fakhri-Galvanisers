@@ -129,7 +129,7 @@ export default function OrderMaterialForm({ currentOrder }) {
     control,
     name: 'materials',
   });
-
+  console.log(fields);
   const values = watch();
 
   const onSubmit = handleSubmit(async (formData) => {
@@ -304,6 +304,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                   name={`materials[${index}].noOfLots`}
                   label="No Of Lots"
                   fullWidth
+                  disabled={item.status !== 0}
                 />
 
                 {/** Job Card Button outside the TextField */}
@@ -405,6 +406,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                     />
                   ))
                 }
+                disabled={item.status !== 0}
               />
             </Grid>
             <Grid item xs={12}>
@@ -431,6 +433,7 @@ export default function OrderMaterialForm({ currentOrder }) {
           material.lots?.map((lot) => ({
             lotNumber: lot.lotNumber,
             quantity: lot.quantity,
+            status: lot.status,
             processes: lot.processes.map((process) => ({
               processId: process.id,
               duration: process.processesDetails.duration,
