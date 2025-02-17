@@ -756,7 +756,7 @@ export class OrderController {
       }
 
       // Update material status
-      const materialStatus = materialInProgress ? 1 : allLotsCompleted ? 2 : 0;
+      const materialStatus = materialInProgress ? 1 : allLotsCompleted ? 2 : 1;
       await this.materialRepository.updateById(material.id, {
         status: materialStatus,
       });

@@ -355,6 +355,7 @@ export default function OrderLotProcessModal({
                             },
                           }}
                           sx={{ minWidth: '140px' }}
+                          disabled
                         />
                       ) : times[lotIndex]?.[processIndex].status === 2 ? (
                         <Stack direction="column" spacing={1}>

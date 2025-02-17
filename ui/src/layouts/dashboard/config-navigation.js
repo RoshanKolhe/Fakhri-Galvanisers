@@ -155,9 +155,9 @@ export function useNavData() {
             ],
           },
 
-          // ORDER
+          // QC REPORT
           {
-            title: t('qcReport'),
+            title: t('qc Report'),
             path: paths.dashboard.qcReport.root,
             icon: ICONS.qcReport,
             roles: ['super_admin'],
