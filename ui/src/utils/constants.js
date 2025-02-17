@@ -397,6 +397,11 @@ export const ORDER_STATUS_OPTIONS = [
   { value: 4, label: 'Ready To dispatch' },
 ];
 
+export const QCREPORT_STATUS_OPTIONS = [
+  { value: 0, label: 'Pending' },
+  { value: 1, label: 'Completed' },
+];
+
 export const MATERIAL_STATUS_OPTIONS = [
   { value: 0, label: 'Pending' },
   { value: 1, label: 'In Process' },
@@ -407,6 +412,7 @@ export const _roles = ['Admin', 'Worker', 'Qc Admin'];
 
 export const formatRFQId = (rfqId) => `RFQ${rfqId.toString().padStart(4, '0')}`;
 export const formatChallanId = (challanId) => `CHLN${challanId.toString().padStart(4, '0')}`;
+export const formatQcReportId = (rfqId) => `QCR${rfqId.toString().padStart(4, '0')}`;
 export const formatTime = (isoString) => {
   const date = new Date(isoString);
   const minutes = date.getMinutes();

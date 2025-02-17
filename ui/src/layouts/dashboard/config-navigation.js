@@ -33,6 +33,7 @@ const ICONS = {
   lock: icon('ic_lock'),
   tour: icon('ic_tour'),
   order: icon('ic_order'),
+  qcReport: icon('ic_qcReport'),
   label: icon('ic_label'),
   blank: icon('ic_blank'),
   kanban: icon('ic_kanban'),
@@ -150,7 +151,18 @@ export function useNavData() {
             icon: ICONS.order,
             roles: ['super_admin'],
             children: [
-              { title: t('list'), path: paths.dashboard.order.root, roles: ['super_admin'] }, 
+              { title: t('list'), path: paths.dashboard.order.root, roles: ['super_admin'] },
+            ],
+          },
+
+          // ORDER
+          {
+            title: t('qcReport'),
+            path: paths.dashboard.qcReport.root,
+            icon: ICONS.qcReport,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.qcReport.root, roles: ['super_admin'] },
             ],
           },
         ],

@@ -133,14 +133,14 @@ export const paths = {
       view: (id) => `${ROOTS.DASHBOARD}/challan/${id}/view`,
     },
 
-
-
     order: {
       root: `${ROOTS.DASHBOARD}/order`,
       details: (id) => `${ROOTS.DASHBOARD}/order/${id}`,
-      demo: {
-        details: `${ROOTS.DASHBOARD}/order/${MOCK_ID}`,
-      },
+    },
+    qcReport: {
+      root: `${ROOTS.DASHBOARD}/qcReport`,
+      edit: (id) => `${ROOTS.DASHBOARD}/qcReport/${id}/edit`,
+      view: (id) => `${ROOTS.DASHBOARD}/qcReport/${id}/view`,
     },
     job: {
       root: `${ROOTS.DASHBOARD}/job`,

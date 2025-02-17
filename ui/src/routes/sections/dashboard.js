@@ -56,6 +56,11 @@ const ChallanViewPage = lazy(() => import('src/pages/dashboard/challan/view'));
 const OrderListPage = lazy(() => import('src/pages/dashboard/order/list'));
 const OrderDetailsPage = lazy(() => import('src/pages/dashboard/order/details'));
 
+// QCREPORT
+const QcReportListPage = lazy(() => import('src/pages/dashboard/qcReport/list'));
+const QcReportEditPage = lazy(() => import('src/pages/dashboard/qcReport/edit'));
+const QcReportViewPage = lazy(() => import('src/pages/dashboard/qcReport/view'));
+
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 
@@ -153,6 +158,16 @@ export const dashboardRoutes = [
           { element: <OrderListPage />, index: true },
           { path: 'list', element: <OrderListPage /> },
           { path: ':id', element: <OrderDetailsPage /> },
+        ],
+      },
+
+      {
+        path: 'qcReport',
+        children: [
+          { element: <QcReportListPage />, index: true },
+          { path: 'list', element: <QcReportListPage /> },
+          { path: ':id/edit', element: <QcReportEditPage /> },
+          { path: ':id/view', element: <QcReportViewPage /> },
         ],
       },
 

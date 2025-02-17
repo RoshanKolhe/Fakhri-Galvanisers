@@ -16,9 +16,10 @@ import {
   del,
   requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
-import {QcReport} from '../models';
-import {QcReportRepository} from '../repositories';
+import {QcReport, QcTest} from '../models';
+import {QcReportRepository, QcTestRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 
@@ -26,6 +27,8 @@ export class QcReportController {
   constructor(
     @repository(QcReportRepository)
     public qcReportRepository: QcReportRepository,
+    @repository(QcTestRepository)
+    public qcTestRepository: QcTestRepository,
   ) {}
 
   @authenticate({
@@ -57,6 +60,49 @@ export class QcReportController {
 
   @authenticate({
     strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER],
+    },
+  })
+  @post('/qc-reports/{id}/create-tests')
+  @response(200, {
+    description: 'QcReport model instance',
+    content: {'application/json': {schema: getModelSchemaRef(QcReport)}},
+  })
+  async createQCTests(
+    @param.path.number('id') qcReportId: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'array',
+            items: getModelSchemaRef(QcTest, {
+              title: 'NewQcTestReport',
+              exclude: ['id'],
+            }),
+          },
+        },
+      },
+    })
+    qcTests: Omit<QcTest, 'id'>[],
+  ): Promise<QcTest[]> {
+    // Check if the QC Report exists
+    const qcReport = await this.qcReportRepository.findById(qcReportId);
+    if (!qcReport) {
+      throw new HttpErrors.BadRequest('Qc Report does not exist');
+    }
+
+    // Delete existing QcTests for the given QcReportId
+    await this.qcTestRepository.deleteAll({qcReportId});
+
+    // Create new QC Tests
+    return this.qcTestRepository.createAll(
+      qcTests.map(test => ({...test, qcReportId})),
+    );
+  }
+
+  @authenticate({
+    strategy: 'jwt',
   })
   @get('/qc-reports')
   @response(200, {
@@ -73,7 +119,20 @@ export class QcReportController {
   async find(
     @param.filter(QcReport) filter?: Filter<QcReport>,
   ): Promise<QcReport[]> {
-    return this.qcReportRepository.find(filter);
+    return this.qcReportRepository.find({
+      ...filter,
+      include: [
+        {
+          relation: 'order',
+          scope: {
+            include: ['customer'],
+          },
+        },
+        {relation: 'material'},
+        {relation: 'lots'},
+        {relation: 'qcTests'},
+      ],
+    });
   }
 
   @authenticate({
@@ -93,7 +152,20 @@ export class QcReportController {
     @param.filter(QcReport, {exclude: 'where'})
     filter?: FilterExcludingWhere<QcReport>,
   ): Promise<QcReport> {
-    return this.qcReportRepository.findById(id, filter);
+    return this.qcReportRepository.findById(id, {
+      ...filter,
+      include: [
+        {
+          relation: 'order',
+          scope: {
+            include: ['customer'],
+          },
+        },
+        {relation: 'material'},
+        {relation: 'lots'},
+        {relation: 'qcTests'},
+      ],
+    });
   }
 
   @authenticate({
