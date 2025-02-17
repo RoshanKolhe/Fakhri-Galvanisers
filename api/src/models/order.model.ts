@@ -8,6 +8,7 @@ import {
 import {Challan} from './challan.model';
 import {Material} from './material.model';
 import {Customer} from './customer.model';
+import {QcReport} from './qc-report.model';
 
 @model()
 export class Order extends Entity {
@@ -135,6 +136,9 @@ export class Order extends Entity {
 
   @belongsTo(() => Customer)
   customerId: number;
+
+  @hasMany(() => QcReport)
+  qcReports: QcReport[];
 
   constructor(data?: Partial<Order>) {
     super(data);

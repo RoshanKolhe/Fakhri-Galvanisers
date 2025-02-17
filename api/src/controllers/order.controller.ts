@@ -20,7 +20,7 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {LotProcesses, Material, Order} from '../models';
+import {LotProcesses, Material, Order, QcReport} from '../models';
 import {
   ChallanRepository,
   LotProcessesRepository,
@@ -28,6 +28,7 @@ import {
   MaterialRepository,
   MaterialUserRepository,
   OrderRepository,
+  QcReportRepository,
 } from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
@@ -51,6 +52,8 @@ export class OrderController {
     public lotsRepository: LotsRepository,
     @repository(LotProcessesRepository)
     public lotProcessesRepository: LotProcessesRepository,
+    @repository(QcReportRepository)
+    public qcReportRepository: QcReportRepository,
   ) {}
 
   @authenticate({
@@ -731,6 +734,22 @@ export class OrderController {
         // Update lot status
         const lotStatus = lotInProgress ? 1 : allProcessesCompleted ? 2 : 0;
         await this.lotsRepository.updateById(lot.id, {status: lotStatus});
+        if (allProcessesCompleted) {
+          const alreadyPresent = await this.qcReportRepository.findOne({
+            where: {
+              lotsId: lot.id,
+            },
+          });
+          if (!alreadyPresent) {
+            const inputData: Partial<QcReport> = {
+              orderId: orderId,
+              materialId: material.id,
+              lotsId: lot.id,
+              status: 0,
+            };
+            await this.qcReportRepository.create(inputData);
+          }
+        }
 
         if (lotStatus === 1) materialInProgress = true;
         if (lotStatus !== 2) allLotsCompleted = false;

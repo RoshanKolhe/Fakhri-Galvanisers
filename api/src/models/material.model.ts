@@ -5,6 +5,7 @@ import {MaterialUser} from './material-user.model';
 import {Processes} from './processes.model';
 import {MaterialProcess} from './material-process.model';
 import {Lots} from './lots.model';
+import {QcReport} from './qc-report.model';
 
 @model()
 export class Material extends Entity {
@@ -128,6 +129,9 @@ export class Material extends Entity {
 
   @hasMany(() => Lots)
   lots: Lots[];
+
+  @hasMany(() => QcReport)
+  qcReports: QcReport[];
 
   constructor(data?: Partial<Material>) {
     super(data);

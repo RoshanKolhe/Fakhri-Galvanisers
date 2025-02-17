@@ -1,6 +1,7 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
 import {Processes} from './processes.model';
 import {LotProcesses} from './lot-processes.model';
+import {QcReport} from './qc-report.model';
 
 @model()
 export class Lots extends Entity {
@@ -62,6 +63,9 @@ export class Lots extends Entity {
 
   @hasMany(() => Processes, {through: {model: () => LotProcesses}})
   processes: Processes[];
+
+  @hasMany(() => QcReport)
+  qcReports: QcReport[];
 
   constructor(data?: Partial<Lots>) {
     super(data);

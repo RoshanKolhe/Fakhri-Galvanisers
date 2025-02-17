@@ -22,6 +22,7 @@ export async function migrate(args: string[]) {
       'MaterialProcess',
       'Lots',
       'LotProcesses',
+      'QcReport',
     ],
   });
 
