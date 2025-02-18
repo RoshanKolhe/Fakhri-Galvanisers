@@ -19,12 +19,7 @@ export default function InvoiceNewEditStatusDate() {
       direction={{ xs: 'column', sm: 'row' }}
       sx={{ p: 3, bgcolor: 'background.neutral' }}
     >
-      <RHFTextField
-        disabled
-        name="invoiceNumber"
-        label="Invoice number"
-        value={values.invoiceNumber}
-      />
+      <RHFTextField disabled name="performaId" label="Performa Id" value={values.performaId} />
 
       <RHFSelect
         fullWidth
@@ -32,16 +27,21 @@ export default function InvoiceNewEditStatusDate() {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
+        disabled
       >
-        {['paid', 'pending', 'overdue', 'draft'].map((option) => (
+        {[1, 0, 2, 3, 4].map((option) => (
           <MenuItem key={option} value={option}>
-            {option}
+            {(option === 0 && 'Pending') ||
+              (option === 1 && 'Paid') ||
+              (option === 2 && 'Overdue') ||
+              (option === 3 && 'Pending Approval') ||
+              (option === 4 && 'Request Reupload')}
           </MenuItem>
         ))}
       </RHFSelect>
 
       <Controller
-        name="createDate"
+        name="createdAt"
         control={control}
         render={({ field, fieldState: { error } }) => (
           <DatePicker
@@ -57,6 +57,7 @@ export default function InvoiceNewEditStatusDate() {
                 helperText: error?.message,
               },
             }}
+            disabled
           />
         )}
       />
@@ -71,6 +72,7 @@ export default function InvoiceNewEditStatusDate() {
             onChange={(newValue) => {
               field.onChange(newValue);
             }}
+            minDate={new Date()}
             slotProps={{
               textField: {
                 fullWidth: true,

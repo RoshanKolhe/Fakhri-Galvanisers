@@ -36,9 +36,9 @@ export class Material extends Entity {
 
   @property({
     type: 'number',
-    required: true,
+    required: false,
   })
-  noOfLots: number;
+  noOfLots?: number;
 
   @property({
     type: 'number',

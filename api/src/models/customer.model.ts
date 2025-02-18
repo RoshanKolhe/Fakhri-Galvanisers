@@ -7,6 +7,8 @@ import {
 } from '@loopback/repository';
 import {Quotation} from './quotation.model';
 import {Order} from './order.model';
+import {Challan} from './challan.model';
+import {Payment} from './payment.model';
 
 @model()
 export class Customer extends Entity {
@@ -156,6 +158,12 @@ export class Customer extends Entity {
 
   @hasMany(() => Order)
   orders: Order[];
+
+  @hasMany(() => Challan)
+  challans: Challan[];
+
+  @hasMany(() => Payment)
+  payments: Payment[];
 
   constructor(data?: Partial<Customer>) {
     super(data);

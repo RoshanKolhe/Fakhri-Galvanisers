@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Page, View, Text, Image, Document, Font, StyleSheet } from '@react-pdf/renderer';
 // utils
 import { fDate } from 'src/utils/format-time';
@@ -85,58 +85,92 @@ const useStyles = () =>
 // ----------------------------------------------------------------------
 
 export default function InvoicePDF({ invoice, currentStatus }) {
-  const {
-    items,
-    taxes,
-    dueDate,
-    discount,
-    shipping,
-    invoiceTo,
-    createDate,
-    totalAmount,
-    invoiceFrom,
-    invoiceNumber,
-    subTotal,
-  } = invoice;
-
   const styles = useStyles();
+
+  const [invoiceDetails, setInvoiceDetails] = useState();
+  const [totals, setTotals] = useState({
+    subtotal: 0,
+    totalTax: 0,
+    grandTotal: 0,
+  });
+
+  const calculateTotals = (allMaterials) => {
+    let subtotal = 0;
+    let totalTax = 0;
+    let grandTotal = 0;
+
+    allMaterials.forEach((material) => {
+      const pricePerUnit = parseFloat(material?.pricePerUnit) || 0;
+      const quantity = parseFloat(material?.quantity) || 0;
+      const tax = parseFloat(material?.tax) || 0;
+      if (pricePerUnit && quantity) {
+        const totalPrice = pricePerUnit * quantity;
+        const taxAmount = (totalPrice * tax) / 100;
+
+        subtotal += totalPrice;
+        totalTax += taxAmount;
+        grandTotal += totalPrice + taxAmount;
+      }
+    });
+
+    return {
+      subtotal: subtotal.toFixed(2),
+      totalTax: totalTax.toFixed(2),
+      grandTotal: grandTotal.toFixed(2),
+    };
+  };
+  useEffect(() => {
+    if (invoice) {
+      setInvoiceDetails(invoice);
+      const invoiceTotals = calculateTotals(invoice?.order?.challan?.materials);
+      setTotals(invoiceTotals);
+    }
+  }, [invoice]);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={[styles.gridContainer, styles.mb40]}>
-          <Image source="/logo/logo_single.png" style={{ width: 48, height: 48 }} />
+          <Image source="/logo/hylite_logo.png" style={{ width: 60, height: 60 }} />
 
           <View style={{ alignItems: 'flex-end', flexDirection: 'column' }}>
-            <Text style={styles.h3}>{currentStatus}</Text>
-            <Text> {invoiceNumber} </Text>
+            <Text style={styles.h3}>
+              {(currentStatus === 0 && 'Pending') ||
+                (currentStatus === 1 && 'Paid') ||
+                (currentStatus === 2 && 'Overdue') ||
+                (currentStatus === 3 && 'Pending Approval') ||
+                (currentStatus === 4 && 'Request Reupload')}
+            </Text>
+            <Text> {invoiceDetails?.performaId} </Text>
           </View>
         </View>
 
         <View style={[styles.gridContainer, styles.mb40]}>
           <View style={styles.col6}>
             <Text style={[styles.subtitle2, styles.mb4]}>Invoice from</Text>
-            <Text style={styles.body2}>{invoiceFrom.name}</Text>
-            <Text style={styles.body2}>{invoiceFrom.fullAddress}</Text>
-            <Text style={styles.body2}>{invoiceFrom.phoneNumber}</Text>
+            <Text style={styles.body2}>Hylite</Text>
+            <Text style={styles.body2}>
+              A/129, T.T.C. MIDC Indl.Area, Khairane Fire Brigade Lane Pawane, Navi Mumbai, India.
+            </Text>
+            <Text style={styles.body2}>7253000111</Text>
           </View>
 
           <View style={styles.col6}>
             <Text style={[styles.subtitle2, styles.mb4]}>Invoice to</Text>
-            <Text style={styles.body2}>{invoiceTo.name}</Text>
-            <Text style={styles.body2}>{invoiceTo.fullAddress}</Text>
-            <Text style={styles.body2}>{invoiceTo.phoneNumber}</Text>
+            <Text style={styles.body2}>{invoiceDetails?.customer?.firstName}</Text>
+            <Text style={styles.body2}>{invoiceDetails?.customer?.fullAddress}</Text>
+            <Text style={styles.body2}>{invoiceDetails?.customer?.phoneNumber}</Text>
           </View>
         </View>
 
         <View style={[styles.gridContainer, styles.mb40]}>
           <View style={styles.col6}>
             <Text style={[styles.subtitle2, styles.mb4]}>Date create</Text>
-            <Text style={styles.body2}>{fDate(createDate)}</Text>
+            <Text style={styles.body2}>{fDate(invoiceDetails?.createdAt)}</Text>
           </View>
           <View style={styles.col6}>
             <Text style={[styles.subtitle2, styles.mb4]}>Due date</Text>
-            <Text style={styles.body2}>{fDate(dueDate)}</Text>
+            <Text style={styles.body2}>{fDate(invoiceDetails?.dueDate)}</Text>
           </View>
         </View>
 
@@ -158,25 +192,29 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={styles.tableCell_3}>
+                <Text style={styles.subtitle2}>Tax</Text>
+              </View>
+
+              <View style={styles.tableCell_3}>
                 <Text style={styles.subtitle2}>Unit price</Text>
               </View>
 
-              <View style={[styles.tableCell_3, styles.alignRight]}>
+              <View style={styles.tableCell_3}>
                 <Text style={styles.subtitle2}>Total</Text>
               </View>
             </View>
           </View>
 
           <View>
-            {items.map((item, index) => (
+            {invoiceDetails?.order?.challan?.materials?.map((item, index) => (
               <View style={styles.tableRow} key={item.id}>
                 <View style={styles.tableCell_1}>
                   <Text>{index + 1}</Text>
                 </View>
 
                 <View style={styles.tableCell_2}>
-                  <Text style={styles.subtitle2}>{item.title}</Text>
-                  <Text>{item.description}</Text>
+                  <Text style={styles.subtitle2}>{item.materialType}</Text>
+                  <Text>{item.hsnNo.hsnCode}</Text>
                 </View>
 
                 <View style={styles.tableCell_3}>
@@ -184,11 +222,15 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 </View>
 
                 <View style={styles.tableCell_3}>
-                  <Text>{item.price}</Text>
+                  <Text>{item.tax}</Text>
                 </View>
 
-                <View style={[styles.tableCell_3, styles.alignRight]}>
-                  <Text>{fCurrency(item.price * item.quantity)}</Text>
+                <View style={styles.tableCell_3}>
+                  <Text>{item.pricePerUnit}</Text>
+                </View>
+
+                <View style={styles.tableCell_3}>
+                  <Text>{item.priceAfterTax}</Text>
                 </View>
               </View>
             ))}
@@ -201,31 +243,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text>Subtotal</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text>{fCurrency(subTotal)}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.tableRow, styles.noBorder]}>
-              <View style={styles.tableCell_1} />
-              <View style={styles.tableCell_2} />
-              <View style={styles.tableCell_3} />
-              <View style={styles.tableCell_3}>
-                <Text>Shipping</Text>
-              </View>
-              <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text>{fCurrency(-shipping)}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.tableRow, styles.noBorder]}>
-              <View style={styles.tableCell_1} />
-              <View style={styles.tableCell_2} />
-              <View style={styles.tableCell_3} />
-              <View style={styles.tableCell_3}>
-                <Text>Discount</Text>
-              </View>
-              <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text>{fCurrency(-discount)}</Text>
+                <Text>{fCurrency(totals.subtotal)}</Text>
               </View>
             </View>
 
@@ -237,7 +255,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text>Taxes</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text>{fCurrency(taxes)}</Text>
+                <Text>{fCurrency(totals.totalTax)}</Text>
               </View>
             </View>
 
@@ -249,7 +267,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text style={styles.h4}>{fCurrency(totalAmount)}</Text>
+                <Text style={styles.h4}>{fCurrency(totals.grandTotal)}</Text>
               </View>
             </View>
           </View>
@@ -258,13 +276,11 @@ export default function InvoicePDF({ invoice, currentStatus }) {
         <View style={[styles.gridContainer, styles.footer]} fixed>
           <View style={styles.col8}>
             <Text style={styles.subtitle2}>NOTES</Text>
-            <Text>
-              We appreciate your business. Should you need us to add VAT or extra notes let us know!
-            </Text>
+            <Text>We appreciate your business. Should you need any help please contact admin!</Text>
           </View>
           <View style={[styles.col4, styles.alignRight]}>
             <Text style={styles.subtitle2}>Have a Question?</Text>
-            <Text>support@abcapp.com</Text>
+            <Text>smarketing@hylite.co.in</Text>
           </View>
         </View>
       </Page>
@@ -273,6 +289,6 @@ export default function InvoicePDF({ invoice, currentStatus }) {
 }
 
 InvoicePDF.propTypes = {
-  currentStatus: PropTypes.string,
+  currentStatus: PropTypes.number,
   invoice: PropTypes.object,
 };

@@ -10,6 +10,7 @@ import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Paper from '@mui/material/Paper';
+import Label from 'src/components/label';
 import Stack from '@mui/material/Stack';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
@@ -64,20 +65,20 @@ export default function OrderDetailsHistory({ history = [], order }) {
         const timelineStep = history && history.find((step) => step.id === status.value);
         const isCompleted = timelineStep !== undefined;
         const isCurrentStep = isCompleted && index === history.length - 1;
-  
+
         let color = 'grey';
-  
+
         if (isCompleted || isCurrentStep) {
           color = 'success';
-        } 
-  
+        }
+
         return (
           <TimelineItem key={status.value}>
             <TimelineSeparator>
               <TimelineDot color={color} />
               {index !== ORDER_STATUS_OPTIONS.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
-  
+
             <TimelineContent>
               <Typography variant="subtitle2" fontWeight={isCurrentStep ? 'bold' : 'normal'}>
                 {status.label}
@@ -91,11 +92,17 @@ export default function OrderDetailsHistory({ history = [], order }) {
       })}
     </Timeline>
   );
-  
 
   return (
     <Card>
-      <CardHeader title="Status" />
+      <CardHeader
+        title="Status"
+        action={
+          <Label color={order?.isPaid ? 'success' : 'error'} variant="soft">
+            {order?.isPaid ? 'Paid' : 'Unpaid'}
+          </Label>
+        }
+      />
       <Stack
         spacing={3}
         alignItems={{ md: 'flex-start' }}

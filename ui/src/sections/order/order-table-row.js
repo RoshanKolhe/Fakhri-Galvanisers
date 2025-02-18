@@ -63,7 +63,7 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
 
         <ListItemText
           primary={`${customer?.firstName} ${customer?.lastName ? customer?.lastName : ''}`}
-          secondary={customer.email}
+          secondary={customer?.email}
           primaryTypographyProps={{ typography: 'body2' }}
           secondaryTypographyProps={{ component: 'span', color: 'text.disabled' }}
         />

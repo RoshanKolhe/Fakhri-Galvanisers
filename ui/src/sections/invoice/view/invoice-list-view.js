@@ -1,5 +1,5 @@
 import sumBy from 'lodash/sumBy';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, Fragment } from 'react';
 // @mui
 import { useTheme, alpha } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
@@ -22,8 +22,6 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 // utils
 import { fTimestamp } from 'src/utils/format-time';
-// _mock
-import { _invoices, INVOICE_SERVICE_OPTIONS } from 'src/_mock';
 // components
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -42,6 +40,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetPayments } from 'src/api/invoice';
 import InvoiceAnalytic from '../invoice-analytic';
 import InvoiceTableRow from '../invoice-table-row';
 import InvoiceTableToolbar from '../invoice-table-toolbar';
@@ -50,11 +49,10 @@ import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Customer' },
-  { id: 'createDate', label: 'Create' },
+  { id: 'performaId', label: 'Customer' },
+  { id: 'createdAt', label: 'Create' },
   { id: 'dueDate', label: 'Due' },
-  { id: 'price', label: 'Amount' },
-  { id: 'sent', label: 'Sent', align: 'center' },
+  { id: 'totalAmount', label: 'Amount' },
   { id: 'status', label: 'Status' },
   { id: '' },
 ];
@@ -76,13 +74,15 @@ export default function InvoiceListView() {
 
   const router = useRouter();
 
-  const table = useTable({ defaultOrderBy: 'createDate' });
+  const table = useTable({ defaultOrderBy: 'createdAt' });
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(_invoices);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
+
+  const { payments, paymentsLoading, paymentsEmpty, refreshPayments } = useGetPayments();
 
   const dateError =
     filters.startDate && filters.endDate
@@ -123,10 +123,11 @@ export default function InvoiceListView() {
 
   const TABS = [
     { value: 'all', label: 'All', color: 'default', count: tableData.length },
-    { value: 'paid', label: 'Paid', color: 'success', count: getInvoiceLength('paid') },
-    { value: 'pending', label: 'Pending', color: 'warning', count: getInvoiceLength('pending') },
-    { value: 'overdue', label: 'Overdue', color: 'error', count: getInvoiceLength('overdue') },
-    { value: 'draft', label: 'Draft', color: 'default', count: getInvoiceLength('draft') },
+    { value: 1, label: 'Paid', color: 'success', count: getInvoiceLength(1) },
+    { value: 0, label: 'Pending', color: 'warning', count: getInvoiceLength(0) },
+    { value: 2, label: 'Overdue', color: 'error', count: getInvoiceLength(2) },
+    { value: 3, label: 'Pending Approval', color: 'info', count: getInvoiceLength(3) },
+    { value: 4, label: 'Request Reupload', color: 'secondary', count: getInvoiceLength(4) },
   ];
 
   const handleFilters = useCallback(
@@ -186,6 +187,12 @@ export default function InvoiceListView() {
     setFilters(defaultFilters);
   }, []);
 
+  useEffect(() => {
+    if (payments) {
+      setTableData(payments);
+    }
+  }, [payments]);
+
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -204,16 +211,6 @@ export default function InvoiceListView() {
               name: 'List',
             },
           ]}
-          action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.invoice.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              New Invoice
-            </Button>
-          }
           sx={{
             mb: { xs: 3, md: 5 },
           }}
@@ -225,55 +222,60 @@ export default function InvoiceListView() {
           }}
         >
           <Scrollbar>
-            <Stack
-              direction="row"
-              divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-              sx={{ py: 2 }}
-            >
-              <InvoiceAnalytic
-                title="Total"
-                total={tableData.length}
-                percent={100}
-                price={sumBy(tableData, 'totalAmount')}
-                icon="solar:bill-list-bold-duotone"
-                color={theme.palette.info.main}
-              />
-
-              <InvoiceAnalytic
-                title="Paid"
-                total={getInvoiceLength('paid')}
-                percent={getPercentByStatus('paid')}
-                price={getTotalAmount('paid')}
-                icon="solar:file-check-bold-duotone"
-                color={theme.palette.success.main}
-              />
-
-              <InvoiceAnalytic
-                title="Pending"
-                total={getInvoiceLength('pending')}
-                percent={getPercentByStatus('pending')}
-                price={getTotalAmount('pending')}
-                icon="solar:sort-by-time-bold-duotone"
-                color={theme.palette.warning.main}
-              />
-
-              <InvoiceAnalytic
-                title="Overdue"
-                total={getInvoiceLength('overdue')}
-                percent={getPercentByStatus('overdue')}
-                price={getTotalAmount('overdue')}
-                icon="solar:bell-bing-bold-duotone"
-                color={theme.palette.error.main}
-              />
-
-              <InvoiceAnalytic
-                title="Draft"
-                total={getInvoiceLength('draft')}
-                percent={getPercentByStatus('draft')}
-                price={getTotalAmount('draft')}
-                icon="solar:file-corrupted-bold-duotone"
-                color={theme.palette.text.secondary}
-              />
+            <Stack direction="row" sx={{ py: 2 }}>
+              {[
+                {
+                  title: 'Total',
+                  status: 'total',
+                  icon: 'solar:bill-list-bold-duotone',
+                  color: theme.palette.info.main,
+                },
+                {
+                  title: 'Paid',
+                  status: 1,
+                  icon: 'solar:file-check-bold-duotone',
+                  color: theme.palette.success.main,
+                },
+                {
+                  title: 'Pending',
+                  status: 0,
+                  icon: 'solar:sort-by-time-bold-duotone',
+                  color: theme.palette.warning.main,
+                },
+                {
+                  title: 'Overdue',
+                  status: 2,
+                  icon: 'solar:bell-bing-bold-duotone',
+                  color: theme.palette.error.main,
+                },
+                {
+                  title: 'Pending Approval',
+                  status: 3,
+                  icon: 'solar:hourglass-bold-duotone',
+                  color: theme.palette.info.main,
+                },
+                {
+                  title: 'Request Reupload',
+                  status: 4,
+                  icon: 'solar:cloud-upload-bold-duotone',
+                  color: theme.palette.secondary.main,
+                },
+              ].map((analytic, index) => (
+                <Fragment key={analytic.title}>
+                  <InvoiceAnalytic
+                    title={analytic.title}
+                    total={getInvoiceLength(analytic.status)}
+                    percent={getPercentByStatus(analytic.status)}
+                    price={getTotalAmount(analytic.status)}
+                    icon={analytic.icon}
+                    color={analytic.color}
+                  />
+                  {/* Add divider only if it's not the last item */}
+                  {index < 5 && (
+                    <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />
+                  )}
+                </Fragment>
+              ))}
             </Stack>
           </Scrollbar>
         </Card>
@@ -312,7 +314,6 @@ export default function InvoiceListView() {
             onFilters={handleFilters}
             //
             dateError={dateError}
-            serviceOptions={INVOICE_SERVICE_OPTIONS.map((option) => option.name)}
           />
 
           {canReset && (
@@ -382,6 +383,7 @@ export default function InvoiceListView() {
                       tableData.map((row) => row.id)
                     )
                   }
+                  showCheckbox={false}
                 />
 
                 <TableBody>
@@ -470,8 +472,9 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   if (name) {
     inputData = inputData.filter(
       (invoice) =>
-        invoice.invoiceNumber.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        invoice.invoiceTo.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
+        invoice.performaId.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        invoice.customer.firstName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        invoice.customer.lastName.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
@@ -489,8 +492,8 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
     if (startDate && endDate) {
       inputData = inputData.filter(
         (invoice) =>
-          fTimestamp(invoice.createDate) >= fTimestamp(startDate) &&
-          fTimestamp(invoice.createDate) <= fTimestamp(endDate)
+          fTimestamp(invoice.createdAt) >= fTimestamp(startDate) &&
+          fTimestamp(invoice.createdAt) <= fTimestamp(endDate)
       );
     }
   }

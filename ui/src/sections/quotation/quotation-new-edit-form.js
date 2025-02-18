@@ -332,6 +332,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       enqueueSnackbar('Quotation Rejected Successfully');
       setRejectError(false);
       confirm.onFalse();
+      router.push(paths.dashboard.quotation.list);
     } catch (error) {
       console.error('Error saving user details:', error);
       enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
@@ -355,6 +356,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       await axiosInstance.patch(`/quotations/${currentQuotation.id}`, inputData);
       poDocModal.onFalse();
       enqueueSnackbar('Quotation Approved Successfully');
+      router.push(paths.dashboard.quotation.list);
     } catch (error) {
       console.error('Error saving user details:', error);
       poDocModal.onFalse();

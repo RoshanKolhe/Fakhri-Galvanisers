@@ -8,12 +8,6 @@ import Typography from '@mui/material/Typography';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-// _mock
-import { _addressBooks } from 'src/_mock';
-// components
-import Iconify from 'src/components/iconify';
-//
-import { AddressListDialog } from '../address';
 
 // ----------------------------------------------------------------------
 
@@ -28,104 +22,58 @@ export default function InvoiceNewEditAddress() {
 
   const values = watch();
 
-  const { invoiceFrom, invoiceTo } = values;
-
-  const from = useBoolean();
-
-  const to = useBoolean();
+  const { invoiceTo } = values;
 
   return (
-    <>
-      <Stack
-        spacing={{ xs: 3, md: 5 }}
-        direction={{ xs: 'column', md: 'row' }}
-        divider={
-          <Divider
-            flexItem
-            orientation={upMd ? 'vertical' : 'horizontal'}
-            sx={{ borderStyle: 'dashed' }}
-          />
-        }
-        sx={{ p: 3 }}
-      >
-        <Stack sx={{ width: 1 }}>
-          <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-            <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
-              From:
-            </Typography>
-
-            <IconButton onClick={from.onTrue}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Stack>
-
-          <Stack spacing={1}>
-            <Typography variant="subtitle2">{invoiceFrom.name}</Typography>
-            <Typography variant="body2">{invoiceFrom.fullAddress}</Typography>
-            <Typography variant="body2"> {invoiceFrom.phoneNumber}</Typography>
-          </Stack>
+    <Stack
+      spacing={{ xs: 3, md: 5 }}
+      direction={{ xs: 'column', md: 'row' }}
+      divider={
+        <Divider
+          flexItem
+          orientation={upMd ? 'vertical' : 'horizontal'}
+          sx={{ borderStyle: 'dashed' }}
+        />
+      }
+      sx={{ p: 3 }}
+    >
+      <Stack sx={{ width: 1 }}>
+        <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
+            From:
+          </Typography>
         </Stack>
 
-        <Stack sx={{ width: 1 }}>
-          <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-            <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
-              To:
-            </Typography>
-
-            <IconButton onClick={to.onTrue}>
-              <Iconify icon={invoiceTo ? 'solar:pen-bold' : 'mingcute:add-line'} />
-            </IconButton>
-          </Stack>
-
-          {invoiceTo ? (
-            <Stack spacing={1}>
-              <Typography variant="subtitle2">{invoiceTo.name}</Typography>
-              <Typography variant="body2">{invoiceTo.fullAddress}</Typography>
-              <Typography variant="body2"> {invoiceTo.phoneNumber}</Typography>
-            </Stack>
-          ) : (
-            <Typography typography="caption" sx={{ color: 'error.main' }}>
-              {errors.invoiceTo?.message}
-            </Typography>
-          )}
+        <Stack spacing={1}>
+          <Typography variant="subtitle2">Hylite</Typography>
+          <Typography variant="body2">
+            A/129, T.T.C. MIDC Indl.Area, Khairane Fire Brigade Lane Pawane, Navi Mumbai, India.
+          </Typography>
+          <Typography variant="body2"> 7253000111</Typography>
         </Stack>
       </Stack>
 
-      <AddressListDialog
-        title="Customers"
-        open={from.value}
-        onClose={from.onFalse}
-        selected={(selectedId) => invoiceFrom?.id === selectedId}
-        onSelect={(address) => setValue('invoiceFrom', address)}
-        list={_addressBooks}
-        action={
-          <Button
-            size="small"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            sx={{ alignSelf: 'flex-end' }}
-          >
-            New
-          </Button>
-        }
-      />
+      <Stack sx={{ width: 1 }}>
+        <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="h6" sx={{ color: 'text.disabled', flexGrow: 1 }}>
+            To:
+          </Typography>
+        </Stack>
 
-      <AddressListDialog
-        title="Customers"
-        open={to.value}
-        onClose={to.onFalse}
-        selected={(selectedId) => invoiceTo?.id === selectedId}
-        onSelect={(address) => setValue('invoiceTo', address)}
-        list={_addressBooks}
-        action={
-          <Button
-            size="small"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            sx={{ alignSelf: 'flex-end' }}
-          >
-            New
-          </Button>
-        }
-      />
-    </>
+        {invoiceTo ? (
+          <Stack spacing={1}>
+            <Typography variant="subtitle2">{`${invoiceTo?.firstName} ${
+              invoiceTo?.lastName ? invoiceTo?.lastName : ''
+            }`}</Typography>
+            <Typography variant="body2">{invoiceTo?.fullAddress}</Typography>
+            <Typography variant="body2"> {invoiceTo?.phoneNumber}</Typography>
+          </Stack>
+        ) : (
+          <Typography typography="caption" sx={{ color: 'error.main' }}>
+            {errors.invoiceTo?.message}
+          </Typography>
+        )}
+      </Stack>
+    </Stack>
   );
 }

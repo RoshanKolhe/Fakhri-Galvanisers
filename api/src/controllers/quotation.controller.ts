@@ -110,9 +110,12 @@ export class QuotationController {
     ) {
       return this.quotationRepository.find(filter);
     } else {
+      console.log(filter);
+
       return this.quotationRepository.find({
         ...filter,
         where: {
+          ...filter?.where,
           customerId: currnetUser.id,
         },
       });

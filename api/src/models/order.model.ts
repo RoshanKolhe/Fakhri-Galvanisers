@@ -3,12 +3,12 @@ import {
   model,
   property,
   belongsTo,
-  hasMany,
-} from '@loopback/repository';
+  hasMany, hasOne} from '@loopback/repository';
 import {Challan} from './challan.model';
 import {Material} from './material.model';
 import {Customer} from './customer.model';
 import {QcReport} from './qc-report.model';
+import {Payment} from './payment.model';
 
 @model()
 export class Order extends Entity {
@@ -69,7 +69,7 @@ export class Order extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number; // 0 : Material Received,1:In Process, 2:Material Ready,3:Awaiting Payment,4:Ready ToDispatch,5:Cancelled
+  status?: number; // 0 : Material Received,1:In Process, 2:Material Ready,3:Ready ToDispatch,4:Cancelled
 
   @property({
     type: 'array',
@@ -139,6 +139,9 @@ export class Order extends Entity {
 
   @hasMany(() => QcReport)
   qcReports: QcReport[];
+
+  @hasOne(() => Payment)
+  payment: Payment;
 
   constructor(data?: Partial<Order>) {
     super(data);

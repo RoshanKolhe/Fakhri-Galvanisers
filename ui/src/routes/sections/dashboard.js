@@ -61,6 +61,12 @@ const QcReportListPage = lazy(() => import('src/pages/dashboard/qcReport/list'))
 const QcReportEditPage = lazy(() => import('src/pages/dashboard/qcReport/edit'));
 const QcReportViewPage = lazy(() => import('src/pages/dashboard/qcReport/view'));
 
+// INVOICE
+const InvoiceListPage = lazy(() => import('src/pages/dashboard/invoice/list'));
+const InvoiceDetailsPage = lazy(() => import('src/pages/dashboard/invoice/details'));
+const InvoiceCreatePage = lazy(() => import('src/pages/dashboard/invoice/new'));
+const InvoiceEditPage = lazy(() => import('src/pages/dashboard/invoice/edit'));
+
 // BLANK PAGE
 const BlankPage = lazy(() => import('src/pages/dashboard/blank'));
 
@@ -168,6 +174,16 @@ export const dashboardRoutes = [
           { path: 'list', element: <QcReportListPage /> },
           { path: ':id/edit', element: <QcReportEditPage /> },
           { path: ':id/view', element: <QcReportViewPage /> },
+        ],
+      },
+      {
+        path: 'invoice',
+        children: [
+          { element: <InvoiceListPage />, index: true },
+          { path: 'list', element: <InvoiceListPage /> },
+          { path: ':id', element: <InvoiceDetailsPage /> },
+          { path: ':id/edit', element: <InvoiceEditPage /> },
+          { path: 'new', element: <InvoiceCreatePage /> },
         ],
       },
 

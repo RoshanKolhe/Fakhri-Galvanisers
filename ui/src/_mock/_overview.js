@@ -53,7 +53,7 @@ export const _appInvoices = [...Array(5)].map((_, index) => {
 
   return {
     id: _mock.id(index),
-    invoiceNumber: `INV-199${index}`,
+    performaId: `INV-199${index}`,
     price: _mock.number.price(index),
     category,
     status,

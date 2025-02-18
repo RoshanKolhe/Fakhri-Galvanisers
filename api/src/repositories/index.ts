@@ -13,3 +13,4 @@ export * from './lots.repository';
 export * from './lot-processes.repository';
 export * from './qc-report.repository';
 export * from './qc-test.repository';
+export * from './payment.repository';

@@ -393,8 +393,7 @@ export const ORDER_STATUS_OPTIONS = [
   { value: 0, label: 'Material Received' },
   { value: 1, label: 'In Process' },
   { value: 2, label: 'Material Ready' },
-  { value: 3, label: 'Awaiting Payment' },
-  { value: 4, label: 'Ready To dispatch' },
+  { value: 3, label: 'Ready To dispatch' },
 ];
 
 export const QCREPORT_STATUS_OPTIONS = [
@@ -406,6 +405,14 @@ export const MATERIAL_STATUS_OPTIONS = [
   { value: 0, label: 'Pending' },
   { value: 1, label: 'In Process' },
   { value: 2, label: 'Completed' },
+];
+
+export const INVOICE_STATUS_OPTIONS = [
+  { value: 1, label: 'Paid' },
+  { value: 0, label: 'Pending' },
+  { value: 2, label: 'Overdue' },
+  { value: 3, label: 'Pending Approval' },
+  { value: 4, label: 'Request Reupload' },
 ];
 
 export const _roles = ['Admin', 'Worker', 'Qc Admin'];

@@ -48,7 +48,7 @@ import ChallanQuickEditForm from '../challan-quick-edit-form';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...COMMON_STATUS_OPTIONS];
+const STATUS_OPTIONS = [{ value: 'all', label: 'All' }];
 
 const TABLE_HEAD = [
   { id: 'id', label: 'Challan Number' },
@@ -56,7 +56,7 @@ const TABLE_HEAD = [
   { id: 'vehicleNumber', label: 'Vehicle Number', width: 180 },
   { id: 'grossWeight', label: 'Gross Weight', width: 180 },
   { id: 'netWeight', label: 'Net Weight', width: 180 },
-  { id: 'status', label: 'Status', width: 180 },
+  // { id: 'status', label: 'Status', width: 180 },
   { id: '', width: 88 },
 ];
 

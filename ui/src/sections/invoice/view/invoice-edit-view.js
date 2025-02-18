@@ -3,12 +3,12 @@ import Container from '@mui/material/Container';
 // routes
 import { paths } from 'src/routes/paths';
 import { useParams } from 'src/routes/hook';
-// _mock
-import { _invoices } from 'src/_mock';
 // components
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
+import { useEffect, useState } from 'react';
+import { useGetPayment } from 'src/api/invoice';
 import InvoiceNewEditForm from '../invoice-new-edit-form';
 
 // ----------------------------------------------------------------------
@@ -20,8 +20,13 @@ export default function InvoiceEditView() {
 
   const { id } = params;
 
-  const currentInvoice = _invoices.find((invoice) => invoice.id === id);
-
+  const { payment } = useGetPayment(id);
+  const [currentInvoice, setCurrentInvoice] = useState();
+  useEffect(() => {
+    if (payment) {
+      setCurrentInvoice(payment);
+    }
+  }, [payment]);
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -35,7 +40,7 @@ export default function InvoiceEditView() {
             name: 'Invoice',
             href: paths.dashboard.invoice.root,
           },
-          { name: currentInvoice?.invoiceNumber },
+          { name: currentInvoice?.performaId },
         ]}
         sx={{
           mb: { xs: 3, md: 5 },

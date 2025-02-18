@@ -20,8 +20,10 @@ import {
 } from '@loopback/rest';
 import {Challan} from '../models';
 import {ChallanRepository} from '../repositories';
-import {authenticate} from '@loopback/authentication';
+import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
+import {inject} from '@loopback/core';
+import {UserProfile} from '@loopback/security';
 
 export class ChallanController {
   constructor(
@@ -102,6 +104,7 @@ export class ChallanController {
     },
   })
   async find(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @param.filter(Challan) filter?: Filter<Challan>,
   ): Promise<Challan[]> {
     filter = {
@@ -119,7 +122,20 @@ export class ChallanController {
         },
       ],
     };
-    return this.challanRepository.find(filter);
+    const currentUserPermission = currnetUser.permissions;
+    if (
+      currentUserPermission.includes('super_admin') ||
+      currentUserPermission.includes('admin')
+    ) {
+      return this.challanRepository.find(filter);
+    } else {
+      return this.challanRepository.find({
+        ...filter,
+        where: {
+          customerId: currnetUser.id,
+        },
+      });
+    }
   }
 
   @authenticate({

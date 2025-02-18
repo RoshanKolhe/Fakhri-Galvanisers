@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 // @mui
 import Box from '@mui/material/Box';
@@ -20,18 +20,38 @@ import { useBoolean } from 'src/hooks/use-boolean';
 // components
 import Iconify from 'src/components/iconify';
 //
+import { useAuthContext } from 'src/auth/hooks';
+import { FormProvider, useForm } from 'react-hook-form';
+import { DialogContent, DialogTitle } from '@mui/material';
+import { RHFUpload } from 'src/components/hook-form';
 import InvoicePDF from './invoice-pdf';
+import InvoicePaymentProofModal from './invoice-payment-proof-modal';
 
 // ----------------------------------------------------------------------
 
 export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChangeStatus }) {
+  const [open, setOpen] = useState(false);
+  const methods = useForm();
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const handleSubmit = (data) => {
+    console.log('Uploaded Data:', data);
+    handleClose();
+  };
+  const { user } = useAuthContext();
+  const isAdmin = user
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    : false;
   const router = useRouter();
 
   const view = useBoolean();
 
   const handleEdit = useCallback(() => {
-    router.push(paths.dashboard.invoice.edit(invoice.id));
-  }, [invoice.id, router]);
+    if (invoice) {
+      router.push(paths.dashboard.invoice.edit(invoice?.id));
+    }
+  }, [invoice, router]);
 
   return (
     <>
@@ -42,11 +62,13 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
         sx={{ mb: { xs: 3, md: 5 } }}
       >
         <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
-          <Tooltip title="Edit">
-            <IconButton onClick={handleEdit}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Tooltip>
+          {isAdmin ? (
+            <Tooltip title="Edit">
+              <IconButton onClick={handleEdit}>
+                <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
 
           <Tooltip title="View">
             <IconButton onClick={view.onTrue}>
@@ -56,7 +78,7 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
 
           <PDFDownloadLink
             document={<InvoicePDF invoice={invoice} currentStatus={currentStatus} />}
-            fileName={invoice.invoiceNumber}
+            fileName={invoice?.performaId}
             style={{ textDecoration: 'none' }}
           >
             {({ loading }) => (
@@ -71,42 +93,38 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
               </Tooltip>
             )}
           </PDFDownloadLink>
-
-          <Tooltip title="Print">
-            <IconButton>
-              <Iconify icon="solar:printer-minimalistic-bold" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Send">
-            <IconButton>
-              <Iconify icon="iconamoon:send-fill" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Share">
-            <IconButton>
-              <Iconify icon="solar:share-bold" />
-            </IconButton>
-          </Tooltip>
         </Stack>
 
-        <TextField
-          fullWidth
-          select
-          label="Status"
-          value={currentStatus}
-          onChange={onChangeStatus}
-          sx={{
-            maxWidth: 160,
-          }}
-        >
-          {statusOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        <Stack direction="row" justifyContent="flex-end" spacing={1} flexGrow={1} sx={{ width: 1 }}>
+          {!isAdmin ? (
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+              onClick={handleOpen}
+              disabled={currentStatus === 3}
+            >
+              Upload Payment Proof
+            </Button>
+          ) : null}
+
+          <TextField
+            fullWidth
+            select
+            label="Status"
+            value={currentStatus}
+            onChange={onChangeStatus}
+            sx={{
+              maxWidth: 190,
+            }}
+            disabled
+          >
+            {statusOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
       </Stack>
 
       <Dialog fullScreen open={view.value}>
@@ -128,12 +146,14 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
           </Box>
         </Box>
       </Dialog>
+
+      <InvoicePaymentProofModal open={open} handleClose={handleClose} invoice={invoice} />
     </>
   );
 }
 
 InvoiceToolbar.propTypes = {
-  currentStatus: PropTypes.string,
+  currentStatus: PropTypes.number,
   invoice: PropTypes.object,
   onChangeStatus: PropTypes.func,
   statusOptions: PropTypes.array,

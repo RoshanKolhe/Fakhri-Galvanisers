@@ -20,7 +20,7 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {LotProcesses, Material, Order, QcReport} from '../models';
+import {LotProcesses, Material, Order, Payment, QcReport} from '../models';
 import {
   ChallanRepository,
   LotProcessesRepository,
@@ -28,6 +28,7 @@ import {
   MaterialRepository,
   MaterialUserRepository,
   OrderRepository,
+  PaymentRepository,
   QcReportRepository,
 } from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
@@ -42,6 +43,8 @@ export class OrderController {
     public dataSource: FakhriGalvanisersDataSource,
     @repository(OrderRepository)
     public orderRepository: OrderRepository,
+    @repository(PaymentRepository)
+    public paymentRepository: PaymentRepository,
     @repository(MaterialRepository)
     public materialRepository: MaterialRepository,
     @repository(MaterialUserRepository)
@@ -95,7 +98,7 @@ export class OrderController {
       const {materials, ...orderWithoutMaterials} = orderData;
       const inputData: Partial<Order> = {
         ...orderWithoutMaterials,
-        status: 1,
+        status: 0,
         timeline: [
           {
             id: 0,
@@ -140,6 +143,33 @@ export class OrderController {
           transaction: tx,
         });
       }
+      let subtotal = 0;
+      let totalTax = 0;
+      let grandTotal = 0;
+
+      materials.forEach((material: any) => {
+        const pricePerUnit = parseFloat(material?.pricePerUnit) || 0;
+        const quantity = parseFloat(material?.quantity) || 0;
+        const tax = parseFloat(material?.tax) || 0;
+        if (pricePerUnit && quantity) {
+          const totalPrice = pricePerUnit * quantity;
+          const taxAmount = (totalPrice * tax) / 100;
+
+          subtotal += totalPrice;
+          totalTax += taxAmount;
+          grandTotal += totalPrice + taxAmount;
+        }
+      });
+      const formattedInvoiceId = `PI-${createdOrder.id.toString().padStart(4, '0')}`;
+      const paymentData: Partial<Payment> = {
+        orderId: createdOrder.id,
+        performaId: formattedInvoiceId,
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 45)),
+        totalAmount: grandTotal,
+      };
+      await this.paymentRepository.create(paymentData, {
+        transaction: tx,
+      });
       tx.commit();
       return this.orderRepository.findById(createdOrder.id, {
         include: ['materials'],
@@ -165,7 +195,10 @@ export class OrderController {
       },
     },
   })
-  async find(@param.filter(Order) filter?: Filter<Order>): Promise<Order[]> {
+  async find(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @param.filter(Order) filter?: Filter<Order>,
+  ): Promise<Order[]> {
     filter = {
       ...filter,
       where: {
@@ -178,7 +211,21 @@ export class OrderController {
         {relation: 'challan'},
       ],
     };
-    return this.orderRepository.find(filter);
+    const currentUserPermission = currnetUser.permissions;
+    if (
+      currentUserPermission.includes('super_admin') ||
+      currentUserPermission.includes('admin')
+    ) {
+      return this.orderRepository.find(filter);
+    } else {
+      return this.orderRepository.find({
+        ...filter,
+        where: {
+          ...filter?.where,
+          customerId: currnetUser.id,
+        },
+      });
+    }
   }
 
   @authenticate({

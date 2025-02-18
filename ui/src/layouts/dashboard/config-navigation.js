@@ -149,9 +149,13 @@ export function useNavData() {
             title: t('order'),
             path: paths.dashboard.order.root,
             icon: ICONS.order,
-            roles: ['super_admin'],
+            roles: ['super_admin', 'customer'],
             children: [
-              { title: t('list'), path: paths.dashboard.order.root, roles: ['super_admin'] },
+              {
+                title: t('list'),
+                path: paths.dashboard.order.root,
+                roles: ['super_admin', 'customer'],
+              },
             ],
           },
 
@@ -164,6 +168,14 @@ export function useNavData() {
             children: [
               { title: t('list'), path: paths.dashboard.qcReport.root, roles: ['super_admin'] },
             ],
+          },
+
+          // INVOICE
+          {
+            title: t('invoice'),
+            path: paths.dashboard.invoice.root,
+            icon: ICONS.invoice,
+            children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
           },
         ],
       },

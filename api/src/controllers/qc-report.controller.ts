@@ -1,8 +1,10 @@
 import {
   Count,
   CountSchema,
+  DefaultTransactionalRepository,
   Filter,
   FilterExcludingWhere,
+  IsolationLevel,
   repository,
   Where,
 } from '@loopback/repository';
@@ -22,9 +24,13 @@ import {QcReport, QcTest} from '../models';
 import {QcReportRepository, QcTestRepository} from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
+import {inject} from '@loopback/core';
+import {FakhriGalvanisersDataSource} from '../datasources';
 
 export class QcReportController {
   constructor(
+    @inject('datasources.fakhriGalvanisers')
+    public dataSource: FakhriGalvanisersDataSource,
     @repository(QcReportRepository)
     public qcReportRepository: QcReportRepository,
     @repository(QcTestRepository)
@@ -86,19 +92,41 @@ export class QcReportController {
     })
     qcTests: Omit<QcTest, 'id'>[],
   ): Promise<QcTest[]> {
-    // Check if the QC Report exists
-    const qcReport = await this.qcReportRepository.findById(qcReportId);
-    if (!qcReport) {
-      throw new HttpErrors.BadRequest('Qc Report does not exist');
+    const repo = new DefaultTransactionalRepository(QcReport, this.dataSource);
+    const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
+    try {
+      const qcReport = await this.qcReportRepository.findById(qcReportId);
+      if (!qcReport) {
+        throw new HttpErrors.BadRequest('Qc Report does not exist');
+      }
+
+      // Delete existing QcTests for the given QcReportId
+      await this.qcTestRepository.deleteAll(
+        {qcReportId},
+        {
+          transaction: tx,
+        },
+      );
+
+      // Create new QC Tests
+      const data = await this.qcTestRepository.createAll(
+        qcTests.map(test => ({...test, qcReportId})),
+        {
+          transaction: tx,
+        },
+      );
+      await this.qcReportRepository.updateById(
+        qcReportId,
+        {status: 1},
+        {
+          transaction: tx,
+        },
+      );
+      return data;
+    } catch (err) {
+      tx.rollback();
+      throw err;
     }
-
-    // Delete existing QcTests for the given QcReportId
-    await this.qcTestRepository.deleteAll({qcReportId});
-
-    // Create new QC Tests
-    return this.qcTestRepository.createAll(
-      qcTests.map(test => ({...test, qcReportId})),
-    );
   }
 
   @authenticate({

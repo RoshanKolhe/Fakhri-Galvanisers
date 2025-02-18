@@ -9,3 +9,4 @@ export * from './challan.controller';
 export * from './order.controller';
 export * from './processes.controller';
 export * from './qc-report.controller';
+export * from './payment.controller';

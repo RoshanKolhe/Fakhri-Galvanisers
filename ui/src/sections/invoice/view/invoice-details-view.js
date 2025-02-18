@@ -2,13 +2,13 @@
 import Container from '@mui/material/Container';
 // routes
 import { paths } from 'src/routes/paths';
-// _mock
-import { _invoices } from 'src/_mock';
 // components
 import { useParams } from 'src/routes/hook';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
+import { useGetPayment } from 'src/api/invoice';
+import { useEffect, useState } from 'react';
 import InvoiceDetails from '../invoice-details';
 
 // ----------------------------------------------------------------------
@@ -20,12 +20,18 @@ export default function InvoiceDetailsView() {
 
   const { id } = params;
 
-  const currentInvoice = _invoices.filter((invoice) => invoice.id === id)[0];
+  const { payment } = useGetPayment(id);
+  const [currentInvoice, setCurrentInvoice] = useState();
+  useEffect(() => {
+    if (payment) {
+      setCurrentInvoice(payment);
+    }
+  }, [payment]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading={currentInvoice?.invoiceNumber}
+        heading={currentInvoice?.performaId}
         links={[
           {
             name: 'Dashboard',
@@ -35,7 +41,7 @@ export default function InvoiceDetailsView() {
             name: 'Invoice',
             href: paths.dashboard.invoice.root,
           },
-          { name: currentInvoice?.invoiceNumber },
+          { name: currentInvoice?.performaId },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />

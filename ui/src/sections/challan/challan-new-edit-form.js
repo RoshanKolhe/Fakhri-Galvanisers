@@ -34,9 +34,15 @@ export default function ChallanNewEditForm({ currentChallan }) {
   const NewChallanSchema = Yup.object().shape({
     quotation: Yup.object().required('Quotation is Required'),
     vehicleNumber: Yup.string().required('Vehicle Number is required'),
-    grossWeight: Yup.number().min(1, 'Value must be greater than 0').required('Gross Weight is required'),
-    tareWeight: Yup.number().min(0.01, 'Value must be greater than 0').required('Tare Weight is required'),
-    netWeight: Yup.number().min(0.01, 'Value must be greater than 0').required('Net Weight is required'),
+    grossWeight: Yup.number()
+      .min(1, 'Value must be greater than 0')
+      .required('Gross Weight is required'),
+    tareWeight: Yup.number()
+      .min(0.01, 'Value must be greater than 0')
+      .required('Tare Weight is required'),
+    netWeight: Yup.number()
+      .min(0.01, 'Value must be greater than 0')
+      .required('Net Weight is required'),
     poNumber: Yup.string().required('PO Number is required'),
     remark: Yup.string(),
     materials: Yup.array()
@@ -110,7 +116,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
       if (event && event.target.value) {
         const filter = {
           where: {
-            id: { like: event.target.value },
+            id: { like: `%${event.target.value}%` },
+            status: 1,
           },
         };
         const filterString = encodeURIComponent(JSON.stringify(filter));
@@ -136,6 +143,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         tareWeight: formData.tareWeight,
         vehicleNumber: formData.vehicleNumber,
         quotationId: formData.quotation.id,
+        customerId: formData.quotation.customer.id,
         status: formData.status ? 1 : 0,
         materials: formData.materials,
       };

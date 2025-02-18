@@ -21,6 +21,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +33,11 @@ export default function InvoiceTableRow({
   onEditRow,
   onDeleteRow,
 }) {
-  const { sent, invoiceNumber, createDate, dueDate, status, invoiceTo, totalAmount } = row;
+  const { user } = useAuthContext();
+  const isAdmin = user
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    : false;
+  const { performaId, createdAt, dueDate, status, customer: invoiceTo, totalAmount } = row;
 
   const confirm = useBoolean();
 
@@ -41,20 +46,16 @@ export default function InvoiceTableRow({
   return (
     <>
       <TableRow hover selected={selected}>
-        <TableCell padding="checkbox">
-          <Checkbox checked={selected} onClick={onSelectRow} />
-        </TableCell>
-
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar alt={invoiceTo.name} sx={{ mr: 2 }}>
-            {invoiceTo.name.charAt(0).toUpperCase()}
+          <Avatar alt={invoiceTo.firstName} sx={{ mr: 2 }}>
+            {invoiceTo.firstName.charAt(0).toUpperCase()}
           </Avatar>
 
           <ListItemText
             disableTypography
             primary={
               <Typography variant="body2" noWrap>
-                {invoiceTo.name}
+                {invoiceTo.firstName}
               </Typography>
             }
             secondary={
@@ -64,7 +65,7 @@ export default function InvoiceTableRow({
                 onClick={onViewRow}
                 sx={{ color: 'text.disabled', cursor: 'pointer' }}
               >
-                {invoiceNumber}
+                {performaId}
               </Link>
             }
           />
@@ -72,8 +73,8 @@ export default function InvoiceTableRow({
 
         <TableCell>
           <ListItemText
-            primary={format(new Date(createDate), 'dd MMM yyyy')}
-            secondary={format(new Date(createDate), 'p')}
+            primary={format(new Date(createdAt), 'dd MMM yyyy')}
+            secondary={format(new Date(createdAt), 'p')}
             primaryTypographyProps={{ typography: 'body2', noWrap: true }}
             secondaryTypographyProps={{
               mt: 0.5,
@@ -98,19 +99,23 @@ export default function InvoiceTableRow({
 
         <TableCell>{fCurrency(totalAmount)}</TableCell>
 
-        <TableCell align="center">{sent}</TableCell>
-
         <TableCell>
           <Label
             variant="soft"
             color={
-              (status === 'paid' && 'success') ||
-              (status === 'pending' && 'warning') ||
-              (status === 'overdue' && 'error') ||
+              (status === 1 && 'success') ||
+              (status === 0 && 'warning') ||
+              (status === 2 && 'error') ||
+              (status === 3 && 'info') || // Pending Approval
+              (status === 4 && 'secondary') || // Request Reupload
               'default'
             }
           >
-            {status}
+            {(status === 0 && 'Pending') ||
+              (status === 1 && 'Paid') ||
+              (status === 2 && 'Overdue') ||
+              (status === 3 && 'Pending Approval') ||
+              (status === 4 && 'Request Reupload')}
           </Label>
         </TableCell>
 
@@ -137,28 +142,17 @@ export default function InvoiceTableRow({
           View
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            onEditRow();
-            popover.onClose();
-          }}
-        >
-          <Iconify icon="solar:pen-bold" />
-          Edit
-        </MenuItem>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
-
-        <MenuItem
-          onClick={() => {
-            confirm.onTrue();
-            popover.onClose();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
+        {isAdmin ? (
+          <MenuItem
+            onClick={() => {
+              onEditRow();
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="solar:pen-bold" />
+            Edit
+          </MenuItem>
+        ) : null}
       </CustomPopover>
 
       <ConfirmDialog

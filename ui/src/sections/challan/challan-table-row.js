@@ -49,11 +49,11 @@ export default function ChallanTableRow({
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{grossWeight}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{netWeight}</TableCell>
 
-        <TableCell>
+        {/* <TableCell>
           <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>
             {status ? 'Active' : 'In-Active'}
           </Label>
-        </TableCell>
+        </TableCell> */}
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>

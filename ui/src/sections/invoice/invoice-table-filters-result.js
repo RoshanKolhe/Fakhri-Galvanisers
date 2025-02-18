@@ -61,7 +61,17 @@ export default function InvoiceTableFiltersResult({
 
         {filters.status !== 'all' && (
           <Block label="Status:">
-            <Chip size="small" label={filters.status} onDelete={handleRemoveStatus} />
+            <Chip
+              size="small"
+              label={
+                (filters.status === 1 && 'Paid') ||
+                (filters.status === 0 && 'Pending') ||
+                (filters.status === 2 && 'Overdue') ||
+                (filters.status === 3 && 'Pending Approval') ||
+                (filters.status === 4 && 'Request Reupload')
+              }
+              onDelete={handleRemoveStatus}
+            />
           </Block>
         )}
 

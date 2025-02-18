@@ -92,7 +92,7 @@ function AppNewInvoiceRow({ row }) {
   return (
     <>
       <TableRow>
-        <TableCell>{row.invoiceNumber}</TableCell>
+        <TableCell>{row.performaId}</TableCell>
 
         <TableCell>{row.category}</TableCell>
 

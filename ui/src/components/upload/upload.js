@@ -102,14 +102,13 @@ export default function Upload({
 
       <Stack direction="row" justifyContent="flex-end" spacing={1.5}>
         {onRemoveAll && (
-          <Button color="inherit" variant="outlined" size="small" onClick={onRemoveAll}>
+          <Button color="inherit" variant="outlined"  onClick={onRemoveAll}>
             Remove All
           </Button>
         )}
 
         {onUpload && (
           <Button
-            size="small"
             variant="contained"
             onClick={onUpload}
             startIcon={<Iconify icon="eva:cloud-upload-fill" />}
