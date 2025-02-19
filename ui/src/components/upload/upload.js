@@ -35,6 +35,7 @@ export default function Upload({
   sx,
   ...other
 }) {
+  console.log(disabled);
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
     multiple,
     disabled,
@@ -44,7 +45,6 @@ export default function Upload({
   const hasFile = !!file && !multiple;
 
   const hasFiles = !!files && multiple && !!files.length;
-
   const hasError = isDragReject || !!error;
 
   const renderPlaceholder = (
@@ -97,17 +97,22 @@ export default function Upload({
   const renderMultiPreview = hasFiles && (
     <>
       <Box sx={{ my: 3 }}>
-        <MultiFilePreview files={files} thumbnail={thumbnail} onRemove={onRemove} />
+        <MultiFilePreview
+          files={files}
+          thumbnail={thumbnail}
+          onRemove={onRemove}
+          disabled={disabled}
+        />
       </Box>
 
       <Stack direction="row" justifyContent="flex-end" spacing={1.5}>
-        {onRemoveAll && (
-          <Button color="inherit" variant="outlined"  onClick={onRemoveAll}>
+        {onRemoveAll && !disabled && (
+          <Button color="inherit" variant="outlined" onClick={onRemoveAll}>
             Remove All
           </Button>
         )}
 
-        {onUpload && (
+        {onUpload && !disabled && (
           <Button
             variant="contained"
             onClick={onUpload}

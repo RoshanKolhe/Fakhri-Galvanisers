@@ -20,7 +20,7 @@ export default function InvoiceDetailsView() {
 
   const { id } = params;
 
-  const { payment } = useGetPayment(id);
+  const { payment, refreshPayment } = useGetPayment(id);
   const [currentInvoice, setCurrentInvoice] = useState();
   useEffect(() => {
     if (payment) {
@@ -46,7 +46,7 @@ export default function InvoiceDetailsView() {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      <InvoiceDetails invoice={currentInvoice} />
+      <InvoiceDetails invoice={currentInvoice} refreshPayment={refreshPayment} />
     </Container>
   );
 }

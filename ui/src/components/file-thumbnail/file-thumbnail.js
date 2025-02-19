@@ -13,6 +13,11 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
 
   const format = fileFormat(path || preview);
 
+  const isValidUrl = (str) => {
+    const urlPattern = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i;
+    return urlPattern.test(str);
+  };
+
   const renderContent =
     format === 'image' && imageView ? (
       <Box
@@ -24,6 +29,12 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
           flexShrink: 0,
           objectFit: 'cover',
           ...imgSx,
+          cursor: isValidUrl(file) ? 'pointer' : 'default',
+        }}
+        onClick={() => {
+          if (isValidUrl(file)) {
+            window.open(file, '_blank'); // Open URL in a new tab
+          }
         }}
       />
     ) : (
@@ -35,6 +46,12 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
           height: 32,
           flexShrink: 0,
           ...sx,
+          cursor: isValidUrl(file) ? 'pointer' : 'default',
+        }}
+        onClick={() => {
+          if (isValidUrl(file)) {
+            window.open(file, '_blank'); // Open URL in a new tab
+          }
         }}
       />
     );

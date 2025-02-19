@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
@@ -21,24 +22,32 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Iconify from 'src/components/iconify';
 //
 import { useAuthContext } from 'src/auth/hooks';
-import { FormProvider, useForm } from 'react-hook-form';
-import { DialogContent, DialogTitle } from '@mui/material';
-import { RHFUpload } from 'src/components/hook-form';
+import { DialogContent, DialogTitle, Typography } from '@mui/material';
+import { useSnackbar } from 'src/components/snackbar';
+import { MultiFilePreview } from 'src/components/upload';
+import axiosInstance from 'src/utils/axios';
 import InvoicePDF from './invoice-pdf';
 import InvoicePaymentProofModal from './invoice-payment-proof-modal';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChangeStatus }) {
+export default function InvoiceToolbar({
+  invoice,
+  currentStatus,
+  statusOptions,
+  onChangeStatus,
+  refreshPayment,
+}) {
+  const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState(false);
-  const methods = useForm();
+  const [openApproval, setOpenApproval] = useState(false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-  const handleSubmit = (data) => {
-    console.log('Uploaded Data:', data);
-    handleClose();
-  };
+
+  const handleOpenApproval = () => setOpenApproval(true);
+  const handleCloseApproval = () => setOpenApproval(false);
+
   const { user } = useAuthContext();
   const isAdmin = user
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
@@ -52,6 +61,42 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
       router.push(paths.dashboard.invoice.edit(invoice?.id));
     }
   }, [invoice, router]);
+
+  const handleRequestReupload = async () => {
+    try {
+      const inputData = {
+        status: 4,
+      };
+      await axiosInstance.patch(`/payments/${invoice?.id}`, inputData);
+      refreshPayment();
+      enqueueSnackbar('Re-upload requested successfully');
+      handleCloseApproval();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+      handleCloseApproval();
+    }
+  };
+
+  const handleApprovePayment = async () => {
+    try {
+      const inputData = {
+        status: 1,
+      };
+      await axiosInstance.patch(`/payments/${invoice?.id}`, inputData);
+      enqueueSnackbar('Payment Proof Approved Successfully');
+      refreshPayment();
+      handleCloseApproval();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+      handleCloseApproval();
+    }
+  };
 
   return (
     <>
@@ -101,12 +146,18 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
               variant="contained"
               startIcon={<Iconify icon="eva:cloud-upload-fill" />}
               onClick={handleOpen}
-              disabled={currentStatus === 3}
             >
-              Upload Payment Proof
+              {invoice?.status === 1 ? 'View' : 'Upload'} Payment Proof
+            </Button>
+          ) : isAdmin && invoice?.status === 3 ? (
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+              onClick={handleOpenApproval}
+            >
+              Verify Payment
             </Button>
           ) : null}
-
           <TextField
             fullWidth
             select
@@ -147,7 +198,36 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
         </Box>
       </Dialog>
 
-      <InvoicePaymentProofModal open={open} handleClose={handleClose} invoice={invoice} />
+      <InvoicePaymentProofModal
+        open={open}
+        handleClose={handleClose}
+        invoice={invoice}
+        refreshPayment={refreshPayment}
+      />
+
+      <Dialog open={openApproval} onClose={handleCloseApproval} fullWidth maxWidth="sm">
+        <Box sx={{ px: 3, pt: 2 }}>
+          <DialogTitle sx={{ p: 0 }}>{`${invoice?.performaId}`}</DialogTitle>
+        </Box>
+
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              Payment Proof
+            </Typography>
+            <MultiFilePreview files={invoice?.paymentProof} thumbnail />
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 1.5 }}>
+          <Button color="inherit" variant="outlined" onClick={handleRequestReupload}>
+            Request Re-Upload
+          </Button>
+          <Button color="inherit" variant="contained" onClick={handleApprovePayment}>
+            Approve Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
@@ -157,4 +237,5 @@ InvoiceToolbar.propTypes = {
   invoice: PropTypes.object,
   onChangeStatus: PropTypes.func,
   statusOptions: PropTypes.array,
+  refreshPayment: PropTypes.func,
 };

@@ -15,8 +15,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 // ----------------------------------------------------------------------
 
-export default function InvoicePaymentProofModal({ open, handleClose, invoice }) {
-  console.log(open);
+export default function InvoicePaymentProofModal({ open, handleClose, invoice, refreshPayment }) {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const isAdmin = user
@@ -27,7 +26,7 @@ export default function InvoicePaymentProofModal({ open, handleClose, invoice })
   });
   const defaultValues = useMemo(
     () => ({
-      images: invoice?.images || [],
+      images: invoice?.paymentProof || [],
     }),
     [invoice]
   );
@@ -40,6 +39,7 @@ export default function InvoicePaymentProofModal({ open, handleClose, invoice })
     reset,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -54,6 +54,7 @@ export default function InvoicePaymentProofModal({ open, handleClose, invoice })
       };
       await axiosInstance.patch(`/payments/${invoice.id}`, inputData);
       enqueueSnackbar('Payment Proof uploaded successfully');
+      refreshPayment();
       handleClose();
     } catch (err) {
       console.error(err);
@@ -74,15 +75,20 @@ export default function InvoicePaymentProofModal({ open, handleClose, invoice })
         const response = await axiosInstance.post('/files', formData);
         const { data } = response;
         console.log(data);
-        const updatedData = data.files.map((res) => res.fileUrl);
-        setValue('images', updatedData, {
+        const newFiles = data.files.map((res) => res.fileUrl);
+
+        // Get the current images from the form
+        const currentImages = getValues('images') || [];
+
+        // Merge new images with existing ones
+        setValue('images', [...currentImages, ...newFiles], {
           shouldValidate: true,
         });
       } catch (err) {
         console.error('Error uploading files:', err);
       }
     },
-    [setValue]
+    [getValues, setValue]
   );
 
   const handleRemoveFile = useCallback(
@@ -129,6 +135,7 @@ export default function InvoicePaymentProofModal({ open, handleClose, invoice })
             onRemoveAll={handleRemoveAllFiles}
             onUpload={() => handleUplaodPaymentProof()}
             sx={{ mb: 3 }}
+            disabled={invoice?.status === 1}
           />
         </DialogContent>
       </FormProvider>
@@ -140,4 +147,5 @@ InvoicePaymentProofModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   invoice: PropTypes.object,
+  refreshPayment: PropTypes.func,
 };

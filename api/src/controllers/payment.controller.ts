@@ -17,6 +17,7 @@ import {
   del,
   requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
 import {Payment} from '../models';
 import {OrderRepository, PaymentRepository} from '../repositories';
@@ -180,12 +181,16 @@ export class PaymentController {
     })
     payment: Payment,
   ): Promise<void> {
+    const paymentDetails = await this.paymentRepository.findById(id);
+    if (!paymentDetails) {
+      throw new HttpErrors.BadRequest('Inovice not found');
+    }
     if (payment.status && payment.status == 1) {
-      await this.orderRepository.updateById(id, {
+      await this.orderRepository.updateById(paymentDetails.orderId, {
         isPaid: true,
       });
     } else {
-      await this.orderRepository.updateById(id, {
+      await this.orderRepository.updateById(paymentDetails.orderId, {
         isPaid: false,
       });
     }

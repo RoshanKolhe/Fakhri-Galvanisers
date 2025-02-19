@@ -28,8 +28,7 @@ import InvoiceToolbar from './invoice-toolbar';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceDetails({ invoice }) {
- 
+export default function InvoiceDetails({ invoice, refreshPayment }) {
   const [currentStatus, setCurrentStatus] = useState();
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -172,6 +171,7 @@ export default function InvoiceDetails({ invoice }) {
         currentStatus={currentStatus || 0}
         onChangeStatus={handleChangeStatus}
         statusOptions={INVOICE_STATUS_OPTIONS}
+        refreshPayment={refreshPayment}
       />
 
       <Card sx={{ pt: 5, px: 5 }}>
@@ -264,4 +264,5 @@ export default function InvoiceDetails({ invoice }) {
 
 InvoiceDetails.propTypes = {
   invoice: PropTypes.object,
+  refreshPayment: PropTypes.func,
 };

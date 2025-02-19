@@ -14,7 +14,10 @@ import FileThumbnail, { fileData } from '../file-thumbnail';
 
 // ----------------------------------------------------------------------
 
-export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
+export default function MultiFilePreview({ thumbnail, files, onRemove, sx, disabled }) {
+  console.log(disabled);
+
+
   return (
     <AnimatePresence initial={false}>
       {files?.map((file) => {
@@ -37,10 +40,12 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                 height: 80,
                 borderRadius: 1.25,
                 overflow: 'hidden',
+                
                 position: 'relative',
                 border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.16)}`,
                 ...sx,
               }}
+              
             >
               <FileThumbnail
                 tooltip
@@ -50,7 +55,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                 imgSx={{ position: 'absolute' }}
               />
 
-              {onRemove && (
+              {onRemove && !disabled && (
                 <IconButton
                   size="small"
                   onClick={() => onRemove(file)}
@@ -118,4 +123,5 @@ MultiFilePreview.propTypes = {
   onRemove: PropTypes.func,
   sx: PropTypes.object,
   thumbnail: PropTypes.bool,
+  disabled: PropTypes.bool,
 };

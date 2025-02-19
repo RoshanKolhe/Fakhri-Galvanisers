@@ -30,19 +30,20 @@ export function useGetPayments() {
 
 export function useGetPayment(paymentId) {
   const URL = paymentId ? [endpoints.payment.details(paymentId)] : null;
-  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
-  const memoizedValue = useMemo(
-    () => ({
-      payment: data,
-      paymentLoading: isLoading,
-      paymentError: error,
-      paymentValidating: isValidating,
-    }),
-    [data, error, isLoading, isValidating]
-  );
+  const refreshPayment = () => {
+    // Use the `mutate` function to trigger a revalidation
+    mutate();
+  };
 
-  return memoizedValue;
+  return {
+    payment: data,
+    paymentLoading: isLoading,
+    paymentError: error,
+    paymentValidating: isValidating,
+    refreshPayment,
+  };
 }
 
 // ----------------------------------------------------------------------
