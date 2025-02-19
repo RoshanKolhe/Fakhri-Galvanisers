@@ -14,3 +14,4 @@ export * from './lot-processes.model';
 export * from './qc-report.model';
 export * from './qc-test.model';
 export * from './payment.model';
+export * from './dispatch.model';

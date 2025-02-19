@@ -1,4 +1,10 @@
-import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {
+  Entity,
+  model,
+  property,
+  belongsTo,
+  hasMany,
+} from '@loopback/repository';
 import {Order} from './order.model';
 import {User} from './user.model';
 import {MaterialUser} from './material-user.model';
@@ -60,7 +66,7 @@ export class Material extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status?: number; // 0:Pending,1:InProcess,2:Completed
 
   @property({
     type: 'string',

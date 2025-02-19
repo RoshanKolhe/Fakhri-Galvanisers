@@ -44,14 +44,14 @@ import QcReportTableRow from '../qcReport-table-row';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }];
+const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...QCREPORT_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'id', label: 'Qc Report ID', width: 116 },
   { id: 'order.id', label: 'Order ID' },
   { id: 'order.customer.firstName', label: 'Customer Name' },
   { id: 'materials', label: 'Materials', width: 120 },
-  // { id: 'status', label: 'Status', width: 110 },
+  { id: 'status', label: 'Status', width: 110 },
   { id: '', width: 88 },
 ];
 
@@ -212,29 +212,14 @@ export default function QcReportListView() {
                       ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
                     }
                     color={
-                      (tab.value === 0 && 'success') ||
-                      (tab.value === 1 && 'warning') ||
-                      (tab.value === 2 && 'info') ||
-                      (tab.value === 3 && 'secondary') ||
-                      (tab.value === 4 && 'warning') ||
-                      (tab.value === 5 && 'error') ||
-                      'default'
+                      (tab.value === 0 && 'warning') || (tab.value === 1 && 'success') || 'default'
                     }
                   >
                     {tab.value === 'all' && qcReports.length}
                     {tab.value === 0 &&
                       qcReports.filter((qcReport) => qcReport.status === 0).length}
-
                     {tab.value === 1 &&
                       qcReports.filter((qcReport) => qcReport.status === 1).length}
-                    {tab.value === 2 &&
-                      qcReports.filter((qcReport) => qcReport.status === 2).length}
-                    {tab.value === 3 &&
-                      qcReports.filter((qcReport) => qcReport.status === 3).length}
-                    {tab.value === 4 &&
-                      qcReports.filter((qcReport) => qcReport.status === 4).length}
-                    {tab.value === 5 &&
-                      qcReports.filter((qcReport) => qcReport.status === 5).length}
                   </Label>
                 }
               />

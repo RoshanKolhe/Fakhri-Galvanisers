@@ -9,6 +9,7 @@ import {Quotation} from './quotation.model';
 import {Order} from './order.model';
 import {Challan} from './challan.model';
 import {Payment} from './payment.model';
+import {Dispatch} from './dispatch.model';
 
 @model()
 export class Customer extends Entity {
@@ -164,6 +165,9 @@ export class Customer extends Entity {
 
   @hasMany(() => Payment)
   payments: Payment[];
+
+  @hasMany(() => Dispatch)
+  dispatches: Dispatch[];
 
   constructor(data?: Partial<Customer>) {
     super(data);

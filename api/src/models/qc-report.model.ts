@@ -1,4 +1,10 @@
-import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {
+  Entity,
+  model,
+  property,
+  belongsTo,
+  hasMany,
+} from '@loopback/repository';
 import {Order} from './order.model';
 import {Material} from './material.model';
 import {Lots} from './lots.model';
@@ -17,7 +23,7 @@ export class QcReport extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status?: number; // 0:Pending, 1:Completed
 
   @property({
     type: 'date',

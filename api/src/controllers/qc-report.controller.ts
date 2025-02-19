@@ -21,7 +21,13 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import {QcReport, QcTest} from '../models';
-import {QcReportRepository, QcTestRepository} from '../repositories';
+import {
+  DispatchRepository,
+  MaterialRepository,
+  OrderRepository,
+  QcReportRepository,
+  QcTestRepository,
+} from '../repositories';
 import {authenticate} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
@@ -35,6 +41,12 @@ export class QcReportController {
     public qcReportRepository: QcReportRepository,
     @repository(QcTestRepository)
     public qcTestRepository: QcTestRepository,
+    @repository(OrderRepository)
+    public orderRepository: OrderRepository,
+    @repository(MaterialRepository)
+    public materialRepository: MaterialRepository,
+    @repository(DispatchRepository)
+    public dispatchRepository: DispatchRepository,
   ) {}
 
   @authenticate({
@@ -122,6 +134,8 @@ export class QcReportController {
           transaction: tx,
         },
       );
+      tx.commit();
+      await this.checkAllQcStatusAndCreateDispatch(qcReport.orderId);
       return data;
     } catch (err) {
       tx.rollback();
@@ -236,5 +250,54 @@ export class QcReportController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.qcReportRepository.deleteById(id);
+  }
+
+  async checkAllQcStatusAndCreateDispatch(orderId: number): Promise<void> {
+    const qcReports = await this.qcReportRepository.find({
+      where: {orderId},
+    });
+
+    const allQcCompleted =
+      qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
+
+    const materials = await this.materialRepository.find({
+      where: {orderId},
+    });
+
+    const allMaterialsCompleted =
+      materials.length > 0 && materials.every(mat => mat.status === 2);
+
+    if (allQcCompleted && allMaterialsCompleted) {
+      const order = await this.orderRepository.findById(orderId);
+      const orderTimeline = order.timeline || [];
+
+      const newEntry = {
+        id: 3,
+        title: 'Ready to Dispatch',
+        time: new Date().toISOString(),
+      };
+
+      const isAlreadyPresent = orderTimeline.some(
+        (entry: any) => entry.id === 3,
+      );
+      if (!isAlreadyPresent) {
+        orderTimeline.push(newEntry);
+      }
+
+      await this.orderRepository.updateById(orderId, {
+        status: 3,
+        timeline: orderTimeline,
+      });
+
+      await this.dispatchRepository.create({
+        orderId,
+        status: 0,
+        customerId: order.customerId,
+      });
+
+      console.log(
+        `Order ${orderId} marked as 'Ready to Dispatch' and dispatch record created.`,
+      );
+    }
   }
 }

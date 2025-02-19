@@ -209,6 +209,7 @@ export class OrderController {
         {relation: 'materials'},
         {relation: 'customer'},
         {relation: 'challan'},
+        {relation: 'payment'},
       ],
     };
     const currentUserPermission = currnetUser.permissions;
@@ -261,6 +262,7 @@ export class OrderController {
         },
         {relation: 'customer'},
         {relation: 'challan'},
+        {relation: 'payment'},
       ],
     };
 

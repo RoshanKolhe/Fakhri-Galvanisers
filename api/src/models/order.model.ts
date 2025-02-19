@@ -9,6 +9,7 @@ import {Material} from './material.model';
 import {Customer} from './customer.model';
 import {QcReport} from './qc-report.model';
 import {Payment} from './payment.model';
+import {Dispatch} from './dispatch.model';
 
 @model()
 export class Order extends Entity {
@@ -142,6 +143,9 @@ export class Order extends Entity {
 
   @hasOne(() => Payment)
   payment: Payment;
+
+  @hasOne(() => Dispatch)
+  dispatch: Dispatch;
 
   constructor(data?: Partial<Order>) {
     super(data);

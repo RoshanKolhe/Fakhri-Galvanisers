@@ -129,7 +129,6 @@ export default function OrderMaterialForm({ currentOrder }) {
     control,
     name: 'materials',
   });
-  console.log(fields);
   const values = watch();
 
   const onSubmit = handleSubmit(async (formData) => {

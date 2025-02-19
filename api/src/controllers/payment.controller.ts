@@ -1,8 +1,10 @@
 import {
   Count,
   CountSchema,
+  DefaultTransactionalRepository,
   Filter,
   FilterExcludingWhere,
+  IsolationLevel,
   relation,
   repository,
   Where,
@@ -20,18 +22,33 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import {Payment} from '../models';
-import {OrderRepository, PaymentRepository} from '../repositories';
+import {
+  DispatchRepository,
+  MaterialRepository,
+  OrderRepository,
+  PaymentRepository,
+  QcReportRepository,
+} from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
 import {UserProfile} from '@loopback/security';
+import {FakhriGalvanisersDataSource} from '../datasources';
 
 export class PaymentController {
   constructor(
+    @inject('datasources.fakhriGalvanisers')
+    public dataSource: FakhriGalvanisersDataSource,
     @repository(PaymentRepository)
     public paymentRepository: PaymentRepository,
     @repository(OrderRepository)
     public orderRepository: OrderRepository,
+    @repository(MaterialRepository)
+    public materialRepository: MaterialRepository,
+    @repository(DispatchRepository)
+    public dispatchRepository: DispatchRepository,
+    @repository(QcReportRepository)
+    public qcReportRepository: QcReportRepository,
   ) {}
 
   @authenticate({
@@ -181,20 +198,86 @@ export class PaymentController {
     })
     payment: Payment,
   ): Promise<void> {
-    const paymentDetails = await this.paymentRepository.findById(id);
-    if (!paymentDetails) {
-      throw new HttpErrors.BadRequest('Inovice not found');
+    const repo = new DefaultTransactionalRepository(Payment, this.dataSource);
+    const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
+
+    try {
+      const paymentDetails = await this.paymentRepository.findById(id);
+      if (!paymentDetails) {
+        throw new HttpErrors.BadRequest('Invoice not found');
+      }
+
+      if (payment.status && payment.status === 1) {
+        await this.orderRepository.updateById(
+          paymentDetails.orderId,
+          {isPaid: true},
+          {transaction: tx},
+        );
+
+        const materials = await this.materialRepository.find({
+          where: {orderId: paymentDetails.orderId},
+        });
+
+        const qcReports = await this.qcReportRepository.find({
+          where: {orderId: paymentDetails.orderId},
+        });
+
+        const allMaterialsCompleted =
+          materials.length > 0 &&
+          materials.every(material => material.status === 2);
+
+        const allQcCompleted =
+          qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
+
+        if (allMaterialsCompleted && allQcCompleted) {
+          await this.dispatchRepository.create(
+            {
+              orderId: paymentDetails.orderId,
+              customerId: paymentDetails.customerId,
+            },
+            {transaction: tx},
+          );
+
+          // Update order timeline with 'Ready to Dispatch' entry
+          const order = await this.orderRepository.findById(
+            paymentDetails.orderId,
+          );
+          const orderTimeline = order.timeline || [];
+
+          const newEntry = {
+            id: 3,
+            title: 'Ready to Dispatch',
+            time: new Date().toISOString(),
+          };
+
+          if (!orderTimeline.some((entry: any) => entry.id === 3)) {
+            orderTimeline.push(newEntry);
+          }
+
+          await this.orderRepository.updateById(
+            paymentDetails.orderId,
+            {
+              status: 3,
+              timeline: orderTimeline,
+            },
+            {transaction: tx},
+          );
+        }
+      } else {
+        await this.orderRepository.updateById(
+          paymentDetails.orderId,
+          {isPaid: false},
+          {transaction: tx},
+        );
+      }
+
+      await this.paymentRepository.updateById(id, payment, {transaction: tx});
+
+      await tx.commit();
+    } catch (err) {
+      await tx.rollback();
+      throw err;
     }
-    if (payment.status && payment.status == 1) {
-      await this.orderRepository.updateById(paymentDetails.orderId, {
-        isPaid: true,
-      });
-    } else {
-      await this.orderRepository.updateById(paymentDetails.orderId, {
-        isPaid: false,
-      });
-    }
-    await this.paymentRepository.updateById(id, payment);
   }
 
   @authenticate({

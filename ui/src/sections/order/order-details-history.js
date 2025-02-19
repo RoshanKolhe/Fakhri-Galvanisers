@@ -39,14 +39,14 @@ export default function OrderDetailsHistory({ history = [], order }) {
         <Box sx={{ color: 'text.disabled' }}>Order time</Box>
         {order && fDateTime(order?.createdAt)}
       </Stack>
-      <Stack spacing={0.5}>
+      {/* <Stack spacing={0.5}>
         <Box sx={{ color: 'text.disabled' }}>Payment time</Box>
         {order && fDateTime(order?.createdAt)}
       </Stack>
       <Stack spacing={0.5}>
         <Box sx={{ color: 'text.disabled' }}>Completion time</Box>
         {order && fDateTime(order?.createdAt)}
-      </Stack>
+      </Stack> */}
     </Stack>
   );
 

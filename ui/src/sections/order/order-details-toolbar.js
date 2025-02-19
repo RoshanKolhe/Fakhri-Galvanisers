@@ -56,16 +56,14 @@ export default function OrderDetailsToolbar({
                   (status === 1 && 'warning') ||
                   (status === 2 && 'info') ||
                   (status === 3 && 'secondary') ||
-                  (status === 4 && 'warning') ||
-                  (status === 5 && 'error') ||
+                  (status === 4 && 'error') ||
                   'default'
                 }
               >
                 {(status === 1 && 'In Process') ||
                   (status === 2 && 'Material Ready') ||
-                  (status === 3 && 'Awaiting Payment') ||
-                  (status === 4 && 'Ready To dispatch') ||
-                  (status === 5 && 'Cancelled') ||
+                  (status === 3 && 'Ready To dispatch') ||
+                  (status === 4 && 'Cancelled') ||
                   (status === 0 && 'Material Received')}
               </Label>
             </Stack>

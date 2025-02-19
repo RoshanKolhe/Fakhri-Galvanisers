@@ -70,14 +70,14 @@ export default function QcReportTableRow({
       </TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{material.materialType}</TableCell>
 
-      {/* <TableCell>
+      <TableCell>
         <Label
           variant="soft"
           color={(status === 0 && 'warning') || (status === 1 && 'success') || 'default'}
         >
           {(status === 0 && 'Pending') || (status === 1 && 'Completed')}
         </Label>
-      </TableCell> */}
+      </TableCell>
 
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
         {qcTests && qcTests.length > 0 ? (

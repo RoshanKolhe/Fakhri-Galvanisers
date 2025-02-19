@@ -16,6 +16,7 @@ import Iconify from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export default function OrderDetailsInfo({ customer, delivery, payment, shippingAddress }) {
+  console.log(payment);
   const renderCustomer = (
     <>
       <CardHeader
@@ -89,13 +90,19 @@ export default function OrderDetailsInfo({ customer, delivery, payment, shipping
         //   </IconButton>
         // }
       />
-      <Stack direction="row" alignItems="center" sx={{ p: 3, typography: 'body2' }}>
+      <Stack direction="row" alignItems="center" sx={{ px: 3, py: 1, typography: 'body2' }}>
         <Box component="span" sx={{ color: 'text.secondary', flexGrow: 1 }}>
-          Phone number
+          Performa ID
         </Box>
 
-        {payment?.cardNumber}
-        <Iconify icon="logos:mastercard" width={24} sx={{ ml: 0.5 }} />
+        {payment?.performaId}
+      </Stack>
+      <Stack direction="row" alignItems="center" sx={{ px: 3, py: 1, typography: 'body2' }}>
+        <Box component="span" sx={{ color: 'text.secondary', flexGrow: 1 }}>
+          Amount
+        </Box>
+
+        {payment?.totalAmount}
       </Stack>
     </>
   );

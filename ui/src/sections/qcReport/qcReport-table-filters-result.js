@@ -46,14 +46,7 @@ export default function QcReportTableFiltersResult({
           <Block label="Status:">
             <Chip
               size="small"
-              label={
-                (filters.status === 0 && 'Material Received') ||
-                (filters.status === 1 && 'In Process') ||
-                (filters.status === 2 && 'Material Ready') ||
-                (filters.status === 3 && 'Awaiting Payment') ||
-                (filters.status === 4 && 'Ready To dispatch') ||
-                (filters.status === 5 && 'Cancelled')
-              }
+              label={(filters.status === 0 && 'Pending') || (filters.status === 1 && 'Completed')}
               onDelete={handleRemoveStatus}
             />
           </Block>
