@@ -261,6 +261,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                         helperText: error?.message,
                       },
                     }}
+                    disabled={!isAdmin}
                   />
                 )}
               />
@@ -283,6 +284,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                         helperText: error?.message,
                       },
                     }}
+                    disabled={!isAdmin}
                   />
                 )}
               />
@@ -303,36 +305,38 @@ export default function OrderMaterialForm({ currentOrder }) {
                   name={`materials[${index}].noOfLots`}
                   label="No Of Lots"
                   fullWidth
-                  disabled={item.status !== 0}
+                  disabled={item.status !== 0 || !isAdmin}
                 />
 
                 {/** Job Card Button outside the TextField */}
-                <Button
-                  variant="text"
-                  sx={{
-                    textTransform: 'none',
-                    alignSelf: 'flex-end',
-                    color: '#0000FF',
-                    fontWeight: 400,
-                  }}
-                  onClick={() => {
-                    if (values.materials[index].noOfLots <= 0) {
-                      enqueueSnackbar('No of Lots should be greater than 0', {
-                        variant: 'error',
-                      });
-                      return;
-                    }
-                    if (values.materials[index].processes.length <= 0) {
-                      enqueueSnackbar('Please Select at least one process', {
-                        variant: 'error',
-                      });
-                      return;
-                    }
-                    handleJobCardClick(values.materials[index]);
-                  }}
-                >
-                  Job Card
-                </Button>
+                {isAdmin ? (
+                  <Button
+                    variant="text"
+                    sx={{
+                      textTransform: 'none',
+                      alignSelf: 'flex-end',
+                      color: '#0000FF',
+                      fontWeight: 400,
+                    }}
+                    onClick={() => {
+                      if (values.materials[index].noOfLots <= 0) {
+                        enqueueSnackbar('No of Lots should be greater than 0', {
+                          variant: 'error',
+                        });
+                        return;
+                      }
+                      if (values.materials[index].processes.length <= 0) {
+                        enqueueSnackbar('Please Select at least one process', {
+                          variant: 'error',
+                        });
+                        return;
+                      }
+                      handleJobCardClick(values.materials[index]);
+                    }}
+                  >
+                    Job Card
+                  </Button>
+                ) : null}
               </Stack>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -372,6 +376,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                     />
                   ))
                 }
+                disabled={!isAdmin}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -405,11 +410,17 @@ export default function OrderMaterialForm({ currentOrder }) {
                     />
                   ))
                 }
-                disabled={item.status !== 0}
+                disabled={item.status !== 0 || !isAdmin}
               />
             </Grid>
             <Grid item xs={12}>
-              <RHFTextField name={`materials[${index}].remark`} multiline rows={3} label="Remark" />
+              <RHFTextField
+                name={`materials[${index}].remark`}
+                multiline
+                rows={3}
+                label="Remark"
+                disabled={!isAdmin}
+              />
             </Grid>
           </Grid>
           {index < fields.length - 1 && <Divider sx={{ my: 2, borderStyle: 'dashed' }} />}
@@ -467,11 +478,13 @@ export default function OrderMaterialForm({ currentOrder }) {
               <Grid item xs={12}>
                 {renderMaterialDetailsForm}
               </Grid>
-              <Stack alignItems="flex-end" sx={{ mt: 3 }}>
-                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                  Save
-                </LoadingButton>
-              </Stack>
+              {isAdmin ? (
+                <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+                  <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                    Save
+                  </LoadingButton>
+                </Stack>
+              ) : null}
             </Grid>
           </Card>
         </Grid>

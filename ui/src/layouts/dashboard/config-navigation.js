@@ -34,6 +34,7 @@ const ICONS = {
   tour: icon('ic_tour'),
   order: icon('ic_order'),
   qcReport: icon('ic_qcReport'),
+  dispatch: icon('ic_dispatch'),
   label: icon('ic_label'),
   blank: icon('ic_blank'),
   kanban: icon('ic_kanban'),
@@ -176,6 +177,21 @@ export function useNavData() {
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
+          },
+
+          // Dispatch
+          {
+            title: t('dispatch'),
+            path: paths.dashboard.dispatch.root,
+            icon: ICONS.dispatch,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.dispatch.root,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
           },
         ],
       },

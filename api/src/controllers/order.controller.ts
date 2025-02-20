@@ -166,6 +166,7 @@ export class OrderController {
         performaId: formattedInvoiceId,
         dueDate: new Date(new Date().setDate(new Date().getDate() + 45)),
         totalAmount: grandTotal,
+        customerId: orderData.customerId,
       };
       await this.paymentRepository.create(paymentData, {
         transaction: tx,
@@ -210,6 +211,7 @@ export class OrderController {
         {relation: 'customer'},
         {relation: 'challan'},
         {relation: 'payment'},
+        {relation: 'dispatch'},
       ],
     };
     const currentUserPermission = currnetUser.permissions;
@@ -263,6 +265,7 @@ export class OrderController {
         {relation: 'customer'},
         {relation: 'challan'},
         {relation: 'payment'},
+        {relation: 'dispatch'},
       ],
     };
 

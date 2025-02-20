@@ -10,3 +10,4 @@ export * from './order.controller';
 export * from './processes.controller';
 export * from './qc-report.controller';
 export * from './payment.controller';
+export * from './dispatch.controller';

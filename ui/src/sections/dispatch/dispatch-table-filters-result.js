@@ -12,7 +12,7 @@ import { shortDateLabel } from 'src/components/custom-date-range-picker';
 
 // ----------------------------------------------------------------------
 
-export default function QcReportTableFiltersResult({
+export default function DispatchTableFiltersResult({
   filters,
   onFilters,
   //
@@ -70,7 +70,7 @@ export default function QcReportTableFiltersResult({
   );
 }
 
-QcReportTableFiltersResult.propTypes = {
+DispatchTableFiltersResult.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
   onResetFilters: PropTypes.func,

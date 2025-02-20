@@ -95,6 +95,7 @@ export class QuotationController {
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @param.filter(Quotation) filter?: Filter<Quotation>,
   ): Promise<Quotation[]> {
+    console.log('currnetUser', currnetUser.id);
     filter = {
       ...filter,
       where: {

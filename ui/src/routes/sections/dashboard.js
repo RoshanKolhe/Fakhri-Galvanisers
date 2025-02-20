@@ -61,6 +61,11 @@ const QcReportListPage = lazy(() => import('src/pages/dashboard/qcReport/list'))
 const QcReportEditPage = lazy(() => import('src/pages/dashboard/qcReport/edit'));
 const QcReportViewPage = lazy(() => import('src/pages/dashboard/qcReport/view'));
 
+// DISPATCH
+const DispatchListPage = lazy(() => import('src/pages/dashboard/dispatch/list'));
+const DispatchEditPage = lazy(() => import('src/pages/dashboard/dispatch/edit'));
+const DispatchViewPage = lazy(() => import('src/pages/dashboard/dispatch/view'));
+
 // INVOICE
 const InvoiceListPage = lazy(() => import('src/pages/dashboard/invoice/list'));
 const InvoiceDetailsPage = lazy(() => import('src/pages/dashboard/invoice/details'));
@@ -174,6 +179,15 @@ export const dashboardRoutes = [
           { path: 'list', element: <QcReportListPage /> },
           { path: ':id/edit', element: <QcReportEditPage /> },
           { path: ':id/view', element: <QcReportViewPage /> },
+        ],
+      },
+      {
+        path: 'dispatch',
+        children: [
+          { element: <DispatchListPage />, index: true },
+          { path: 'list', element: <DispatchListPage /> },
+          { path: ':id/edit', element: <DispatchEditPage /> },
+          { path: ':id/view', element: <DispatchViewPage /> },
         ],
       },
       {

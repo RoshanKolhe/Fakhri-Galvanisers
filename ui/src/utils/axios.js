@@ -73,6 +73,11 @@ export const endpoints = {
     filterList: (filter) => `/qc-reports?${filter}`,
     details: (id) => `/qc-reports/${id}`,
   },
+  dispatch: {
+    list: '/dispatches',
+    filterList: (filter) => `/dispatches?${filter}`,
+    details: (id) => `/dispatches/${id}`,
+  },
   processes: {
     list: '/processes',
     filterList: (filter) => `/processes?${filter}`,

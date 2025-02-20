@@ -15,7 +15,7 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function OrderDetailsInfo({ customer, delivery, payment, shippingAddress }) {
+export default function OrderDetailsInfo({ customer, dispatch, payment, shippingAddress }) {
   console.log(payment);
   const renderCustomer = (
     <>
@@ -45,10 +45,10 @@ export default function OrderDetailsInfo({ customer, delivery, payment, shipping
     </>
   );
 
-  const renderDelivery = (
+  const renderDispatch = (
     <>
       <CardHeader
-        title="Delivery"
+        title="Dispatch"
         // action={
         //   <IconButton>
         //     <Iconify icon="solar:pen-bold" />
@@ -58,24 +58,24 @@ export default function OrderDetailsInfo({ customer, delivery, payment, shipping
       <Stack spacing={1.5} sx={{ p: 3, typography: 'body2' }}>
         <Stack direction="row" alignItems="center">
           <Box component="span" sx={{ color: 'text.secondary', width: 120, flexShrink: 0 }}>
-            Ship by
+            Vehicle Number
           </Box>
-          {delivery?.shipBy}
+          {dispatch?.vehicleDetails?.vehicleNumber || 'NA'}
         </Stack>
-        <Stack direction="row" alignItems="center">
+        {/* <Stack direction="row" alignItems="center">
           <Box component="span" sx={{ color: 'text.secondary', width: 120, flexShrink: 0 }}>
             Speedy
           </Box>
-          {delivery?.speedy}
+          {dispatch?.speedy}
         </Stack>
         <Stack direction="row" alignItems="center">
           <Box component="span" sx={{ color: 'text.secondary', width: 120, flexShrink: 0 }}>
             Tracking No.
           </Box>
           <Link underline="always" color="inherit">
-            {delivery?.trackingNumber}
+            {dispatch?.trackingNumber}
           </Link>
-        </Stack>
+        </Stack> */}
       </Stack>
     </>
   );
@@ -113,7 +113,7 @@ export default function OrderDetailsInfo({ customer, delivery, payment, shipping
 
       <Divider sx={{ borderStyle: 'dashed' }} />
 
-      {renderDelivery}
+      {renderDispatch}
 
       <Divider sx={{ borderStyle: 'dashed' }} />
 
@@ -124,7 +124,7 @@ export default function OrderDetailsInfo({ customer, delivery, payment, shipping
 
 OrderDetailsInfo.propTypes = {
   customer: PropTypes.object,
-  delivery: PropTypes.object,
+  dispatch: PropTypes.object,
   payment: PropTypes.object,
   shippingAddress: PropTypes.object,
 };

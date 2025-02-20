@@ -203,7 +203,8 @@ export default function QuotationNewEditForm({ currentQuotation }) {
 
   const onSubmit = handleSubmit(async (formData) => {
     try {
-      console.info('DATA', formData);
+      console.info('DATA', customerName);
+      console.info('user', user);
       const inputData = {
         customerId: customerName ? customerName.id : user.id,
         adminNote: formData.adminNote,
@@ -211,6 +212,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
         materials: formData.materials,
         status: isAdmin ? 2 : 4,
       };
+      console.log(inputData);
       if (!currentQuotation) {
         await axiosInstance.post('/quotations', inputData);
       } else {
@@ -741,6 +743,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
           </Grid>
         </Grid>
         <Dialog fullWidth maxWidth="sm" open={poDocModal.value} onClose={poDocModal.onFalse}>
+          <DialogTitle>Upload PO</DialogTitle>
           <DialogContent sx={{ typography: 'body2' }}>
             <RHFUpload
               sx={{ marginTop: '30px' }}

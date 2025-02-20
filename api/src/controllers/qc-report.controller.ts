@@ -256,7 +256,7 @@ export class QcReportController {
     const qcReports = await this.qcReportRepository.find({
       where: {orderId},
     });
-
+    const order = await this.orderRepository.findById(orderId);
     const allQcCompleted =
       qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
 
@@ -267,7 +267,7 @@ export class QcReportController {
     const allMaterialsCompleted =
       materials.length > 0 && materials.every(mat => mat.status === 2);
 
-    if (allQcCompleted && allMaterialsCompleted) {
+    if (allQcCompleted && allMaterialsCompleted && order.isPaid) {
       const order = await this.orderRepository.findById(orderId);
       const orderTimeline = order.timeline || [];
 

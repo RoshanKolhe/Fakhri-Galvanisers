@@ -64,15 +64,16 @@ export class ChallanController {
         or: [{quotationId: challan.quotationId}, {poNumber: challan.poNumber}],
       },
     });
-
+    console.log('existingChallan', existingChallan);
     if (existingChallan) {
       let errorMessage = '';
 
       if (existingChallan.quotationId === challan.quotationId) {
         errorMessage += 'RFQ Reference is already used in another Challan. ';
-      }
-      if (existingChallan.poNumber == challan.poNumber) {
+      } else if (existingChallan.poNumber == challan.poNumber) {
         errorMessage += 'PO Number is already used in another Challan.';
+      } else {
+        errorMessage += 'Challan With Qutation Id or Po number already exists';
       }
 
       throw new HttpErrors.BadRequest(errorMessage.trim());

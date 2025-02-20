@@ -41,6 +41,7 @@ export default function OrderLotProcessModal({
   console.log(jobCardLots);
   const { enqueueSnackbar } = useSnackbar();
   const [lots, setLots] = useState([]);
+  console.log('lots', lots);
   const [times, setTimes] = useState([]);
   console.log('times', times);
 
@@ -67,12 +68,13 @@ export default function OrderLotProcessModal({
         }));
 
         setLots(newLots);
-        // Assuming `processes` array should be initialized in the `times` state
+
+        // Ensure `times` is properly initialized with process details
         const newTimes = foundMaterial.lots.map((lot) =>
           lot.processes.map((process) => ({
-            duration: new Date(process.duration),
-            status: process.status,
-            timeTaken: new Date(process.timeTaken),
+            duration: process.duration ? new Date(process.duration) : null,
+            status: process.status || 0,
+            timeTaken: process.timeTaken ? new Date(process.timeTaken) : null,
           }))
         );
 
@@ -87,10 +89,28 @@ export default function OrderLotProcessModal({
           .map((_, i) => ({
             lotNumber: i + 1,
             quantity: baseQty + (i < remainder ? 1 : 0),
+            status: 0,
+            processes: processes.map(() => ({
+              duration: null,
+              status: 0,
+              timeTaken: null,
+            })), // Initialize processes properly
           }));
 
         setLots(newLots);
-        setTimes(Array(count).fill([])); // Assuming `times` needs to be an empty array initially
+
+        // Ensure `times` matches `processes` structure
+        const newTimes = Array(count)
+          .fill(null)
+          .map(() =>
+            processes.map(() => ({
+              duration: null,
+              status: 0,
+              timeTaken: null,
+            }))
+          );
+
+        setTimes(newTimes);
       }
     } catch (err) {
       console.log(err);
@@ -142,8 +162,18 @@ export default function OrderLotProcessModal({
     if (!bulkTime) return;
 
     const updatedTimes = [...times];
+
     selectedRows.forEach((lotIndex) => {
-      updatedTimes[lotIndex] = processes.map(() => bulkTime);
+      // Ensure the lot has an array to store process times
+      updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
+
+      processes.forEach((_, processIndex) => {
+        // Ensure each process entry exists before modifying
+        updatedTimes[lotIndex][processIndex] = {
+          ...(updatedTimes[lotIndex][processIndex] || {}),
+          duration: bulkTime, // Apply only the duration field
+        };
+      });
     });
 
     setTimes(updatedTimes);
@@ -341,7 +371,7 @@ export default function OrderLotProcessModal({
                   <TableCell>{`Lot${lot.lotNumber}`}</TableCell>
                   {processes.map((process, processIndex) => (
                     <TableCell key={processIndex}>
-                      {times[lotIndex]?.[processIndex].status === 1 ? (
+                      {times[lotIndex]?.[processIndex]?.status === 1 ? (
                         <TimePicker
                           value={times[lotIndex]?.[processIndex].duration || null}
                           onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
@@ -357,7 +387,7 @@ export default function OrderLotProcessModal({
                           sx={{ minWidth: '140px' }}
                           disabled
                         />
-                      ) : times[lotIndex]?.[processIndex].status === 2 ? (
+                      ) : times[lotIndex]?.[processIndex]?.status === 2 ? (
                         <Stack direction="column" spacing={1}>
                           {/* Duration Time */}
                           <Typography variant="body2" color="textSecondary">
@@ -381,7 +411,7 @@ export default function OrderLotProcessModal({
                         </Stack>
                       ) : (
                         <TimePicker
-                          value={times[lotIndex]?.[processIndex].duration || null}
+                          value={times[lotIndex]?.[processIndex]?.duration || null}
                           onChange={(newTime) => handleTimeChange(lotIndex, processIndex, newTime)}
                           views={['minutes', 'seconds']}
                           format="mm:ss"

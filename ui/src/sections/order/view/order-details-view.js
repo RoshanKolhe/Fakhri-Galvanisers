@@ -60,7 +60,7 @@ export default function OrderDetailsView() {
         <Grid xs={12} md={4}>
           <OrderDetailsInfo
             customer={currentOrder?.customer}
-            delivery={currentOrder?.delivery}
+            dispatch={currentOrder?.dispatch}
             payment={currentOrder?.payment}
             shippingAddress={currentOrder?.shippingAddress}
           />
