@@ -16,7 +16,7 @@ export default function ProcessesCreateView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Create a new Hsn Master"
+        heading="Create a new Process Master"
         links={[
           {
             name: 'Dashboard',
