@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
@@ -16,9 +18,86 @@ import axiosInstance from 'src/utils/axios';
 import { LoadingButton } from '@mui/lab';
 import { useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  MouseSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useGetProcessess } from 'src/api/processes';
 import OrderLotProcessModal from './order-lot-process-modal';
 
 // ----------------------------------------------------------------------
+
+const SortableItem = ({ value, onDelete }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: value.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={{ ...style, margin: '3px' }} {...attributes} {...listeners}>
+      <Chip
+        key={value?.id}
+        label={value?.name}
+        onDelete={onDelete}
+        size="small"
+        color="info"
+        variant="soft"
+      />
+    </div>
+  );
+};
+
+const SortableChips = ({ value, index, props, setValue }) => {
+  console.log(value, props);
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 20 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    // Get existing processes
+    const processes = [...value];
+
+    const oldIndex = processes.findIndex((p) => p.id === active.id);
+    const newIndex = processes.findIndex((p) => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(processes, oldIndex, newIndex);
+
+    setValue(`materials[${index}].processes`, reordered);
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={value} strategy={verticalListSortingStrategy}>
+        {value.map((item, index1) => {
+          const { key, onDelete } = props({ index: index1 });
+          return <SortableItem key={item.name} value={item} onDelete={onDelete} />;
+        })}
+      </SortableContext>
+    </DndContext>
+  );
+};
 
 export default function OrderMaterialForm({ currentOrder }) {
   const { enqueueSnackbar } = useSnackbar();
@@ -105,11 +184,11 @@ export default function OrderMaterialForm({ currentOrder }) {
             status: material.status !== undefined && material.status !== null ? material.status : 0,
             noOfLots: material.noOfLots || 0,
             users: material.users || [],
-            processes: material.processes || [],
+            processes: material.processes || processOptions,
           }))
         : [],
     }),
-    [currentOrder, isAdmin, user]
+    [currentOrder, isAdmin, processOptions, user?.company]
   );
 
   const methods = useForm({
@@ -130,6 +209,8 @@ export default function OrderMaterialForm({ currentOrder }) {
     name: 'materials',
   });
   const values = watch();
+  console.log(values);
+  const { processess, processessLoading, processessEmpty, refreshProcessess } = useGetProcessess();
 
   const onSubmit = handleSubmit(async (formData) => {
     try {
@@ -183,24 +264,22 @@ export default function OrderMaterialForm({ currentOrder }) {
     }
   };
 
-  const fetchProcesses = async (event) => {
-    try {
-      if (event && event?.target?.value && event.target.value.length >= 3) {
-        const filter = {
-          where: {
-            or: [{ name: { like: `%${event.target.value}%` } }],
-          },
-        };
-        const filterString = encodeURIComponent(JSON.stringify(filter));
-        const { data } = await axiosInstance.get(`/processes?filter=${filterString}`);
-        setProcessOptions(data);
-      } else {
-        setProcessOptions([]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // const fetchProcesses = async (event) => {
+  //   try {
+  //     if (event && event?.target?.value && event.target.value.length >= 3) {
+  //       const filter = {
+  //         where: {
+  //           or: [{ name: { like: `%${event.target.value}%` } }],
+  //         },
+  //       };
+  //       const filterString = encodeURIComponent(JSON.stringify(filter));
+  //       const { data } = await axiosInstance.get(`/processes?filter=${filterString}`);
+  //       setProcessOptions(data);
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
 
   const renderMaterialDetailsForm = (
     <Stack spacing={3} mt={2}>
@@ -367,7 +446,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                 renderTags={(selected, getTagProps) =>
                   selected.map((option, tagIndex) => (
                     <Chip
-                      {...getTagProps({ tagIndex })}
+                      {...getTagProps({ index: tagIndex })}
                       key={option.id}
                       label={`${option.firstName} ${option.lastName}`}
                       size="small"
@@ -384,10 +463,13 @@ export default function OrderMaterialForm({ currentOrder }) {
                 multiple
                 name={`materials[${index}].processes`}
                 label="Processes"
-                onInputChange={(event) => fetchProcesses(event)}
                 options={processOptions || []}
                 getOptionLabel={(option) => `${option?.name}` || ''}
-                filterOptions={(x) => x}
+                filterOptions={(options, { inputValue }) =>
+                  options.filter((option) =>
+                    option.name.toLowerCase().includes(inputValue.toLowerCase())
+                  )
+                }
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 renderOption={(props, option) => (
                   <li {...props}>
@@ -398,18 +480,9 @@ export default function OrderMaterialForm({ currentOrder }) {
                     </div>
                   </li>
                 )}
-                renderTags={(selected, getTagProps) =>
-                  selected.map((option, tagIndex) => (
-                    <Chip
-                      {...getTagProps({ tagIndex })}
-                      key={option.id}
-                      label={`${option.name}`}
-                      size="small"
-                      color="info"
-                      variant="soft"
-                    />
-                  ))
-                }
+                renderTags={(value, props) => (
+                  <SortableChips index={index} value={value} props={props} setValue={setValue} />
+                )}
                 disabled={item.status !== 0 || !isAdmin}
               />
             </Grid>
@@ -456,6 +529,12 @@ export default function OrderMaterialForm({ currentOrder }) {
       setJobCardLots(transformedOrder);
     }
   }, [currentOrder]);
+
+  useEffect(() => {
+    if (processess) {
+      setProcessOptions(processess);
+    }
+  }, [processess]);
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>

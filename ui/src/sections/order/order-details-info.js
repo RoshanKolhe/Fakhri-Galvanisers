@@ -16,7 +16,6 @@ import Iconify from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export default function OrderDetailsInfo({ customer, dispatch, payment, shippingAddress }) {
-  console.log(payment);
   const renderCustomer = (
     <>
       <CardHeader

@@ -47,6 +47,7 @@ export class ChallanController {
     content: {'application/json': {schema: getModelSchemaRef(Challan)}},
   })
   async create(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -61,22 +62,14 @@ export class ChallanController {
   ): Promise<Challan> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
-        or: [{quotationId: challan.quotationId}, {poNumber: challan.poNumber}],
+        and: [{poNumber: challan.poNumber}, {customerId: currnetUser.id}],
       },
     });
     console.log('existingChallan', existingChallan);
-    if (existingChallan) {
-      let errorMessage = '';
-
-      if (existingChallan.quotationId === challan.quotationId) {
-        errorMessage += 'RFQ Reference is already used in another Challan. ';
-      } else if (existingChallan.poNumber == challan.poNumber) {
-        errorMessage += 'PO Number is already used in another Challan.';
-      } else {
-        errorMessage += 'Challan With Qutation Id or Po number already exists';
-      }
-
-      throw new HttpErrors.BadRequest(errorMessage.trim());
+    if (existingChallan && existingChallan.poNumber == challan.poNumber) {
+      throw new HttpErrors.BadRequest(
+        'PO Number is already used in another Challan for this customer.',
+      );
     }
 
     return this.challanRepository.create(challan);
