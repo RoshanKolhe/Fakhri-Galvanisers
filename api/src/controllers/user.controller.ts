@@ -25,7 +25,13 @@ import * as _ from 'lodash';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {EmailManagerBindings} from '../keys';
 import {User} from '../models';
-import {Credentials, UserRepository} from '../repositories';
+import {
+  Credentials,
+  OrderRepository,
+  PaymentRepository,
+  QuotationRepository,
+  UserRepository,
+} from '../repositories';
 import {EmailManager} from '../services/email.service';
 import {BcryptHasher} from '../services/hash.password.bcrypt';
 import {JWTService} from '../services/jwt-service';
@@ -46,7 +52,12 @@ export class UserController {
     public emailManager: EmailManager,
     @repository(UserRepository)
     public userRepository: UserRepository,
-
+    @repository(OrderRepository)
+    public orderRepository: OrderRepository,
+    @repository(QuotationRepository)
+    public quotationRepository: QuotationRepository,
+    @repository(PaymentRepository)
+    public paymentRepository: PaymentRepository,
     @inject('service.hasher')
     public hasher: BcryptHasher,
     @inject('service.user.service')
@@ -252,34 +263,33 @@ export class UserController {
     if (!existingUser) {
       throw new HttpErrors.NotFound('User not found');
     }
-  
+
     // Hash password if it's being updated
     if (user.password) {
       user.password = await this.hasher.hashPassword(user.password);
     }
-  
+
     // Validate email uniqueness only if email is being updated
     if (user.email && user.email !== existingUser.email) {
       const emailExists = await this.userRepository.findOne({
         where: {email: user.email, id: {neq: id}}, // Exclude the current user
       });
-  
+
       if (emailExists) {
         throw new HttpErrors.BadRequest('Email already exists');
       }
     }
-  
+
     // Set updatedBy field
     user.updatedBy = currentUser.id;
-  
+
     await this.userRepository.updateById(id, user);
-  
+
     return {
       success: true,
       message: `User profile updated successfully`,
     };
   }
-  
 
   @post('/sendResetPasswordLink')
   async sendResetPasswordLink(
@@ -474,5 +484,145 @@ export class UserController {
       deletedBy: currentUser.id,
       deletedAt: new Date(),
     });
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.CUSTOMER],
+    },
+  })
+  @get('/getDashboardCounts')
+  async getDashboardCounts(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+  ): Promise<any> {
+    console.log(currnetUser.permissions);
+    let totalActiveOrders = 0;
+    let totalOrdersReadyToDispatch = 0;
+    let totalPendingRfq = 0;
+    let last10DaysDispatchCounts: number[] = [];
+    let last10DaysRfqCounts: number[] = [];
+    let last10DaysActiveOrdersCounts: number[] = [];
+    let percentageChangeDispatch = 0;
+    let percentageChangeRfq = 0;
+    let percentageChangeActiveOrders = 0;
+
+    const user = await this.userRepository.findById(currnetUser.id);
+
+    if (user.permissions.includes('super_admin')) {
+      // Get today's totalActiveOrders (status 0, 1, 2)
+      totalActiveOrders = (
+        await this.orderRepository.count({
+          status: {inq: [0, 1, 2]},
+        })
+      ).count;
+
+      // Get today's totalOrdersReadyToDispatch (status 3)
+      totalOrdersReadyToDispatch = (
+        await this.orderRepository.count({
+          status: 3,
+        })
+      ).count;
+
+      // Get today's totalPendingRfq (status 2)
+      totalPendingRfq = (
+        await this.quotationRepository.count({
+          status: 2,
+        })
+      ).count;
+
+      // Get counts for last 10 days based on `updatedAt`
+      const today = new Date();
+      for (let i = 9; i >= 0; i--) {
+        const startOfDay = new Date(today);
+        startOfDay.setDate(today.getDate() - i);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Count Active Orders for the day
+        const activeOrdersCount = (
+          await this.orderRepository.count({
+            status: {inq: [0, 1, 2]},
+            updatedAt: {between: [startOfDay, endOfDay]},
+          })
+        ).count;
+        last10DaysActiveOrdersCounts.push(activeOrdersCount);
+
+        // Count Orders Ready to Dispatch for the day
+        const dispatchCount = (
+          await this.orderRepository.count({
+            status: 3,
+            updatedAt: {between: [startOfDay, endOfDay]},
+          })
+        ).count;
+        last10DaysDispatchCounts.push(dispatchCount);
+
+        // Count Pending RFQs for the day
+        const rfqCount = (
+          await this.quotationRepository.count({
+            status: 2,
+            updatedAt: {between: [startOfDay, endOfDay]},
+          })
+        ).count;
+        last10DaysRfqCounts.push(rfqCount);
+      }
+
+      // Calculate percentage increase/decrease
+      const todayDispatch = last10DaysDispatchCounts[9] || 0;
+      const yesterdayDispatch = last10DaysDispatchCounts[8] || 0;
+      if (yesterdayDispatch > 0) {
+        percentageChangeDispatch =
+          ((todayDispatch - yesterdayDispatch) / yesterdayDispatch) * 100;
+      }
+
+      const todayRfq = last10DaysRfqCounts[9] || 0;
+      const yesterdayRfq = last10DaysRfqCounts[8] || 0;
+      if (yesterdayRfq > 0) {
+        percentageChangeRfq = ((todayRfq - yesterdayRfq) / yesterdayRfq) * 100;
+      }
+
+      const todayActiveOrders = last10DaysActiveOrdersCounts[9] || 0;
+      const yesterdayActiveOrders = last10DaysActiveOrdersCounts[8] || 0;
+      if (yesterdayActiveOrders > 0) {
+        percentageChangeActiveOrders =
+          ((todayActiveOrders - yesterdayActiveOrders) /
+            yesterdayActiveOrders) *
+          100;
+      }
+
+      // **🔹 Get Invoice Counts for Each Status**
+      const invoiceStatuses = [
+        {label: 'Pending', status: 0},
+        {label: 'Paid', status: 1},
+        {label: 'Overdue', status: 2},
+        {label: 'Pending Approval', status: 3},
+        {label: 'Request Reupload', status: 4},
+      ];
+
+      let invoiceCounts = await Promise.all(
+        invoiceStatuses.map(async invoice => {
+          const count = (
+            await this.paymentRepository.count({status: invoice.status})
+          ).count;
+          return {label: invoice.label, value: count};
+        }),
+      );
+
+      return {
+        success: true,
+        totalActiveOrders,
+        totalOrdersReadyToDispatch,
+        totalPendingRfq,
+        last10DaysActiveOrdersCounts,
+        last10DaysDispatchCounts,
+        last10DaysRfqCounts,
+        percentageChangeActiveOrders: percentageChangeActiveOrders.toFixed(2),
+        percentageChangeDispatch: percentageChangeDispatch.toFixed(2),
+        percentageChangeRfq: percentageChangeRfq.toFixed(2),
+        invoiceCounts, // **🔹 Add Invoice Counts in Response**
+      };
+    }
   }
 }

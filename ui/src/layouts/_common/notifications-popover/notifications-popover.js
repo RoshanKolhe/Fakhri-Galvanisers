@@ -39,11 +39,6 @@ const TABS = [
     label: 'Unread',
     count: 12,
   },
-  {
-    value: 'archived',
-    label: 'Archived',
-    count: 10,
-  },
 ];
 
 // ----------------------------------------------------------------------
@@ -60,7 +55,7 @@ export default function NotificationsPopover() {
   }, []);
 
   const [notifications, setNotifications] = useState(_notifications);
-
+  console.log(notifications);
   const totalUnRead = notifications.filter((item) => item.isUnRead === true).length;
 
   const handleMarkAllAsRead = () => {
@@ -105,11 +100,7 @@ export default function NotificationsPopover() {
           icon={
             <Label
               variant={((tab.value === 'all' || tab.value === currentTab) && 'filled') || 'soft'}
-              color={
-                (tab.value === 'unread' && 'info') ||
-                (tab.value === 'archived' && 'success') ||
-                'default'
-              }
+              color={(tab.value === 'unread' && 'info') || 'default'}
             >
               {tab.count}
             </Label>
@@ -171,20 +162,17 @@ export default function NotificationsPopover() {
           sx={{ pl: 2.5, pr: 1 }}
         >
           {renderTabs}
-          <IconButton onClick={handleMarkAllAsRead}>
-            <Iconify icon="solar:settings-bold-duotone" />
-          </IconButton>
         </Stack>
 
         <Divider />
 
         {renderList}
 
-        <Box sx={{ p: 1 }}>
+        {/* <Box sx={{ p: 1 }}>
           <Button fullWidth size="large">
             View All
           </Button>
-        </Box>
+        </Box> */}
       </Drawer>
     </>
   );

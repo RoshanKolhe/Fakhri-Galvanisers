@@ -20,10 +20,13 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { TableHeadCustom } from 'src/components/table';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hook';
 
 // ----------------------------------------------------------------------
 
 export default function AppNewInvoice({ title, subheader, tableData, tableLabels, ...other }) {
+  const router = useRouter();
   return (
     <Card {...other}>
       <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
@@ -49,6 +52,9 @@ export default function AppNewInvoice({ title, subheader, tableData, tableLabels
           size="small"
           color="inherit"
           endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={18} sx={{ ml: -0.5 }} />}
+          onClick={() => {
+            router.push(paths.dashboard.invoice.root);
+          }}
         >
           View All
         </Button>
@@ -69,84 +75,32 @@ AppNewInvoice.propTypes = {
 function AppNewInvoiceRow({ row }) {
   const popover = usePopover();
 
-  const handleDownload = () => {
-    popover.onClose();
-    console.info('DOWNLOAD', row.id);
-  };
-
-  const handlePrint = () => {
-    popover.onClose();
-    console.info('PRINT', row.id);
-  };
-
-  const handleShare = () => {
-    popover.onClose();
-    console.info('SHARE', row.id);
-  };
-
-  const handleDelete = () => {
-    popover.onClose();
-    console.info('DELETE', row.id);
-  };
-
   return (
-    <>
-      <TableRow>
-        <TableCell>{row.performaId}</TableCell>
+    <TableRow>
+      <TableCell>{row.performaId}</TableCell>
 
-        <TableCell>{row.category}</TableCell>
+      <TableCell>{row.totalAmount}</TableCell>
 
-        <TableCell>{fCurrency(row.price)}</TableCell>
-
-        <TableCell>
-          <Label
-            variant="soft"
-            color={
-              (row.status === 'progress' && 'warning') ||
-              (row.status === 'out of date' && 'error') ||
-              'success'
-            }
-          >
-            {row.status}
-          </Label>
-        </TableCell>
-
-        <TableCell align="right" sx={{ pr: 1 }}>
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-
-      <CustomPopover
-        open={popover.open}
-        onClose={popover.onClose}
-        arrow="right-top"
-        sx={{ width: 160 }}
-      >
-        <MenuItem onClick={handleDownload}>
-          <Iconify icon="eva:cloud-download-fill" />
-          Download
-        </MenuItem>
-
-        <MenuItem onClick={handlePrint}>
-          <Iconify icon="solar:printer-minimalistic-bold" />
-          Print
-        </MenuItem>
-
-        <MenuItem onClick={handleShare}>
-          <Iconify icon="solar:share-bold" />
-          Share
-        </MenuItem>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
-
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
-      </CustomPopover>
-    </>
+      <TableCell>
+        <Label
+          variant="soft"
+          color={
+            (row.status === 1 && 'success') ||
+            (row.status === 0 && 'warning') ||
+            (row.status === 2 && 'error') ||
+            (row.status === 3 && 'info') || // Pending Approval
+            (row.status === 4 && 'secondary') || // Request Reupload
+            'default'
+          }
+        >
+          {(row.status === 0 && 'Pending') ||
+            (row.status === 1 && 'Paid') ||
+            (row.status === 2 && 'Overdue') ||
+            (row.status === 3 && 'Pending Approval') ||
+            (row.status === 4 && 'Request Reupload')}
+        </Label>
+      </TableCell>
+    </TableRow>
   );
 }
 

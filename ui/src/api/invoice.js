@@ -49,6 +49,7 @@ export function useGetPayment(paymentId) {
 // ----------------------------------------------------------------------
 
 export function useGetPaymentsWithFilter(filter) {
+  console.log(filter);
   let URL;
   if (filter) {
     URL = endpoints.payment.filterList(filter);
