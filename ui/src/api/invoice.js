@@ -49,7 +49,6 @@ export function useGetPayment(paymentId) {
 // ----------------------------------------------------------------------
 
 export function useGetPaymentsWithFilter(filter) {
-  console.log(filter);
   let URL;
   if (filter) {
     URL = endpoints.payment.filterList(filter);
@@ -71,24 +70,5 @@ export function useGetPaymentsWithFilter(filter) {
     filteredPaymentsValidating: isValidating,
     filteredPaymentsEmpty: !isLoading && !data?.length,
     refreshFilterPayments, // Include the refresh function separately
-  };
-}
-
-export function useGetDashboardCounts() {
-  const URL = endpoints.oayments.getDashboradCounts;
-
-  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
-
-  const refreshDashboardCounts = () => {
-    // Use the `mutate` function to trigger a revalidation
-    mutate();
-  };
-
-  return {
-    dashboardCounts: data || [],
-    isLoading,
-    error,
-    isValidating,
-    refreshDashboardCounts,
   };
 }

@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 // @mui
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
@@ -16,30 +16,16 @@ import Typography from '@mui/material/Typography';
 // hooks
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-// _mock
-import { _notifications } from 'src/_mock';
 // components
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { varHover } from 'src/components/animate';
 //
+import { useGetNotifications } from 'src/api/user';
+import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'notistack';
 import NotificationItem from './notification-item';
-
-// ----------------------------------------------------------------------
-
-const TABS = [
-  {
-    value: 'all',
-    label: 'All',
-    count: 22,
-  },
-  {
-    value: 'unread',
-    label: 'Unread',
-    count: 12,
-  },
-];
 
 // ----------------------------------------------------------------------
 
@@ -50,21 +36,43 @@ export default function NotificationsPopover() {
 
   const [currentTab, setCurrentTab] = useState('all');
 
+  const { enqueueSnackbar } = useSnackbar();
+
+  const [TABS, setTABS] = useState([
+    {
+      value: 'all',
+      label: 'All',
+      count: 0,
+    },
+    {
+      value: 'unread',
+      label: 'Unread',
+      count: 0,
+    },
+  ]);
+
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
   }, []);
 
-  const [notifications, setNotifications] = useState(_notifications);
+  const [notifications, setNotifications] = useState([]);
+  const { notifications: allNotifications, refreshNotifications } = useGetNotifications(
+    `filter=${encodeURIComponent(JSON.stringify({ order: ['createdAt DESC'] }))}`
+  );
   console.log(notifications);
-  const totalUnRead = notifications.filter((item) => item.isUnRead === true).length;
+  const totalUnRead = notifications.filter((item) => !item.status).length;
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(
-      notifications.map((notification) => ({
-        ...notification,
-        isUnRead: false,
-      }))
-    );
+  const handleMarkAllAsRead = async () => {
+    try {
+      await axiosInstance.patch('/notifications/markAllAsRead');
+      refreshNotifications();
+      enqueueSnackbar('All Notifications Updated Successfully');
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+    }
   };
 
   const renderHead = (
@@ -119,11 +127,34 @@ export default function NotificationsPopover() {
     <Scrollbar>
       <List disablePadding>
         {notifications.map((notification) => (
-          <NotificationItem key={notification.id} notification={notification} />
+          <NotificationItem key={notification.id} notification={notification} drawer={drawer} />
         ))}
       </List>
     </Scrollbar>
   );
+  useEffect(() => {
+    const totalUnread = notifications.filter((item) => !item.status).length;
+    const totalAll = notifications.length;
+
+    setTABS([
+      {
+        value: 'all',
+        label: 'All',
+        count: totalAll,
+      },
+      {
+        value: 'unread',
+        label: 'Unread',
+        count: totalUnread,
+      },
+    ]);
+  }, [notifications]);
+
+  useEffect(() => {
+    if (allNotifications) {
+      setNotifications(allNotifications);
+    }
+  }, [allNotifications]);
 
   return (
     <>

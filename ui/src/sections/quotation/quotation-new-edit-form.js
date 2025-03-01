@@ -123,6 +123,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
         : '',
       adminNote: currentQuotation?.adminNote || '',
       customerNote: currentQuotation?.customerNote || '',
+      rejectedReason: currentQuotation?.rejectedReason || '',
       materials: currentQuotation?.materials?.length
         ? currentQuotation.materials.map((material) => ({
             materialType: material.materialType || '',
@@ -671,6 +672,16 @@ export default function QuotationNewEditForm({ currentQuotation }) {
                 <Grid item xs={12} sm={12}>
                   <RHFTextField name="customerNote" label="Customer Note" multiline rows={3} />
                 </Grid>
+                {values?.rejectedReason ? (
+                  <Grid item xs={12} sm={12}>
+                    <RHFTextField
+                      name="rejectedReason"
+                      label="Rejected Reason"
+                      multiline
+                      rows={3}
+                    />
+                  </Grid>
+                ) : null}
               </Grid>
               {currentQuotation ? renderTotal : null}
               <Stack

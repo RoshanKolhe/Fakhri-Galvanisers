@@ -11,3 +11,4 @@ export * from './processes.controller';
 export * from './qc-report.controller';
 export * from './payment.controller';
 export * from './dispatch.controller';
+export * from './notification.controller';

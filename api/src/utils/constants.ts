@@ -33,3 +33,6 @@ export function getStartAndEndDateOfWeek(selectedDate: Date): {
 
   return {startDate, endDate};
 }
+
+export const formatRFQId = (rfqId: number) =>
+  `RFQ${rfqId.toString().padStart(4, '0')}`;

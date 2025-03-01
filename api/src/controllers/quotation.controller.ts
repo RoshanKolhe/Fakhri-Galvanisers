@@ -18,16 +18,25 @@ import {
   response,
 } from '@loopback/rest';
 import {Quotation} from '../models';
-import {QuotationRepository} from '../repositories';
+import {
+  NotificationRepository,
+  QuotationRepository,
+  UserRepository,
+} from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
 import {UserProfile} from '@loopback/security';
+import {formatRFQId} from '../utils/constants';
 
 export class QuotationController {
   constructor(
     @repository(QuotationRepository)
     public quotationRepository: QuotationRepository,
+    @repository(NotificationRepository)
+    public notificationRepository: NotificationRepository,
+    @repository(UserRepository)
+    public userRepository: UserRepository,
   ) {}
 
   @authenticate({
@@ -59,6 +68,7 @@ export class QuotationController {
     quotation: Omit<Quotation, 'id'>,
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<Quotation> {
+    const user: any = await this.userRepository.findById(currnetUser.id);
     const inputData: Partial<Quotation> = {
       ...quotation,
       createdByType: currnetUser.userType,
@@ -66,7 +76,34 @@ export class QuotationController {
       updatedByType: currnetUser.userType,
       updatedBy: currnetUser.id,
     };
-    return this.quotationRepository.create(inputData);
+    const quotationData = await this.quotationRepository.create(inputData);
+
+    if (quotation.status === 4) {
+      await this.notificationRepository.create({
+        avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
+        title: `A new Request for Quotation (RFQ) has been submitted by ${currnetUser.name}.`,
+        type: 'quotation',
+        status: 0,
+        userId: 0,
+        extraDetails: {
+          rfqId: quotationData.id,
+        },
+      });
+    }
+    if (quotation.status === 2) {
+      console.log('here');
+      await this.notificationRepository.create({
+        avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
+        title: `Admin sent you the Quotation for approval`,
+        type: 'quotation',
+        status: 0,
+        customerId: quotation.customerId,
+        extraDetails: {
+          rfqId: quotationData.id,
+        },
+      });
+    }
+    return quotationData;
   }
 
   @authenticate({
@@ -180,11 +217,46 @@ export class QuotationController {
     quotation: Quotation,
     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<void> {
+    const user: any = await this.userRepository.findById(currentUser.id);
     await this.quotationRepository.updateById(id, {
       ...quotation,
       updatedBy: currentUser.id,
       updatedByType: currentUser.userType,
     });
+
+    if (quotation.status === 2) {
+      await this.notificationRepository.create({
+        avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
+        title: `Admin sent you the Quotation for approval`,
+        type: 'quotation',
+        status: 0,
+        customerId: quotation.customerId,
+        extraDetails: {
+          rfqId: id,
+        },
+      });
+    }
+    if (quotation.status === 1) {
+      await this.notificationRepository.create({
+        avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
+        title: `Quotation ${formatRFQId(id)} has been approved by ${currentUser.name}.`,
+        type: 'quotation',
+        status: 0,
+        userId: 0,
+      });
+    }
+    if (quotation.status === 3) {
+      await this.notificationRepository.create({
+        avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
+        title: `Quotation ${formatRFQId(id)} has been rejected by ${currentUser.name}.`,
+        type: 'quotation',
+        status: 0,
+        userId: 0,
+        extraDetails: {
+          rfqId: id,
+        },
+      });
+    }
   }
 
   @del('/quotations/{id}')

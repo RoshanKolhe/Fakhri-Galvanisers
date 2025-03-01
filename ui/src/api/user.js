@@ -26,8 +26,14 @@ export function useGetUsers() {
   };
 }
 
-export function useGetNotifications() {
-  const URL = endpoints.user.notifications;
+export function useGetNotifications(filter) {
+  console.log(filter);
+  let URL;
+  if (filter) {
+    URL = endpoints.user.filterNotificationList(filter);
+  } else {
+    URL = endpoints.user.notifications;
+  }
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 

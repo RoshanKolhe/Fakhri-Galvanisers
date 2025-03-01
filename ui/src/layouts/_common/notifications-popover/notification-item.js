@@ -13,10 +13,19 @@ import { fToNow } from 'src/utils/format-time';
 // components
 import Label from 'src/components/label';
 import FileThumbnail from 'src/components/file-thumbnail';
+import { useRouter } from 'src/routes/hook';
+import { paths } from 'src/routes/paths';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function NotificationItem({ notification }) {
+export default function NotificationItem({ notification, drawer }) {
+  const { user } = useAuthContext();
+  const isAdmin = user
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    : false;
+  const router = useRouter();
+
   const renderAvatar = (
     <ListItemAvatar>
       {notification.avatarUrl ? (
@@ -36,7 +45,7 @@ export default function NotificationItem({ notification }) {
             component="img"
             src={`/assets/icons/notification/${
               (notification.type === 'order' && 'ic_order') ||
-              (notification.type === 'chat' && 'ic_chat') ||
+              (notification.type === 'quotation' && 'ic_quotation') ||
               (notification.type === 'mail' && 'ic_mail') ||
               (notification.type === 'delivery' && 'ic_delivery')
             }.svg`}
@@ -63,13 +72,12 @@ export default function NotificationItem({ notification }) {
           }
         >
           {fToNow(notification.createdAt)}
-          {notification.category}
         </Stack>
       }
     />
   );
 
-  const renderUnReadBadge = notification.isUnRead && (
+  const renderUnReadBadge = !notification.status && (
     <Box
       sx={{
         top: 26,
@@ -83,14 +91,33 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  const friendAction = (
+  const quotationAction = (
     <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-      <Button size="small" variant="contained">
-        Accept
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
+      {notification?.extraDetails?.rfqId && (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            console.log('here');
+            drawer.onFalse();
+            router.push(paths.dashboard.quotation.view(notification.extraDetails.rfqId));
+          }}
+        >
+          View RFQ
+        </Button>
+      )}
+      {isAdmin && notification?.extraDetails?.rfqId ? (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            drawer.onFalse();
+            router.push(paths.dashboard.quotation.edit(notification.extraDetails.rfqId));
+          }}
+        >
+          Generate Quote
+        </Button>
+      ) : null}
     </Stack>
   );
 
@@ -209,7 +236,7 @@ export default function NotificationItem({ notification }) {
 
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
-        {notification.type === 'friend' && friendAction}
+        {notification.type === 'quotation' && quotationAction}
         {notification.type === 'project' && projectAction}
         {notification.type === 'file' && fileAction}
         {notification.type === 'tags' && tagsAction}
@@ -221,6 +248,7 @@ export default function NotificationItem({ notification }) {
 
 NotificationItem.propTypes = {
   notification: PropTypes.object,
+  drawer: PropTypes.any,
 };
 
 // ----------------------------------------------------------------------

@@ -3,11 +3,11 @@ import {
   DefaultCrudRepository,
   repository,
   HasOneRepositoryFactory,
-  BelongsToAccessor,
-} from '@loopback/repository';
+  BelongsToAccessor, HasManyRepositoryFactory} from '@loopback/repository';
 import {FakhriGalvanisersDataSource} from '../datasources';
-import {User, UserRelations} from '../models';
+import {User, UserRelations, Notification} from '../models';
 import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
+import {NotificationRepository} from './notification.repository';
 
 export type Credentials = {
   email?: string;
@@ -28,13 +28,17 @@ export class UserRepository extends TimeStampRepositoryMixin<
 
   public readonly deleter: BelongsToAccessor<User, typeof User.prototype.id>;
 
+  public readonly notifications: HasManyRepositoryFactory<Notification, typeof User.prototype.id>;
+
   constructor(
     @inject('datasources.fakhriGalvanisers')
     dataSource: FakhriGalvanisersDataSource,
     @repository.getter('UserRepository')
-    protected userRepositoryGetter: Getter<UserRepository>,
+    protected userRepositoryGetter: Getter<UserRepository>, @repository.getter('NotificationRepository') protected notificationRepositoryGetter: Getter<NotificationRepository>,
   ) {
     super(User, dataSource);
+    this.notifications = this.createHasManyRepositoryFactoryFor('notifications', notificationRepositoryGetter,);
+    this.registerInclusionResolver('notifications', this.notifications.inclusionResolver);
     this.deleter = this.createBelongsToAccessorFor(
       'deleter',
       userRepositoryGetter,

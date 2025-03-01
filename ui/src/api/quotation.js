@@ -71,22 +71,3 @@ export function useGetQuotationsWithFilter(filter) {
     refreshFilterQuotations, // Include the refresh function separately
   };
 }
-
-export function useGetDashboardCounts() {
-  const URL = endpoints.quotation.getDashboradCounts;
-
-  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
-
-  const refreshDashboardCounts = () => {
-    // Use the `mutate` function to trigger a revalidation
-    mutate();
-  };
-
-  return {
-    dashboardCounts: data || [],
-    isLoading,
-    error,
-    isValidating,
-    refreshDashboardCounts,
-  };
-}

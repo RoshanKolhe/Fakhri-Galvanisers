@@ -26,6 +26,7 @@ export async function migrate(args: string[]) {
       'QcTest',
       'Payment',
       'Dispatch',
+      'Notification',
     ],
   });
 

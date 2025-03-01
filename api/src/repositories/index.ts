@@ -15,3 +15,4 @@ export * from './qc-report.repository';
 export * from './qc-test.repository';
 export * from './payment.repository';
 export * from './dispatch.repository';
+export * from './notification.repository';

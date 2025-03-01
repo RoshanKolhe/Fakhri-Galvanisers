@@ -10,6 +10,7 @@ import {Order} from './order.model';
 import {Challan} from './challan.model';
 import {Payment} from './payment.model';
 import {Dispatch} from './dispatch.model';
+import {Notification} from './notification.model';
 
 @model()
 export class Customer extends Entity {
@@ -168,6 +169,9 @@ export class Customer extends Entity {
 
   @hasMany(() => Dispatch)
   dispatches: Dispatch[];
+
+  @hasMany(() => Notification)
+  notifications: Notification[];
 
   constructor(data?: Partial<Customer>) {
     super(data);

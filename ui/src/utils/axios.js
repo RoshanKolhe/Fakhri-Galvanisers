@@ -38,6 +38,7 @@ export const endpoints = {
   user: {
     list: '/api/users/list',
     notifications: '/notifications',
+    filterNotificationList: (filter) => `/notifications?${filter}`,
     filterList: (filter) => `/api/users/list?${filter}`,
     details: (id) => `/api/users/${id}`,
     search: '/api/user/search',
@@ -52,6 +53,9 @@ export const endpoints = {
     list: '/quotations',
     filterList: (filter) => `/quotations?${filter}`,
     details: (id) => `/quotations/${id}`,
+  },
+  notification: {
+    list: '/notifications',
   },
   hsnMaster: {
     list: '/hsn-masters',

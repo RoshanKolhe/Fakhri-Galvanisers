@@ -6,13 +6,14 @@ import {
   HasManyRepositoryFactory,
 } from '@loopback/repository';
 import {FakhriGalvanisersDataSource} from '../datasources';
-import {Customer, CustomerRelations, Quotation, Order, Challan, Payment, Dispatch} from '../models';
+import {Customer, CustomerRelations, Quotation, Order, Challan, Payment, Dispatch, Notification} from '../models';
 import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
 import {QuotationRepository} from './quotation.repository';
 import {OrderRepository} from './order.repository';
 import {ChallanRepository} from './challan.repository';
 import {PaymentRepository} from './payment.repository';
 import {DispatchRepository} from './dispatch.repository';
+import {NotificationRepository} from './notification.repository';
 
 export type CustomerCredentials = {
   email: string;
@@ -43,15 +44,19 @@ export class CustomerRepository extends TimeStampRepositoryMixin<
 
   public readonly dispatches: HasManyRepositoryFactory<Dispatch, typeof Customer.prototype.id>;
 
+  public readonly notifications: HasManyRepositoryFactory<Notification, typeof Customer.prototype.id>;
+
   constructor(
     @inject('datasources.fakhriGalvanisers')
     dataSource: FakhriGalvanisersDataSource,
     @repository.getter('CustomerRepository')
     protected customerRepositoryGetter: Getter<CustomerRepository>,
     @repository.getter('QuotationRepository')
-    protected quotationRepositoryGetter: Getter<QuotationRepository>, @repository.getter('OrderRepository') protected orderRepositoryGetter: Getter<OrderRepository>, @repository.getter('ChallanRepository') protected challanRepositoryGetter: Getter<ChallanRepository>, @repository.getter('PaymentRepository') protected paymentRepositoryGetter: Getter<PaymentRepository>, @repository.getter('DispatchRepository') protected dispatchRepositoryGetter: Getter<DispatchRepository>,
+    protected quotationRepositoryGetter: Getter<QuotationRepository>, @repository.getter('OrderRepository') protected orderRepositoryGetter: Getter<OrderRepository>, @repository.getter('ChallanRepository') protected challanRepositoryGetter: Getter<ChallanRepository>, @repository.getter('PaymentRepository') protected paymentRepositoryGetter: Getter<PaymentRepository>, @repository.getter('DispatchRepository') protected dispatchRepositoryGetter: Getter<DispatchRepository>, @repository.getter('NotificationRepository') protected notificationRepositoryGetter: Getter<NotificationRepository>,
   ) {
     super(Customer, dataSource);
+    this.notifications = this.createHasManyRepositoryFactoryFor('notifications', notificationRepositoryGetter,);
+    this.registerInclusionResolver('notifications', this.notifications.inclusionResolver);
     this.dispatches = this.createHasManyRepositoryFactoryFor('dispatches', dispatchRepositoryGetter,);
     this.registerInclusionResolver('dispatches', this.dispatches.inclusionResolver);
     this.payments = this.createHasManyRepositoryFactoryFor('payments', paymentRepositoryGetter,);

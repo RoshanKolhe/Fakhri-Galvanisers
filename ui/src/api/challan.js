@@ -72,21 +72,3 @@ export function useGetChallansWithFilter(filter) {
   };
 }
 
-export function useGetDashboardCounts() {
-  const URL = endpoints.challan.getDashboradCounts;
-
-  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
-
-  const refreshDashboardCounts = () => {
-    // Use the `mutate` function to trigger a revalidation
-    mutate();
-  };
-
-  return {
-    dashboardCounts: data || [],
-    isLoading,
-    error,
-    isValidating,
-    refreshDashboardCounts,
-  };
-}

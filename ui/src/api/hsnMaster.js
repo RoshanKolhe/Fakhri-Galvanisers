@@ -72,21 +72,3 @@ export function useGetHsnMastersWithFilter(filter) {
   };
 }
 
-export function useGetDashboardCounts() {
-  const URL = endpoints.hsnMaster.getDashboradCounts;
-
-  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
-
-  const refreshDashboardCounts = () => {
-    // Use the `mutate` function to trigger a revalidation
-    mutate();
-  };
-
-  return {
-    dashboardCounts: data || [],
-    isLoading,
-    error,
-    isValidating,
-    refreshDashboardCounts,
-  };
-}
