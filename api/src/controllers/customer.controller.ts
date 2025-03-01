@@ -4,7 +4,13 @@ import {inject} from '@loopback/core';
 import {FakhriGalvanisersDataSource} from '../datasources';
 import {EmailManagerBindings} from '../keys';
 import {EmailManager} from '../services/email.service';
-import {CustomerCredentials, CustomerRepository} from '../repositories';
+import {
+  ChallanRepository,
+  CustomerCredentials,
+  CustomerRepository,
+  OrderRepository,
+  PaymentRepository,
+} from '../repositories';
 import {
   DefaultTransactionalRepository,
   Filter,
@@ -44,6 +50,12 @@ export class CustomerController {
     public emailManager: EmailManager,
     @repository(CustomerRepository)
     public customerRepository: CustomerRepository,
+    @repository(PaymentRepository)
+    public paymentRepository: PaymentRepository,
+    @repository(OrderRepository)
+    public orderRepository: OrderRepository,
+    @repository(ChallanRepository)
+    public challanRepository: ChallanRepository,
 
     @inject('service.hasher')
     public hasher: BcryptHasher,
@@ -155,7 +167,7 @@ export class CustomerController {
   async whoAmI(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<{}> {
-    console.log('email',currnetUser.email);
+    console.log('email', currnetUser.email);
     const user = await this.customerRepository.findOne({
       where: {
         id: currnetUser.id,
@@ -485,5 +497,132 @@ export class CustomerController {
       deletedByType: currentUser.userType,
       deletedAt: new Date(),
     });
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.CUSTOMER],
+    },
+  })
+  @get('/customer/getDashboardCounts')
+  async getCustomerDashboardCounts(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+  ): Promise<any> {
+    console.log(currnetUser.permissions);
+
+    const user = await this.customerRepository.findById(currnetUser.id);
+
+    if (!user.permissions.includes('customer')) {
+      throw new HttpErrors.Forbidden('Access Denied');
+    }
+
+    // Fetch all required data in parallel
+    const [
+      totalOrdersCountRes,
+      totalOutstandingRes,
+      ordersInProcessCountRes,
+      ordersReadyForDispatchCountRes,
+      ordersMaterialReceivedCountRes,
+      ordersMaterialReadyCountRes,
+      totalChallanCountRes,
+      latestInvoices,
+      latestOrderRes,
+    ] = await Promise.all([
+      this.orderRepository.count({customerId: user.id}),
+      this.paymentRepository.execute(
+        'SELECT SUM(totalAmount) as total FROM Payment WHERE status = 0 AND customerId = ?',
+        [user.id],
+      ),
+      this.orderRepository.count({customerId: user.id, status: 1}),
+      this.orderRepository.count({customerId: user.id, status: 3}),
+      this.orderRepository.count({customerId: user.id, status: 0}),
+      this.orderRepository.count({customerId: user.id, status: 2}),
+      this.challanRepository.count({customerId: user.id}),
+      this.paymentRepository.find({
+        where: {customerId: user.id},
+        order: ['createdAt DESC'],
+        limit: 2, // Fetch latest and second last invoice
+      }),
+      this.orderRepository.findOne({
+        where: {customerId: user.id},
+        order: ['createdAt DESC'], // Get latest order
+      }),
+    ]);
+
+    // Extracting required values
+    const totalOrdersCount = totalOrdersCountRes.count || 1; // Avoid division by zero
+    const totalOutstanding = totalOutstandingRes[0]?.total ?? 0;
+    const ordersInProcessCount = ordersInProcessCountRes.count;
+    const ordersReadyForDispatchCount = ordersReadyForDispatchCountRes.count;
+    const ordersMaterialReceivedCount = ordersMaterialReceivedCountRes.count;
+    const ordersMaterialReadyCount = ordersMaterialReadyCountRes.count;
+    const totalChallanCount = totalChallanCountRes.count;
+
+    // Get latest and second last invoice amounts
+    const latestInvoiceAmount = latestInvoices[0]?.totalAmount ?? 0;
+    const secondLastInvoiceAmount = latestInvoices[1]?.totalAmount ?? 0;
+
+    // Orders overview data in the required format
+    const ordersOverview = [
+      {
+        label: 'Orders in Process',
+        totalAmount: totalOrdersCount,
+        value: ordersInProcessCount,
+      },
+      {
+        label: 'Orders Ready for Dispatch',
+        totalAmount: totalOrdersCount,
+        value: ordersReadyForDispatchCount,
+      },
+      {
+        label: 'Orders Material Received',
+        totalAmount: totalOrdersCount,
+        value: ordersMaterialReceivedCount,
+      },
+    ];
+
+    // Orders percentage in the required format
+    const ordersPercentage = [
+      {
+        label: 'Material Received',
+        value: Number(
+          ((ordersMaterialReceivedCount / totalOrdersCount) * 100).toFixed(2),
+        ),
+      },
+      {
+        label: 'In Process',
+        value: Number(
+          ((ordersInProcessCount / totalOrdersCount) * 100).toFixed(2),
+        ),
+      },
+      {
+        label: 'Material Ready',
+        value: Number(
+          ((ordersMaterialReadyCount / totalOrdersCount) * 100).toFixed(2),
+        ),
+      },
+      {
+        label: 'Ready To Dispatch',
+        value: Number(
+          ((ordersReadyForDispatchCount / totalOrdersCount) * 100).toFixed(2),
+        ),
+      },
+    ];
+
+    // Get latest order details (returns null if no orders exist)
+    const latestOrder = latestOrderRes ?? {};
+
+    return {
+      totalOrdersCount,
+      totalOutstanding,
+      ordersInProcessCount,
+      totalChallanCount,
+      latestInvoiceAmount,
+      secondLastInvoiceAmount,
+      ordersOverview,
+      ordersPercentage, // Percentage of each order status
+      latestOrder, // Returning full latest order data
+    };
   }
 }

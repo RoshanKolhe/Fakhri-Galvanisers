@@ -42,7 +42,7 @@ export default function AnalyticsWidgetSummary({
     >
       {icon && <Box sx={{ width: 64, height: 64, mb: 1 }}>{icon}</Box>}
 
-      <Typography variant="h3">{fShortenNumber(total)}</Typography>
+      <Typography variant="h3">{fShortenNumber(total) || 0}</Typography>
 
       <Typography variant="subtitle2" sx={{ opacity: 0.64 }}>
         {title}

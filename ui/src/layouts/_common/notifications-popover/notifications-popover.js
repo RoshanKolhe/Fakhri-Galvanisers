@@ -150,10 +150,10 @@ export default function NotificationsPopover() {
   }, [notifications]);
 
   useEffect(() => {
-    if (allNotifications) {
+    if (allNotifications && JSON.stringify(allNotifications) !== JSON.stringify(notifications)) {
       setNotifications(allNotifications);
     }
-  }, [allNotifications]);
+  }, [allNotifications, notifications]);
 
   return (
     <>

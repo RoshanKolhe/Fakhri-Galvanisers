@@ -48,6 +48,7 @@ export const endpoints = {
     list: '/customer/list',
     filterList: (filter) => `/customer/list?${filter}`,
     details: (id) => `/customer/${id}`,
+    getCustomerDashboradCounts: '/customer/getDashboardCounts',
   },
   quotation: {
     list: '/quotations',

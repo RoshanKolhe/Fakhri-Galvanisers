@@ -11,10 +11,12 @@ import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 // utils
 import { fDateTime } from 'src/utils/format-time';
+import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
+import { Box } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
-export default function AnalyticsOrderTimeline({ title, subheader, list, ...other }) {
+export default function AnalyticsOrderTimeline({ title, history = [], subheader, ...other }) {
   return (
     <Card {...other}>
       <CardHeader title={title} subheader={subheader} />
@@ -29,51 +31,42 @@ export default function AnalyticsOrderTimeline({ title, subheader, list, ...othe
           },
         }}
       >
-        {list.map((item, index) => (
-          <OrderItem key={item.id} item={item} lastTimeline={index === list.length - 1} />
-        ))}
+        {ORDER_STATUS_OPTIONS.map((status, index) => {
+          const timelineStep = history && history.find((step) => step.id === status.value);
+          const isCompleted = timelineStep !== undefined;
+          const isCurrentStep = isCompleted && index === history.length - 1;
+
+          let color = 'grey';
+
+          if (isCompleted || isCurrentStep) {
+            color = 'success';
+          }
+
+          return (
+            <TimelineItem key={status.value}>
+              <TimelineSeparator>
+                <TimelineDot color={color} />
+                {index !== ORDER_STATUS_OPTIONS.length - 1 && <TimelineConnector />}
+              </TimelineSeparator>
+
+              <TimelineContent>
+                <Typography variant="subtitle2" fontWeight={isCurrentStep ? 'bold' : 'normal'}>
+                  {status.label}
+                </Typography>
+                <Box sx={{ color: 'text.disabled', typography: 'caption', mt: 0.5 }}>
+                  {timelineStep ? new Date(timelineStep.time).toLocaleString() : ''}
+                </Box>
+              </TimelineContent>
+            </TimelineItem>
+          );
+        })}
       </Timeline>
     </Card>
   );
 }
 
 AnalyticsOrderTimeline.propTypes = {
-  list: PropTypes.array,
+  history: PropTypes.array,
   subheader: PropTypes.string,
   title: PropTypes.string,
-};
-
-// ----------------------------------------------------------------------
-
-function OrderItem({ item, lastTimeline }) {
-  const { type, title, time } = item;
-  return (
-    <TimelineItem>
-      <TimelineSeparator>
-        <TimelineDot
-          color={
-            (type === 'order1' && 'primary') ||
-            (type === 'order2' && 'success') ||
-            (type === 'order3' && 'info') ||
-            (type === 'order4' && 'warning') ||
-            'error'
-          }
-        />
-        {lastTimeline ? null : <TimelineConnector />}
-      </TimelineSeparator>
-
-      <TimelineContent>
-        <Typography variant="subtitle2">{title}</Typography>
-
-        <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-          {fDateTime(time)}
-        </Typography>
-      </TimelineContent>
-    </TimelineItem>
-  );
-}
-
-OrderItem.propTypes = {
-  item: PropTypes.object,
-  lastTimeline: PropTypes.bool,
 };
