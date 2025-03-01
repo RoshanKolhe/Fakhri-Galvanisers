@@ -158,9 +158,10 @@ export class UserController {
   async whoAmI(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<{}> {
+    console.log(currnetUser);
     const user = await this.userRepository.findOne({
       where: {
-        email: currnetUser.email,
+        id: currnetUser.id,
       },
     });
     const userData = _.omit(user, 'password');

@@ -22,7 +22,6 @@ export class JWTService {
     return token;
   }
 
-
   async generate10MinToken(userProfile: UserProfile): Promise<string> {
     if (!userProfile) {
       throw new HttpErrors.NotFound(
@@ -51,13 +50,21 @@ export class JWTService {
     try {
       const decryptedToken = await verifyAsync(token, 'mushroom');
       userProfile = Object.assign(
-        {id: '', name: '', [securityId]: '', permissions: '',userType:''},
+        {
+          id: '',
+          email: '',
+          name: '',
+          [securityId]: '',
+          permissions: '',
+          userType: '',
+        },
         {
           id: decryptedToken.id,
           name: decryptedToken.name,
+          email: decryptedToken.email,
           [securityId]: decryptedToken.id,
           permissions: decryptedToken.permissions,
-          userType:decryptedToken.userType,
+          userType: decryptedToken.userType,
         },
       );
     } catch (error) {

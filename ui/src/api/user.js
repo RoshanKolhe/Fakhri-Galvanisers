@@ -27,7 +27,6 @@ export function useGetUsers() {
 }
 
 export function useGetNotifications(filter) {
-  console.log(filter);
   let URL;
   if (filter) {
     URL = endpoints.user.filterNotificationList(filter);

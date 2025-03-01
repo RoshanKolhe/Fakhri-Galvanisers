@@ -150,14 +150,15 @@ export class CustomerController {
     });
   }
 
-  @get('/customer/me')
   @authenticate('jwt')
+  @get('/customer/me')
   async whoAmI(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<{}> {
+    console.log('email',currnetUser.email);
     const user = await this.customerRepository.findOne({
       where: {
-        email: currnetUser.email,
+        id: currnetUser.id,
       },
     });
     const userData = _.omit(user, 'password');

@@ -57,7 +57,6 @@ export class AuthorizeInterceptor implements Provider<Interceptor> {
       if (!this.metaData) return await next();
       const requiredPermissions = this.metaData[0]?.options?.required;
       const currentUserData = await this.getCurrentUser();
-      console.log(currentUserData);
 
       if (currentUserData.permissions.includes('super_admin')) {
         return await next();

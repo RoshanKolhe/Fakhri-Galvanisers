@@ -59,7 +59,6 @@ export default function NotificationsPopover() {
   const { notifications: allNotifications, refreshNotifications } = useGetNotifications(
     `filter=${encodeURIComponent(JSON.stringify({ order: ['createdAt DESC'] }))}`
   );
-  console.log(notifications);
   const totalUnRead = notifications.filter((item) => !item.status).length;
 
   const handleMarkAllAsRead = async () => {

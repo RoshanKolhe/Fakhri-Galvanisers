@@ -7,6 +7,7 @@ import { useLocales } from 'src/locales';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -57,8 +58,10 @@ const ICONS = {
 export function useNavData() {
   const { t } = useLocales();
 
-  const data = useMemo(
-    () => [
+  const { user } = useAuthContext();
+  let data = [];
+  if (user && user.permissions.includes('super_admin')) {
+    data = [
       // OVERVIEW
       // ----------------------------------------------------------------------
       {
@@ -239,9 +242,118 @@ export function useNavData() {
           },
         ],
       },
-    ],
-    [t]
-  );
+    ];
+  }
+
+  if (user && user.permissions.includes('customer')) {
+    data = [
+      // OVERVIEW
+      // ----------------------------------------------------------------------
+      {
+        subheader: t('overview'),
+        items: [{ title: t('dashboard'), path: paths.dashboard.root, icon: ICONS.dashboard }],
+      },
+
+      // MANAGEMENT
+      // ----------------------------------------------------------------------
+      {
+        subheader: t('management'),
+        items: [
+          // QUOTATION
+          {
+            title: t('quotation'),
+            path: paths.dashboard.quotation.root,
+            icon: ICONS.quotation,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.quotation.list,
+                roles: ['super_admin', 'customer'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.quotation.new,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+
+          // CHALLAN
+          {
+            title: t('challan'),
+            path: paths.dashboard.challan.root,
+            icon: ICONS.challan,
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.challan.list,
+                roles: ['super_admin', 'customer'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.challan.new,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+
+          // ORDER
+          {
+            title: t('order'),
+            path: paths.dashboard.order.root,
+            icon: ICONS.order,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.order.root,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+
+          // QC REPORT
+          {
+            title: t('qc Report'),
+            path: paths.dashboard.qcReport.root,
+            icon: ICONS.qcReport,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.qcReport.root,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+
+          // INVOICE
+          {
+            title: t('invoice'),
+            path: paths.dashboard.invoice.root,
+            icon: ICONS.invoice,
+            children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
+          },
+
+          // Dispatch
+          {
+            title: t('dispatch'),
+            path: paths.dashboard.dispatch.root,
+            icon: ICONS.dispatch,
+            roles: ['super_admin', 'customer'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.dispatch.root,
+                roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+  }
 
   return data;
 }

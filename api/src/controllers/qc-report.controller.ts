@@ -28,10 +28,11 @@ import {
   QcReportRepository,
   QcTestRepository,
 } from '../repositories';
-import {authenticate} from '@loopback/authentication';
+import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
 import {FakhriGalvanisersDataSource} from '../datasources';
+import {UserProfile} from '@loopback/security';
 
 export class QcReportController {
   constructor(
@@ -159,22 +160,54 @@ export class QcReportController {
     },
   })
   async find(
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @param.filter(QcReport) filter?: Filter<QcReport>,
   ): Promise<QcReport[]> {
-    return this.qcReportRepository.find({
-      ...filter,
-      include: [
-        {
-          relation: 'order',
-          scope: {
-            include: ['customer'],
+    const currentUserPermission = currnetUser.permissions;
+    if (
+      currentUserPermission.includes('super_admin') ||
+      currentUserPermission.includes('admin')
+    ) {
+      return this.qcReportRepository.find({
+        ...filter,
+        include: [
+          {
+            relation: 'order',
+            scope: {
+              include: ['customer'],
+            },
+          },
+          {relation: 'material'},
+          {relation: 'lots'},
+          {relation: 'qcTests'},
+        ],
+      });
+    } else {
+      return this.qcReportRepository.find({
+        ...filter,
+        where: {
+          orderId: {
+            inq: (
+              await this.orderRepository.find({
+                where: {customerId: currnetUser.id},
+                fields: {id: true},
+              })
+            ).map(order => order.id),
           },
         },
-        {relation: 'material'},
-        {relation: 'lots'},
-        {relation: 'qcTests'},
-      ],
-    });
+        include: [
+          {
+            relation: 'order',
+            scope: {
+              include: ['customer'],
+            },
+          },
+          {relation: 'material'},
+          {relation: 'lots'},
+          {relation: 'qcTests'},
+        ],
+      });
+    }
   }
 
   @authenticate({
