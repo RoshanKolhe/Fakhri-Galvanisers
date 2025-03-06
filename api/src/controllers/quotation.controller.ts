@@ -225,7 +225,12 @@ export class QuotationController {
     quotation: Quotation,
     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<void> {
-    const user: any = await this.userRepository.findById(currentUser.id);
+    let user: any;
+    if (currentUser.userType == 'customer') {
+      user = await this.customerRepository.findById(currentUser.id);
+    } else {
+      user = await this.userRepository.findById(currentUser.id);
+    }
     await this.quotationRepository.updateById(id, {
       ...quotation,
       updatedBy: currentUser.id,
