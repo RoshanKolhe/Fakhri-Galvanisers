@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Quotation} from '../models';
 import {
+  CustomerRepository,
   NotificationRepository,
   QuotationRepository,
   UserRepository,
@@ -37,6 +38,8 @@ export class QuotationController {
     public notificationRepository: NotificationRepository,
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @repository(CustomerRepository)
+    public customerRepository: CustomerRepository,
   ) {}
 
   @authenticate({
@@ -68,7 +71,12 @@ export class QuotationController {
     quotation: Omit<Quotation, 'id'>,
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<Quotation> {
-    const user: any = await this.userRepository.findById(currnetUser.id);
+    let user: any;
+    if (currnetUser.userType == 'customer') {
+      user = await this.customerRepository.findById(currnetUser.id);
+    } else {
+      user = await this.userRepository.findById(currnetUser.id);
+    }
     const inputData: Partial<Quotation> = {
       ...quotation,
       createdByType: currnetUser.userType,
