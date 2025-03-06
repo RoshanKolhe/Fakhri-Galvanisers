@@ -38,7 +38,7 @@ export default function AnalyticsCurrentBalance({
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Current Order Total
           </Typography>
-          <Typography variant="body2">- {fCurrency(currentOrderTotal) || 0}</Typography>
+          <Typography variant="body2">{fCurrency(currentOrderTotal) || 0}</Typography>
         </Stack>
       </Stack>
     </Card>
