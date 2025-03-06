@@ -19,7 +19,7 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import {Challan} from '../models';
-import {ChallanRepository} from '../repositories';
+import {ChallanRepository, OrderRepository} from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
@@ -29,6 +29,8 @@ export class ChallanController {
   constructor(
     @repository(ChallanRepository)
     public challanRepository: ChallanRepository,
+    @repository(OrderRepository)
+    public orderRepository: OrderRepository,
   ) {}
 
   @authenticate({
@@ -131,6 +133,54 @@ export class ChallanController {
         },
       });
     }
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.DISPATCH],
+    },
+  })
+  @get('/challans/inwardChallans')
+  @response(200, {
+    description: 'Array of Challan model instances with no orders',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Challan, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findChallansWithoutOrders(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.filter(Challan) filter?: Filter<Challan>,
+  ): Promise<Challan[]> {
+    filter = {
+      ...filter,
+      where: {
+        ...filter?.where,
+        isDeleted: false,
+        id: {
+          nin: (
+            await this.orderRepository.find({
+              fields: {challanId: true},
+            })
+          ).map(order => order.challanId),
+        },
+      },
+      include: [
+        {
+          relation: 'quotation',
+          scope: {
+            include: [{relation: 'customer'}],
+          },
+        },
+      ],
+    };
+
+    return this.challanRepository.find(filter);
   }
 
   @authenticate({
