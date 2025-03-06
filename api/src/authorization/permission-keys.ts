@@ -4,4 +4,5 @@ export const enum PermissionKeys {
   CUSTOMER = 'customer',
   WORKER = 'worker',
   QC_ADMIN = 'qc_admin',
+  DISPATCH = 'dispatch',
 }

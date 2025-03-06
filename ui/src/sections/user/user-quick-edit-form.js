@@ -182,6 +182,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
                 { value: 'admin', name: 'Admin' },
                 { value: 'worker', name: 'Worker' },
                 { value: 'qc_admin', name: 'Qc Admin' },
+                { value: 'dispatch', name: 'Dispatch' },
               ].map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.name}
