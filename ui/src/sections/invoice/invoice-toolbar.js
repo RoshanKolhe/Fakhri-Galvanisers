@@ -141,7 +141,8 @@ export default function InvoiceToolbar({
         </Stack>
 
         <Stack direction="row" justifyContent="flex-end" spacing={1} flexGrow={1} sx={{ width: 1 }}>
-          {!isAdmin ? (
+          {/* Button for non-admin users to Upload/View Payment Proof */}
+          {!isAdmin || (isAdmin && invoice?.status === 1) ? (
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:cloud-upload-fill" />}
@@ -149,7 +150,9 @@ export default function InvoiceToolbar({
             >
               {invoice?.status === 1 ? 'View' : 'Upload'} Payment Proof
             </Button>
-          ) : isAdmin && invoice?.status === 3 ? (
+          ) : null}
+
+          {isAdmin && invoice?.status === 3 && (
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:cloud-upload-fill" />}
@@ -157,7 +160,8 @@ export default function InvoiceToolbar({
             >
               Verify Payment
             </Button>
-          ) : null}
+          )}
+
           <TextField
             fullWidth
             select
