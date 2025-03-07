@@ -80,7 +80,10 @@ export class ProcessesController {
   async find(
     @param.filter(Processes) filter?: Filter<Processes>,
   ): Promise<Processes[]> {
-    return this.processesRepository.find(filter);
+    return this.processesRepository.find({
+      ...filter,
+      order: ['createdAt DESC'],
+    });
   }
 
   @authenticate({

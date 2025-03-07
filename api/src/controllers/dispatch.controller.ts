@@ -86,6 +86,7 @@ export class DispatchController {
         isDeleted: false,
       },
       include: [{relation: 'order'}, {relation: 'customer'}],
+      order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
     if (

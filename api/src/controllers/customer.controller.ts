@@ -210,6 +210,7 @@ export class CustomerController {
         isDeleted: false,
       },
       fields: {password: false},
+      order: ['createdAt DESC'],
     };
     console.log(filter);
     return this.customerRepository.find(filter);

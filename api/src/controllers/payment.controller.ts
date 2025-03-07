@@ -125,6 +125,7 @@ export class PaymentController {
         },
         {relation: 'customer'},
       ],
+      order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
     if (

@@ -181,6 +181,7 @@ export class QcReportController {
           {relation: 'lots'},
           {relation: 'qcTests'},
         ],
+        order: ['createdAt DESC'],
       });
     } else {
       return this.qcReportRepository.find({
@@ -206,6 +207,7 @@ export class QcReportController {
           {relation: 'lots'},
           {relation: 'qcTests'},
         ],
+        order: ['createdAt DESC'],
       });
     }
   }

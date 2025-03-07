@@ -219,6 +219,7 @@ export class OrderController {
         {relation: 'payment'},
         {relation: 'dispatch'},
       ],
+      order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
     if (

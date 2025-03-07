@@ -121,6 +121,7 @@ export class ChallanController {
           relation: 'order',
         },
       ],
+      order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
     if (

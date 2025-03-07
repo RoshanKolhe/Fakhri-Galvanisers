@@ -106,6 +106,7 @@ export class HsnMasterController {
         ...filter?.where,
         isDeleted: false,
       },
+      order: ['createdAt DESC'],
     };
     return this.hsnMasterRepository.find(filter);
   }
