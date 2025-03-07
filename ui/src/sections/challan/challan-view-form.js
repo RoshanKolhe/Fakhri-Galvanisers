@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
@@ -16,7 +16,12 @@ import { useRouter } from 'src/routes/hook';
 // components
 
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFAutocomplete, RHFSelect, RHFTextField } from 'src/components/hook-form';
+import FormProvider, {
+  RHFAutocomplete,
+  RHFSelect,
+  RHFTextField,
+  RHFUpload,
+} from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { formatRFQId } from 'src/utils/constants';
 import { Autocomplete, MenuItem, TextField, Typography } from '@mui/material';
@@ -45,6 +50,7 @@ export default function ChallanViewForm({ currentChallan }) {
       .required('Net Weight is required'),
     poNumber: Yup.string().required('PO Number is required'),
     remark: Yup.string(),
+    images: Yup.array().min(1, 'Images is required'),
     materials: Yup.array()
       .of(
         Yup.object().shape({
@@ -70,6 +76,7 @@ export default function ChallanViewForm({ currentChallan }) {
       tareWeight: currentChallan?.tareWeight || 0,
       netWeight: currentChallan?.netWeight || 0,
       poNumber: currentChallan?.poNumber || '',
+      images: currentChallan?.images || [],
       materials: currentChallan?.materials?.length
         ? currentChallan.materials.map((material) => ({
             materialType: material.materialType || '',
@@ -98,6 +105,7 @@ export default function ChallanViewForm({ currentChallan }) {
     control,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -256,6 +264,47 @@ export default function ChallanViewForm({ currentChallan }) {
       ))}
     </Stack>
   );
+
+  const handleDrop = useCallback(
+    async (acceptedFiles) => {
+      console.log(acceptedFiles);
+      if (!acceptedFiles.length) return;
+      const formData = new FormData();
+      acceptedFiles.forEach((file) => {
+        formData.append('files[]', file); // Ensure backend supports array uploads
+      });
+      try {
+        const response = await axiosInstance.post('/files', formData);
+        const { data } = response;
+        console.log(data);
+        const newFiles = data.files.map((res) => res.fileUrl);
+
+        // Get the current images from the form
+        const currentImages = getValues('images') || [];
+
+        // Merge new images with existing ones
+        setValue('images', [...currentImages, ...newFiles], {
+          shouldValidate: true,
+        });
+      } catch (err) {
+        console.error('Error uploading files:', err);
+      }
+    },
+    [getValues, setValue]
+  );
+
+  const handleRemoveFile = useCallback(
+    (inputFile) => {
+      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
+      setValue('images', filtered);
+    },
+    [setValue, values.images]
+  );
+
+  const handleRemoveAllFiles = useCallback(() => {
+    setValue('images', []);
+  }, [setValue]);
+
   useEffect(() => {
     if (currentChallan) {
       console.log(currentChallan.quotation);
@@ -328,6 +377,34 @@ export default function ChallanViewForm({ currentChallan }) {
             </Grid>
 
             <Box mt={5}>{renderMaterialDetailsForm}</Box>
+
+            <Grid container spacing={2} mt={5}>
+              <Grid item xs={12}>
+                <RHFUpload
+                  multiple
+                  thumbnail
+                  name="images"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={handleDrop}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                  disabled
+                />
+              </Grid>
+            </Grid>
           </Card>
         </Grid>
       </Grid>

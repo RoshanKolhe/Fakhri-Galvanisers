@@ -35,7 +35,6 @@ export default function Upload({
   sx,
   ...other
 }) {
-  console.log(disabled);
   const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
     multiple,
     disabled,

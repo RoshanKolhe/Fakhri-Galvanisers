@@ -54,6 +54,13 @@ export class Challan extends Entity {
   status?: number;
 
   @property({
+    type: 'array',
+    itemType: 'string',
+    required: false,
+  })
+  images?: string[];
+
+  @property({
     type: 'date',
   })
   createdAt?: Date;

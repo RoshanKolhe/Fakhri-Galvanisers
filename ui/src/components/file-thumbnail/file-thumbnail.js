@@ -14,8 +14,13 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
   const format = fileFormat(path || preview);
 
   const isValidUrl = (str) => {
-    const urlPattern = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i;
-    return urlPattern.test(str);
+    try {
+      // eslint-disable-next-line no-new
+      new URL(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
   };
 
   const renderContent =
@@ -49,6 +54,7 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
           cursor: isValidUrl(file) ? 'pointer' : 'default',
         }}
         onClick={() => {
+          console.log('here', isValidUrl(file));
           if (isValidUrl(file)) {
             window.open(file, '_blank'); // Open URL in a new tab
           }

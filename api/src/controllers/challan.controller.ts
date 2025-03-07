@@ -237,6 +237,7 @@ export class ChallanController {
   })
   async updateById(
     @param.path.number('id') id: number,
+    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -248,24 +249,12 @@ export class ChallanController {
   ): Promise<void> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
-        and: [
-          {
-            or: [
-              {quotationId: challan.quotationId},
-              {poNumber: challan.poNumber},
-            ],
-          },
-          {id: {neq: id}}, // Exclude the current challan from check
-        ],
+        and: [{poNumber: challan.poNumber}, {customerId: currnetUser.id}],
       },
     });
-
+    console.log('existingChallan', existingChallan);
     if (existingChallan) {
       let errorMessage = '';
-
-      if (existingChallan.quotationId === challan.quotationId) {
-        errorMessage += 'RFQ Reference is already used in another Challan. ';
-      }
       if (existingChallan.poNumber === challan.poNumber) {
         errorMessage += 'PO Number is already used in another Challan.';
       }
