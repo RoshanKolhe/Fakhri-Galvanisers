@@ -80,12 +80,7 @@ export class OrderController {
                 title: 'NewOrder',
                 exclude: ['id', 'orderId'],
               }).definitions?.NewOrder?.properties,
-              materials: {
-                type: 'array',
-                items: {type: 'object'}, // Define materials as an array of objects
-              },
             },
-            required: ['materials'], // Ensure materials are provided
           },
         },
       },
@@ -95,10 +90,14 @@ export class OrderController {
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
     try {
-      const {materials, ...orderWithoutMaterials} = orderData;
+      const challan = await this.challanRepository.findById(
+        orderData.challanId,
+      );
       const inputData: Partial<Order> = {
-        ...orderWithoutMaterials,
+        ...orderData,
+        customerId: challan.customerId,
         status: 0,
+        isPaid: false,
         timeline: [
           {
             id: 0,
@@ -125,8 +124,9 @@ export class OrderController {
           transaction: tx,
         },
       );
-      if (materials && materials.length > 0) {
-        const mappedMaterials = materials.map((material: any) => ({
+
+      if (challan.materials && challan.materials.length > 0) {
+        const mappedMaterials = challan.materials.map((material: any) => ({
           microns: material.microns,
           hsnCode: material.hsnNo.hsnCode,
           totalQuantity: material.quantity,
@@ -147,7 +147,7 @@ export class OrderController {
       let totalTax = 0;
       let grandTotal = 0;
 
-      materials.forEach((material: any) => {
+      challan.materials.forEach((material: any) => {
         const pricePerUnit = parseFloat(material?.pricePerUnit) || 0;
         const quantity = parseFloat(material?.quantity) || 0;
         const tax = parseFloat(material?.tax) || 0;
@@ -166,7 +166,7 @@ export class OrderController {
         performaId: formattedInvoiceId,
         dueDate: new Date(new Date().setDate(new Date().getDate() + 45)),
         totalAmount: grandTotal,
-        customerId: orderData.customerId,
+        customerId: challan.customerId,
       };
       await this.paymentRepository.create(paymentData, {
         transaction: tx,

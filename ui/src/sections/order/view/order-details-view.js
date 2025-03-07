@@ -42,6 +42,7 @@ export default function OrderDetailsView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <OrderDetailsToolbar
+        order={currentOrder}
         backLink={paths.dashboard.order.root}
         orderNumber={currentOrder?.orderId}
         createdAt={currentOrder?.createdAt}

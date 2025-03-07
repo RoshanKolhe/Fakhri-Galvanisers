@@ -13,10 +13,14 @@ import { fDateTime } from 'src/utils/format-time';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
+import { MultiFilePreview } from 'src/components/upload';
+import { useState } from 'react';
 
 // ----------------------------------------------------------------------
 
 export default function OrderDetailsToolbar({
+  order,
   status,
   backLink,
   createdAt,
@@ -25,6 +29,11 @@ export default function OrderDetailsToolbar({
   onChangeStatus,
 }) {
   const popover = usePopover();
+
+  const [showDocument, setOpenShowDocument] = useState(false);
+
+  const handleOpenShowDocument = () => setOpenShowDocument(true);
+  const handleCloseShowDocument = () => setOpenShowDocument(false);
 
   const getStatusLabel = (currentStatus) => {
     const foundStatus = statusOptions.find((res) => res.value === currentStatus);
@@ -82,6 +91,18 @@ export default function OrderDetailsToolbar({
           justifyContent="flex-end"
         >
           <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Iconify icon="eva:eye-fill" />}
+            onClick={() => {
+              handleOpenShowDocument();
+            }}
+            sx={{ textTransform: 'capitalize' }}
+          >
+            View Doc
+          </Button>
+
+          <Button
             color="inherit"
             variant="outlined"
             endIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
@@ -91,18 +112,6 @@ export default function OrderDetailsToolbar({
           >
             {getStatusLabel(status)}
           </Button>
-
-          {/* <Button
-            color="inherit"
-            variant="outlined"
-            startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}
-          >
-            Print
-          </Button>
-
-          <Button color="inherit" variant="contained" startIcon={<Iconify icon="solar:pen-bold" />}>
-            Edit
-          </Button> */}
         </Stack>
       </Stack>
 
@@ -125,11 +134,46 @@ export default function OrderDetailsToolbar({
           </MenuItem>
         ))}
       </CustomPopover>
+
+      <Dialog open={showDocument} onClose={handleCloseShowDocument} fullWidth maxWidth="sm">
+        <Box sx={{ px: 3, pt: 2 }}>
+          <DialogTitle sx={{ p: 0 }}>{`${order?.orderId}`}</DialogTitle>
+        </Box>
+
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              Challan Images
+            </Typography>
+            <MultiFilePreview files={order?.challanImages?.map((res) => res.fileUrl)} thumbnail />
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              Material Images
+            </Typography>
+            <MultiFilePreview files={order?.materialImages?.map((res) => res.fileUrl)} thumbnail />
+          </Box>
+
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              Vehicle Images
+            </Typography>
+            <MultiFilePreview files={order?.vehicleImages?.map((res) => res.fileUrl)} thumbnail />
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              Po Images
+            </Typography>
+            <MultiFilePreview files={order?.poImages?.map((res) => res.fileUrl)} thumbnail />
+          </Box>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
 OrderDetailsToolbar.propTypes = {
+  order: PropTypes.object,
   backLink: PropTypes.string,
   createdAt: PropTypes.string,
   onChangeStatus: PropTypes.func,
