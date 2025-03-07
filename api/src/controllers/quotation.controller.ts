@@ -99,7 +99,6 @@ export class QuotationController {
       });
     }
     if (quotation.status === 2) {
-      console.log('here');
       await this.notificationRepository.create({
         avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
         title: `Admin sent you the Quotation for approval`,

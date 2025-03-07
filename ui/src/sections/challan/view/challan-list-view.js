@@ -56,6 +56,7 @@ const TABLE_HEAD = [
   { id: 'vehicleNumber', label: 'Vehicle Number', width: 180 },
   { id: 'grossWeight', label: 'Gross Weight', width: 180 },
   { id: 'netWeight', label: 'Net Weight', width: 180 },
+  { id: 'order', label: 'Order', width: 180 },
   // { id: 'status', label: 'Status', width: 180 },
   { id: '', width: 88 },
 ];

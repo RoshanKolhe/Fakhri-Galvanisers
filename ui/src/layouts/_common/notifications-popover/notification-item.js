@@ -121,24 +121,17 @@ export default function NotificationItem({ notification, drawer }) {
     </Stack>
   );
 
-  const projectAction = (
-    <Stack alignItems="flex-start">
-      <Box
-        sx={{
-          p: 1.5,
-          my: 1.5,
-          borderRadius: 1.5,
-          color: 'text.secondary',
-          bgcolor: 'background.neutral',
+  const inquiryAction = (
+    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+      <Button
+        size="small"
+        variant="contained"
+        onClick={() => {
+          drawer.onFalse();
+          router.push(paths.dashboard.inquiry.list);
         }}
       >
-        {reader(
-          `<p><strong>@Jaydon Frankie</strong> feedback by asking questions or just leave a note of appreciation.</p>`
-        )}
-      </Box>
-
-      <Button size="small" variant="contained">
-        Reply
+        View
       </Button>
     </Stack>
   );
@@ -211,13 +204,21 @@ export default function NotificationItem({ notification, drawer }) {
   );
 
   const paymentAction = (
-    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-      <Button size="small" variant="contained">
-        Pay
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
+    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+      {notification?.extraDetails?.paymentId && (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            console.log('here');
+            drawer.onFalse();
+            router.push(paths.dashboard.invoice.details(notification.extraDetails.paymentId));
+          }}
+        >
+          View
+        </Button>
+      )}
+
     </Stack>
   );
 
@@ -237,7 +238,7 @@ export default function NotificationItem({ notification, drawer }) {
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
         {notification.type === 'quotation' && quotationAction}
-        {notification.type === 'project' && projectAction}
+        {notification.type === 'inquiry' && inquiryAction}
         {notification.type === 'file' && fileAction}
         {notification.type === 'tags' && tagsAction}
         {notification.type === 'payment' && paymentAction}

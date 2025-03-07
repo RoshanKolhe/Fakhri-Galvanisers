@@ -30,7 +30,7 @@ export default function ChallanTableRow({
   quickEdit,
   handleQuickEditRow,
 }) {
-  const { id, quotationId, vehicleNumber, grossWeight, netWeight, status } = row;
+  const { id, quotationId, vehicleNumber, grossWeight, netWeight, order, status } = row;
 
   const confirm = useBoolean();
 
@@ -48,6 +48,7 @@ export default function ChallanTableRow({
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{vehicleNumber}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{grossWeight}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{netWeight}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{order ? order?.orderId : '-'}</TableCell>
 
         {/* <TableCell>
           <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>

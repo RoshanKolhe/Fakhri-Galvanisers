@@ -117,6 +117,9 @@ export class ChallanController {
             include: [{relation: 'customer'}],
           },
         },
+        {
+          relation: 'order',
+        },
       ],
     };
     const currentUserPermission = currnetUser.permissions;

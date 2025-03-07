@@ -23,8 +23,10 @@ import {
 } from '@loopback/rest';
 import {Payment} from '../models';
 import {
+  CustomerRepository,
   DispatchRepository,
   MaterialRepository,
+  NotificationRepository,
   OrderRepository,
   PaymentRepository,
   QcReportRepository,
@@ -41,6 +43,10 @@ export class PaymentController {
     public dataSource: FakhriGalvanisersDataSource,
     @repository(PaymentRepository)
     public paymentRepository: PaymentRepository,
+    @repository(CustomerRepository)
+    public customerRepository: CustomerRepository,
+    @repository(NotificationRepository)
+    public notificationRepository: NotificationRepository,
     @repository(OrderRepository)
     public orderRepository: OrderRepository,
     @repository(MaterialRepository)
@@ -206,7 +212,9 @@ export class PaymentController {
       if (!paymentDetails) {
         throw new HttpErrors.BadRequest('Invoice not found');
       }
-
+      const customer: any = await this.customerRepository.findById(
+        paymentDetails.customerId,
+      );
       if (payment.status && payment.status === 1) {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
@@ -263,10 +271,61 @@ export class PaymentController {
             {transaction: tx},
           );
         }
+        await this.notificationRepository.create(
+          {
+            avatarUrl: customer?.avatar?.fileUrl
+              ? customer?.avatar?.fileUrl
+              : null,
+            title: `Payment ${paymentDetails.performaId} has been approved by Admin`,
+            type: 'payment',
+            status: 0,
+            customerId: customer.id,
+            extraDetails: {
+              paymentId: paymentDetails.id,
+            },
+          },
+          {transaction: tx},
+        );
       } else {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
           {isPaid: false},
+          {transaction: tx},
+        );
+      }
+
+      if (payment.status && payment.status === 3) {
+        await this.notificationRepository.create(
+          {
+            avatarUrl: customer?.avatar?.fileUrl
+              ? customer?.avatar?.fileUrl
+              : null,
+            title: `Customer ${customer?.firstName} sent you the Payment Proof for approval`,
+            type: 'payment',
+            status: 0,
+            userId: 0,
+            extraDetails: {
+              paymentId: paymentDetails.id,
+            },
+          },
+          {transaction: tx},
+        );
+      }
+
+      if (payment.status && payment.status === 4) {
+        await this.notificationRepository.create(
+          {
+            avatarUrl: customer?.avatar?.fileUrl
+              ? customer?.avatar?.fileUrl
+              : null,
+            title: `Admin has requested a reupload of the payment proof for invoice ${paymentDetails.performaId}.`,
+            type: 'payment',
+            status: 0,
+            customerId: customer.id,
+            extraDetails: {
+              paymentId: paymentDetails.id,
+            },
+          },
           {transaction: tx},
         );
       }

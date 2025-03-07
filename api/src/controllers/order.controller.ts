@@ -92,7 +92,13 @@ export class OrderController {
     try {
       const challan = await this.challanRepository.findById(
         orderData.challanId,
+        {include: ['order']},
       );
+      if (challan.order) {
+        throw new HttpErrors.BadRequest(
+          'Order Already Exists for this challan',
+        );
+      }
       const inputData: Partial<Order> = {
         ...orderData,
         customerId: challan.customerId,

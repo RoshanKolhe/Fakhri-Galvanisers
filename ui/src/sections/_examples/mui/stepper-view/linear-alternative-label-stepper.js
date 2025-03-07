@@ -208,7 +208,7 @@ export default function LinearAlternativeLabel() {
             <RHFTextField
               type="number"
               name={`materials[${index}].quantity`}
-              label="Quantity (Nos)"
+              label="Quantity"
             />
           </Grid>
           <Grid item xs={12} sm={3}>

@@ -23,7 +23,11 @@ import {
 } from '@loopback/rest';
 import * as _ from 'lodash';
 import {Customer, Inquiry} from '../models';
-import {CustomerRepository, InquiryRepository} from '../repositories';
+import {
+  CustomerRepository,
+  InquiryRepository,
+  NotificationRepository,
+} from '../repositories';
 import {authenticate, AuthenticationBindings} from '@loopback/authentication';
 import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
@@ -40,6 +44,8 @@ export class InquiryController {
     public dataSource: FakhriGalvanisersDataSource,
     @repository(CustomerRepository)
     public customerRepository: CustomerRepository,
+    @repository(NotificationRepository)
+    public notificationRepository: NotificationRepository,
     @inject('service.hasher')
     public hasher: BcryptHasher,
   ) {}
@@ -86,6 +92,7 @@ export class InquiryController {
         ...filter?.where,
         isDeleted: false,
       },
+      order: ['createdAt DESC'],
     };
     return this.inquiryRepository.find(filter);
   }
@@ -122,6 +129,18 @@ export class InquiryController {
     })
     inquiry: Inquiry,
   ): Promise<void> {
+    if (inquiry.status === 1) {
+      await this.notificationRepository.create({
+        title: `New Inquiry Submitted.`,
+        type: 'inquiry',
+        status: 0,
+        userId: 0,
+        extraDetails: {
+          inquiryId: id,
+        },
+      });
+    }
+
     await this.inquiryRepository.updateById(id, inquiry);
   }
 
