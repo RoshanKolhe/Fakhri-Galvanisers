@@ -22,6 +22,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { Grid } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -114,7 +115,9 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
             }),
           }}
         >
-          <Iconify icon="eva:arrow-ios-downward-fill" />
+          <Iconify
+            icon={collapse.value ? 'eva:arrow-ios-upward-fill' : 'eva:arrow-ios-downward-fill'}
+          />
         </IconButton>
 
         <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
@@ -133,46 +136,56 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
           unmountOnExit
           sx={{ bgcolor: 'background.neutral' }}
         >
-          <Stack component={Paper} sx={{ m: 1.5 }}>
-            {/* Add headings for the secondary row */}
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
+          <Paper sx={{ m: 1.5, p: 1.5 }}>
+            {/* Table Head */}
+            <Grid
+              container
               sx={{
-                p: (theme) => theme.spacing(1, 2, 1, 1),
                 bgcolor: 'action.hover',
                 fontWeight: 'bold',
                 borderBottom: (theme) => `solid 2px ${theme.palette.background.neutral}`,
+                p: 1,
               }}
             >
-              <Box>Material Type</Box>
-              <Box>Quantity</Box>
-              <Box>Hsn Code</Box>
-              <Box>Microns</Box>
-            </Stack>
+              <Grid item xs={3}>
+                Material Type
+              </Grid>
+              <Grid item xs={3}>
+                Quantity
+              </Grid>
+              <Grid item xs={3}>
+                HSN Code
+              </Grid>
+              <Grid item xs={3}>
+                Microns
+              </Grid>
+            </Grid>
 
-            {/* Map over materials to render rows */}
+            {/* Table Rows */}
             {materials?.map((item) => (
-              <Stack
+              <Grid
+                container
                 key={item.id}
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
                 sx={{
-                  p: (theme) => theme.spacing(1.5, 2, 1.5, 1.5),
-                  '&:not(:last-of-type)': {
-                    borderBottom: (theme) => `solid 2px ${theme.palette.background.neutral}`,
-                  },
+                  p: 1.5,
+                  borderBottom: (theme) => `solid 1px ${theme.palette.background.neutral}`,
                 }}
               >
-                <Box>{item?.materialType}</Box>
-                <Box>{item?.totalQuantity}</Box>
-                <Box>{item?.hsnCode}</Box>
-                <Box>{item?.microns}</Box>
-              </Stack>
+                <Grid item xs={3}>
+                  {item?.materialType}
+                </Grid>
+                <Grid item xs={3}>
+                  {item?.totalQuantity}
+                </Grid>
+                <Grid item xs={3}>
+                  {item?.hsnCode}
+                </Grid>
+                <Grid item xs={3}>
+                  {item?.microns}
+                </Grid>
+              </Grid>
             ))}
-          </Stack>
+          </Paper>
         </Collapse>
       </TableCell>
     </TableRow>
