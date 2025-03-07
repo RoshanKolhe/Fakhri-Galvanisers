@@ -47,15 +47,15 @@ export default function InvoiceTableRow({
     <>
       <TableRow hover selected={selected}>
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar alt={invoiceTo.firstName} sx={{ mr: 2 }}>
-            {invoiceTo.firstName.charAt(0).toUpperCase()}
+          <Avatar alt={invoiceTo?.firstName} sx={{ mr: 2 }}>
+            {invoiceTo?.firstName.charAt(0).toUpperCase()}
           </Avatar>
 
           <ListItemText
             disableTypography
             primary={
               <Typography variant="body2" noWrap>
-                {invoiceTo.firstName}
+                {invoiceTo?.firstName}
               </Typography>
             }
             secondary={
