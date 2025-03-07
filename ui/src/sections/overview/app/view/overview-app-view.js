@@ -74,21 +74,15 @@ export default function OverviewAppView() {
           <Stack spacing={3}>
             <AppWidget
               title="Conversion"
-              total={38566}
+              total={dashboardCounts?.totalConversions || 0}
               icon="solar:user-rounded-bold"
-              chart={{
-                series: 48,
-              }}
             />
 
             <AppWidget
-              title="Applications"
-              total={55566}
+              title="Total Challan"
+              total={dashboardCounts?.totalChallan || 0}
               icon="fluent:mail-24-filled"
               color="info"
-              chart={{
-                series: 75,
-              }}
             />
           </Stack>
         </Grid>

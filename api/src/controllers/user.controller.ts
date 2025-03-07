@@ -26,7 +26,9 @@ import {PermissionKeys} from '../authorization/permission-keys';
 import {EmailManagerBindings} from '../keys';
 import {User} from '../models';
 import {
+  ChallanRepository,
   Credentials,
+  InquiryRepository,
   OrderRepository,
   PaymentRepository,
   QuotationRepository,
@@ -56,8 +58,12 @@ export class UserController {
     public orderRepository: OrderRepository,
     @repository(QuotationRepository)
     public quotationRepository: QuotationRepository,
+    @repository(InquiryRepository)
+    public inquiryRepository: InquiryRepository,
     @repository(PaymentRepository)
     public paymentRepository: PaymentRepository,
+    @repository(ChallanRepository)
+    public challanRepository: ChallanRepository,
     @inject('service.hasher')
     public hasher: BcryptHasher,
     @inject('service.user.service')
@@ -501,6 +507,8 @@ export class UserController {
     let totalActiveOrders = 0;
     let totalOrdersReadyToDispatch = 0;
     let totalPendingRfq = 0;
+    let totalConversions = 0; 
+    let totalChallan = 0; 
     let last10DaysDispatchCounts: number[] = [];
     let last10DaysRfqCounts: number[] = [];
     let last10DaysActiveOrdersCounts: number[] = [];
@@ -511,21 +519,24 @@ export class UserController {
     const user = await this.userRepository.findById(currnetUser.id);
 
     if (user.permissions.includes('super_admin')) {
-      // Get today's totalActiveOrders (status 0, 1, 2)
+      totalConversions = (
+        await this.inquiryRepository.count({
+          status: 2,
+        })
+      ).count;
+      totalChallan = (await this.challanRepository.count()).count;
       totalActiveOrders = (
         await this.orderRepository.count({
           status: {inq: [0, 1, 2]},
         })
       ).count;
-
-      // Get today's totalOrdersReadyToDispatch (status 3)
       totalOrdersReadyToDispatch = (
         await this.orderRepository.count({
           status: 3,
         })
       ).count;
 
-      // Get today's totalPendingRfq (status 2)
+      // Get totalPendingRfq (status 2)
       totalPendingRfq = (
         await this.quotationRepository.count({
           status: 2,
@@ -616,13 +627,15 @@ export class UserController {
         totalActiveOrders,
         totalOrdersReadyToDispatch,
         totalPendingRfq,
+        totalConversions, 
+        totalChallan,
         last10DaysActiveOrdersCounts,
         last10DaysDispatchCounts,
         last10DaysRfqCounts,
         percentageChangeActiveOrders: percentageChangeActiveOrders.toFixed(2),
         percentageChangeDispatch: percentageChangeDispatch.toFixed(2),
         percentageChangeRfq: percentageChangeRfq.toFixed(2),
-        invoiceCounts, // **🔹 Add Invoice Counts in Response**
+        invoiceCounts, 
       };
     }
   }

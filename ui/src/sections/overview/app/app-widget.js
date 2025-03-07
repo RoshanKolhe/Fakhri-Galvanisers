@@ -11,51 +11,8 @@ import Chart, { useChart } from 'src/components/chart';
 
 // ----------------------------------------------------------------------
 
-export default function AppWidget({ title, total, icon, color = 'primary', chart, sx, ...other }) {
+export default function AppWidget({ title, total, icon, color = 'primary', sx, ...other }) {
   const theme = useTheme();
-
-  const { series, options } = chart;
-
-  const chartOptions = useChart({
-    chart: {
-      sparkline: {
-        enabled: true,
-      },
-    },
-    legend: {
-      show: false,
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        colorStops: [
-          { offset: 0, color: theme.palette[color].light },
-          { offset: 100, color: theme.palette[color].main },
-        ],
-      },
-    },
-    plotOptions: {
-      radialBar: {
-        hollow: {
-          size: '78%',
-        },
-        track: {
-          margin: 0,
-        },
-        dataLabels: {
-          name: {
-            show: false,
-          },
-          value: {
-            offsetY: 6,
-            color: theme.palette.common.white,
-            fontSize: theme.typography.subtitle2.fontSize,
-          },
-        },
-      },
-    },
-    ...options,
-  });
 
   return (
     <Stack
@@ -72,8 +29,6 @@ export default function AppWidget({ title, total, icon, color = 'primary', chart
       }}
       {...other}
     >
-      <Chart type="radialBar" series={[series]} options={chartOptions} width={86} height={86} />
-
       <ListItemText
         sx={{ ml: 3 }}
         primary={fNumber(total)}
