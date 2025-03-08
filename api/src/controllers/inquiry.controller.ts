@@ -35,6 +35,10 @@ import {UserProfile} from '@loopback/security';
 import {FakhriGalvanisersDataSource} from '../datasources';
 import {validateCredentials} from '../services/validator';
 import {BcryptHasher} from '../services/hash.password.bcrypt';
+import generateEmailAndPasswordTemplate from '../templates/email-and-password.template';
+import SITE_SETTINGS from '../utils/config';
+import {EmailManagerBindings} from '../keys';
+import {EmailManager} from '../services/email.service';
 
 export class InquiryController {
   constructor(
@@ -44,6 +48,8 @@ export class InquiryController {
     public dataSource: FakhriGalvanisersDataSource,
     @repository(CustomerRepository)
     public customerRepository: CustomerRepository,
+    @inject(EmailManagerBindings.SEND_MAIL)
+    public emailManager: EmailManager,
     @repository(NotificationRepository)
     public notificationRepository: NotificationRepository,
     @inject('service.hasher')
@@ -200,17 +206,18 @@ export class InquiryController {
   ) {
     const repo = new DefaultTransactionalRepository(Customer, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
+    let emailSent = true; // Flag to track email status
+    let savedUserData = null;
+
     try {
       const customer = await this.customerRepository.findOne({
-        where: {
-          or: [{email: userData.email}],
-        },
+        where: {or: [{email: userData.email}]},
       });
+
       const inquiry = await this.inquiryRepository.findOne({
-        where: {
-          or: [{id: inquiryId}],
-        },
+        where: {or: [{id: inquiryId}]},
       });
+
       if (customer) {
         throw new HttpErrors.BadRequest('Customer Already Exists');
       }
@@ -219,6 +226,7 @@ export class InquiryController {
       }
 
       validateCredentials(userData);
+      const decryptedPassword = userData.password;
       userData.permissions = [PermissionKeys.CUSTOMER];
       userData.password = await this.hasher.hashPassword(userData.password);
       userData.createdByType = 'admin';
@@ -226,24 +234,47 @@ export class InquiryController {
       userData.updatedByType = 'admin';
       userData.updatedBy = currnetUser.id;
       userData.inquiryId = inquiryId;
+
       const savedUser = await this.customerRepository.create(userData, {
         transaction: tx,
       });
+      savedUserData = _.omit(savedUser, 'password');
+
       await this.inquiryRepository.updateById(
         inquiryId,
         {status: 2},
-        {
-          transaction: tx,
-        },
+        {transaction: tx},
       );
 
-      const savedUserData = _.omit(savedUser, 'password');
+      const loginLink = `${process.env.REACT_APP_ENDPOINT}/customer-login`;
+      const template = generateEmailAndPasswordTemplate({
+        userData: savedUser,
+        decryptedPassword,
+        loginLink,
+      });
+
       tx.commit();
-      return Promise.resolve({
+
+      const mailOptions = {
+        from: SITE_SETTINGS.fromMail,
+        to: userData.email,
+        subject: template.subject,
+        html: template.html,
+      };
+
+      try {
+        await this.emailManager.sendMail(mailOptions);
+      } catch (err) {
+        emailSent = false; // Mark email as failed
+        console.error('Email sending failed:', err.message);
+      }
+
+      return {
         success: true,
         userData: savedUserData,
-        message: `Customer registered successfully`,
-      });
+        message: 'Customer registered successfully',
+        emailSent,
+      };
     } catch (err) {
       tx.rollback();
       throw err;
