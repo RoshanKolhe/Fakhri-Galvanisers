@@ -28,7 +28,7 @@ export class FileUploadController {
     @inject(STORAGE_DIRECTORY) private storageDirectory: string,
   ) {}
 
-  // @authenticate('jwt')
+  @authenticate('jwt')
   @post('/files', {
     responses: {
       200: {

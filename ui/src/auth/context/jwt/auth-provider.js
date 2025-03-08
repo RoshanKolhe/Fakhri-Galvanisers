@@ -9,11 +9,6 @@ import { isValidToken, setSession } from './utils';
 
 // ----------------------------------------------------------------------
 
-// NOTE:
-// We only build demo at basic level.
-// Customer will need to do some extra handling yourself if you want to extend the logic and other features...
-
-// ----------------------------------------------------------------------
 
 const initialState = {
   user: null,

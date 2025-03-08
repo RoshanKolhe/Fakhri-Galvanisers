@@ -1,4 +1,3 @@
-import { _mock } from 'src/_mock';
 
 export const states = [
   {
