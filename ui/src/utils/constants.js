@@ -1,4 +1,3 @@
-
 export const states = [
   {
     id: '64801d78b256d628c606f57c',
@@ -414,7 +413,7 @@ export const INVOICE_STATUS_OPTIONS = [
   { value: 4, label: 'Request Reupload' },
 ];
 
-export const _roles = ['Admin', 'Worker', 'Qc Admin'];
+export const _roles = ['Admin', 'Worker', 'Qc Admin', 'Dispatch'];
 
 export const formatRFQId = (rfqId) => `RFQ${rfqId.toString().padStart(4, '0')}`;
 export const formatChallanId = (challanId) => `CHLN${challanId.toString().padStart(4, '0')}`;
