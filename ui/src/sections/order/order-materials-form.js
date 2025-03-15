@@ -39,7 +39,7 @@ import OrderLotProcessModal from './order-lot-process-modal';
 
 // ----------------------------------------------------------------------
 
-const SortableItem = ({ value, onDelete }) => {
+const SortableItem = ({ value, onDelete, disabled }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: value.id,
   });
@@ -54,28 +54,27 @@ const SortableItem = ({ value, onDelete }) => {
       <Chip
         key={value?.id}
         label={value?.name}
-        onDelete={onDelete}
         size="small"
         color="info"
         variant="soft"
+        {...(disabled ? { onDelete: undefined } : { onDelete })} // Disable delete if `disabled`
       />
     </div>
   );
 };
 
-const SortableChips = ({ value, index, props, setValue }) => {
-  console.log(value, props);
+const SortableChips = ({ value, index, props, setValue, disabled }) => {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 20 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
-    // Get existing processes
     const processes = [...value];
 
     const oldIndex = processes.findIndex((p) => p.id === active.id);
@@ -87,12 +86,15 @@ const SortableChips = ({ value, index, props, setValue }) => {
 
     setValue(`materials[${index}].processes`, reordered);
   };
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={value} strategy={verticalListSortingStrategy}>
         {value.map((item, index1) => {
           const { key, onDelete } = props({ index: index1 });
-          return <SortableItem key={item.name} value={item} onDelete={onDelete} />;
+          return (
+            <SortableItem key={item.name} value={item} onDelete={onDelete} disabled={disabled} />
+          );
         })}
       </SortableContext>
     </DndContext>
@@ -452,6 +454,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                       size="small"
                       color="info"
                       variant="soft"
+                      {...(isAdmin ? {} : { onDelete: undefined })}
                     />
                   ))
                 }
@@ -481,7 +484,13 @@ export default function OrderMaterialForm({ currentOrder }) {
                   </li>
                 )}
                 renderTags={(value, props) => (
-                  <SortableChips index={index} value={value} props={props} setValue={setValue} />
+                  <SortableChips
+                    index={index}
+                    value={value}
+                    props={props}
+                    setValue={setValue}
+                    disabled={item.status !== 0 || !isAdmin}
+                  />
                 )}
                 disabled={item.status !== 0 || !isAdmin}
               />

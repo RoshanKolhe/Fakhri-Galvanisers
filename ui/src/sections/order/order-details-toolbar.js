@@ -162,7 +162,7 @@ export default function OrderDetailsToolbar({
           </Box>
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              Po Images
+              Weight Slip Images
             </Typography>
             <MultiFilePreview files={order?.poImages?.map((res) => res.fileUrl)} thumbnail />
           </Box>
