@@ -426,3 +426,9 @@ export const formatTime = (isoString) => {
 
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
+
+export function useUserRoles() {
+  const permissions = sessionStorage.getItem(PERMISSION_KEY).split(',');
+
+  return permissions;
+}

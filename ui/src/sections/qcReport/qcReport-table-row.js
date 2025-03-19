@@ -21,6 +21,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { formatQcReportId } from 'src/utils/constants';
 import { Grid } from '@mui/material';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -32,6 +33,11 @@ export default function QcReportTableRow({
   onSelectRow,
   onDeleteRow,
 }) {
+  const { user } = useAuthContext();
+  const isAdmin = user
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    : false;
+
   const { material, status, id, order, qcTests } = row;
 
   const confirm = useBoolean();
@@ -211,15 +217,17 @@ export default function QcReportTableRow({
           View
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onEditRow();
-          }}
-        >
-          <Iconify icon="grommet-icons:test" />
-          Qc Tests
-        </MenuItem>
+        {isAdmin && (
+          <MenuItem
+            onClick={() => {
+              popover.onClose();
+              onEditRow();
+            }}
+          >
+            <Iconify icon="grommet-icons:test" />
+            Qc Tests
+          </MenuItem>
+        )}
       </CustomPopover>
 
       <ConfirmDialog

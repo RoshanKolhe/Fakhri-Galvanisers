@@ -189,10 +189,10 @@ export default function DispatchEditForm({ currentDispatch }) {
                 onDrop={handleDrop}
                 onRemove={handleRemoveFile}
                 sx={{ mb: 3 }}
-                disabled={currentDispatch?.status !== 2}
+                disabled={currentDispatch?.status === 1}
               />
             </Grid>
-            {currentDispatch?.status !== 2 ? (
+            {currentDispatch?.status === 0 ? (
               <Stack alignItems="flex-end" sx={{ mt: 3 }}>
                 <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
                   {!currentDispatch ? 'Create Dispatch' : 'Save Changes'}
