@@ -552,7 +552,7 @@ export class CustomerController {
     ]);
 
     // Extracting required values
-    const totalOrdersCount = totalOrdersCountRes.count || 1; // Avoid division by zero
+    const totalOrdersCount = totalOrdersCountRes.count || 0; // Avoid division by zero
     const totalOutstanding = totalOutstandingRes[0]?.total ?? 0;
     const ordersInProcessCount = ordersInProcessCountRes.count;
     const ordersReadyForDispatchCount = ordersReadyForDispatchCountRes.count;
@@ -587,27 +587,47 @@ export class CustomerController {
     const ordersPercentage = [
       {
         label: 'Material Received',
-        value: Number(
-          ((ordersMaterialReceivedCount / totalOrdersCount) * 100).toFixed(2),
-        ),
+        value:
+          totalOrdersCount > 0
+            ? Number(
+                (
+                  (ordersMaterialReceivedCount / totalOrdersCount) *
+                  100
+                ).toFixed(2),
+              )
+            : 0,
       },
       {
         label: 'In Process',
-        value: Number(
-          ((ordersInProcessCount / totalOrdersCount) * 100).toFixed(2),
-        ),
+        value:
+          totalOrdersCount > 0
+            ? Number(
+                ((ordersInProcessCount / totalOrdersCount) * 100).toFixed(2),
+              )
+            : 0,
       },
       {
         label: 'Material Ready',
-        value: Number(
-          ((ordersMaterialReadyCount / totalOrdersCount) * 100).toFixed(2),
-        ),
+        value:
+          totalOrdersCount > 0
+            ? Number(
+                ((ordersMaterialReadyCount / totalOrdersCount) * 100).toFixed(
+                  2,
+                ),
+              )
+            : 0,
       },
       {
         label: 'Ready To Dispatch',
-        value: Number(
-          ((ordersReadyForDispatchCount / totalOrdersCount) * 100).toFixed(2),
-        ),
+        value:
+          totalOrdersCount > 0
+            ? Number(
+                (
+                  (ordersReadyForDispatchCount / totalOrdersCount) *
+                  100
+                ).toFixed(2),
+              )
+            : 0,
       },
     ];
 

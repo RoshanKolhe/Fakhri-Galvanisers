@@ -652,7 +652,15 @@ export class OrderController {
             (lp: any) => lp.processesId === process.id,
           );
           if (matchedProcess) {
-            process['processesDetails'] = matchedProcess;
+            process['processesDetails'] = {
+              ...matchedProcess,
+              durationInMs: matchedProcess.duration
+                ? new Date(matchedProcess.duration).getTime()
+                : null,
+              timeTakenInMs: matchedProcess.timeTaken
+                ? new Date(matchedProcess.timeTaken).getTime()
+                : null,
+            };
           }
           return {...process};
         });
