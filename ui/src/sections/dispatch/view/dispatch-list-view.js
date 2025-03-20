@@ -37,14 +37,14 @@ import {
 } from 'src/components/table';
 //
 import { useGetDispatches } from 'src/api/dispatch';
-import { QCREPORT_STATUS_OPTIONS } from 'src/utils/constants';
+import { DISPATCH_STATUS_OPTIONS } from 'src/utils/constants';
 import DispatchTableToolbar from '../dispatch-table-toolbar';
 import DispatchTableFiltersResult from '../dispatch-table-filters-result';
 import DispatchTableRow from '../dispatch-table-row';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...QCREPORT_STATUS_OPTIONS];
+const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...DISPATCH_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'id', label: 'Dispatch ID', width: 116 },
@@ -192,7 +192,7 @@ export default function DispatchListView() {
 
         <Card>
           <Tabs
-            value={filters.status} 
+            value={filters.status}
             onChange={handleFilterStatus}
             sx={{
               px: 2.5,
@@ -211,7 +211,10 @@ export default function DispatchListView() {
                       ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
                     }
                     color={
-                      (tab.value === 0 && 'warning') || (tab.value === 1 && 'success') || 'default'
+                      (tab.value === 0 && 'warning') ||
+                      (tab.value === 1 && 'info') || // 'info' for "Documents Uploaded"
+                      (tab.value === 2 && 'success') || // 'success' for "Completed"
+                      'default'
                     }
                   >
                     {tab.value === 'all' && dispatches.length}
@@ -219,6 +222,8 @@ export default function DispatchListView() {
                       dispatches.filter((qcReport) => qcReport.status === 0).length}
                     {tab.value === 1 &&
                       dispatches.filter((qcReport) => qcReport.status === 1).length}
+                    {tab.value === 2 &&
+                      dispatches.filter((qcReport) => qcReport.status === 2).length}
                   </Label>
                 }
               />

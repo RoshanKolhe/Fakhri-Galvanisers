@@ -46,7 +46,11 @@ export default function DispatchTableFiltersResult({
           <Block label="Status:">
             <Chip
               size="small"
-              label={(filters.status === 0 && 'Pending') || (filters.status === 1 && 'Completed')}
+              label={
+                (filters.status === 0 && 'Pending') ||
+                (filters.status === 1 && 'Documents Uploaded') ||
+                (filters.status === 2 && 'Completed')
+              }
               onDelete={handleRemoveStatus}
             />
           </Block>

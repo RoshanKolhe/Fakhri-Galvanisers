@@ -73,12 +73,18 @@ export default function DispatchTableRow({
       <TableCell>
         <Label
           variant="soft"
-          color={(status === 0 && 'warning') || (status === 1 && 'success') || 'default'}
+          color={
+            (status === 0 && 'warning') ||
+            (status === 1 && 'info') || // 'info' for "Documents Uploaded"
+            (status === 2 && 'success') || // 'success' for "Completed"
+            'default'
+          }
         >
-          {(status === 0 && 'Pending') || (status === 1 && 'Completed')}
+          {(status === 0 && 'Pending') ||
+            (status === 1 && 'Documents Uploaded') ||
+            (status === 2 && 'Completed')}
         </Label>
       </TableCell>
-
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
         <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
           <Iconify icon="eva:more-vertical-fill" />

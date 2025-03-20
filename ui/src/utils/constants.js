@@ -399,6 +399,12 @@ export const QCREPORT_STATUS_OPTIONS = [
   { value: 1, label: 'Completed' },
 ];
 
+export const DISPATCH_STATUS_OPTIONS = [
+  { value: 0, label: 'Pending' },
+  { value: 1, label: 'Documents Uploaded' },
+  { value: 2, label: 'Completed' },
+];
+
 export const MATERIAL_STATUS_OPTIONS = [
   { value: 0, label: 'Pending' },
   { value: 1, label: 'In Process' },
