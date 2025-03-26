@@ -526,6 +526,8 @@ export default function OrderMaterialForm({ currentOrder }) {
             lotNumber: lot.lotNumber,
             quantity: lot.quantity,
             status: lot.status,
+            filing: lot.filing,
+            visualInspection: lot.visualInspection,
             processes: lot.processes.map((process) => ({
               processId: process.id,
               duration: process.processesDetails.duration,

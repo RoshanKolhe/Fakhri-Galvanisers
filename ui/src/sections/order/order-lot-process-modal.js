@@ -18,6 +18,8 @@ import {
   Button,
   TextField,
   Stack,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
 import axiosInstance from 'src/utils/axios';
@@ -63,6 +65,8 @@ export default function OrderLotProcessModal({
         const newLots = foundMaterial.lots.map((lot) => ({
           lotNumber: lot.lotNumber,
           quantity: lot.quantity,
+          filing: lot.filing,
+          visualInspection: lot.visualInspection,
           processes: lot.processes || [],
           status: lot.status,
         }));
@@ -89,6 +93,8 @@ export default function OrderLotProcessModal({
           .map((_, i) => ({
             lotNumber: i + 1,
             quantity: baseQty + (i < remainder ? 1 : 0),
+            filing: '',
+            visualInspection: '',
             status: 0,
             processes: processes.map(() => ({
               duration: null,
@@ -120,6 +126,18 @@ export default function OrderLotProcessModal({
   const handleQuantityChange = (index, value) => {
     const newLots = [...lots];
     newLots[index].quantity = parseInt(value, 10) || 0;
+    setLots(newLots);
+  };
+
+  const handleFilingChange = (index, value) => {
+    const newLots = [...lots];
+    newLots[index].filing = value;
+    setLots(newLots);
+  };
+
+  const handleVisualInspectionChange = (index, value) => {
+    const newLots = [...lots];
+    newLots[index].visualInspection = value;
     setLots(newLots);
   };
 
@@ -212,6 +230,8 @@ export default function OrderLotProcessModal({
     const submissionData = lots.map((lot, index) => ({
       lotNumber: lot.lotNumber,
       quantity: lot.quantity,
+      filing: lot.filing,
+      visualInspection: lot.visualInspection,
       status: lot.status,
       processes:
         times[index]?.map((process, processIndex) => ({
@@ -356,6 +376,8 @@ export default function OrderLotProcessModal({
                   <TableCell key={index}>{process.name}</TableCell>
                 ))}
                 <TableCell>Quantity</TableCell>
+                <TableCell>Filing</TableCell>
+                <TableCell>Visual Inspection</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -434,6 +456,34 @@ export default function OrderLotProcessModal({
                       onChange={(e) => handleQuantityChange(lotIndex, e.target.value)}
                       disabled={lot.status !== 0}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={lot?.filing || ''}
+                      onChange={(e) => handleFilingChange(lotIndex, e.target.value)}
+                      displayEmpty
+                      disabled={lot.status !== 0}
+                    >
+                      <MenuItem value="" disabled>
+                        Select
+                      </MenuItem>
+                      <MenuItem value="OK">OK</MenuItem>
+                      <MenuItem value="Not OK">Not OK</MenuItem>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={lot?.visualInspection || ''}
+                      onChange={(e) => handleVisualInspectionChange(lotIndex, e.target.value)}
+                      disabled={lot.status !== 0}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>
+                        Select
+                      </MenuItem>
+                      <MenuItem value="OK">OK</MenuItem>
+                      <MenuItem value="Not OK">Not OK</MenuItem>
+                    </Select>
                   </TableCell>
                 </TableRow>
               ))}

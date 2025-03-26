@@ -430,6 +430,8 @@ export class OrderController {
                   if (materialLot.lotNumber === lot.lotNumber) {
                     await this.lotsRepository.updateById(materialLot.id, {
                       quantity: lot.quantity,
+                      filing: lot.filing,
+                      visualInspection: lot.visualInspection,
                     });
                     for (const lotProcess of materialLot.processes) {
                       const foundLotFromMaterial = lot.processes.find(
@@ -456,6 +458,8 @@ export class OrderController {
                     lotNumber: lot.lotNumber.toString(),
                     materialId: materialId,
                     quantity: lot.quantity,
+                    filing: lot.filing,
+                    visualInspection: lot.visualInspection,
                     status: 0,
                   },
                   {transaction: tx},

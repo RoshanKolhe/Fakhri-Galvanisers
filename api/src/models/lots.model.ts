@@ -30,6 +30,16 @@ export class Lots extends Entity {
   quantity?: number;
 
   @property({
+    type: 'string',
+  })
+  filing?: string;
+
+  @property({
+    type: 'string',
+  })
+  visualInspection?: string;
+
+  @property({
     type: 'number',
     default: 0,
   })
