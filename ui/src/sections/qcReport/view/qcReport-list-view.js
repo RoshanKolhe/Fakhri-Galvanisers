@@ -49,6 +49,7 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...QCREPORT_STATUS_OPTIO
 const TABLE_HEAD = [
   { id: 'id', label: 'Qc Report ID', width: 116 },
   { id: 'order.id', label: 'Order ID' },
+  { id: 'lot.lotName', label: 'Lot' },
   { id: 'order.customer.firstName', label: 'Customer Name' },
   { id: 'materials', label: 'Materials', width: 120 },
   { id: 'status', label: 'Status', width: 110 },

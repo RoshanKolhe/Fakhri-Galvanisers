@@ -50,6 +50,7 @@ import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 
 const TABLE_HEAD = [
   { id: 'performaId', label: 'Customer' },
+  { id: 'order.orderId', label: 'Order Id' },
   { id: 'createdAt', label: 'Create' },
   { id: 'dueDate', label: 'Due' },
   { id: 'totalAmount', label: 'Amount' },

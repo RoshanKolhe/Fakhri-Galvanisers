@@ -38,7 +38,7 @@ export default function QcReportTableRow({
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
     : false;
 
-  const { material, status, id, order, qcTests } = row;
+  const { material, status, id, order, qcTests, lots } = row;
 
   const confirm = useBoolean();
 
@@ -55,6 +55,7 @@ export default function QcReportTableRow({
       <TableCell>{formatQcReportId(id)}</TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{order.orderId}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{`Lot${lots.lotNumber}`}</TableCell>
 
       <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar

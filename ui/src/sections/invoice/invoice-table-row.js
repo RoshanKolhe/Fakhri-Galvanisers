@@ -37,7 +37,7 @@ export default function InvoiceTableRow({
   const isAdmin = user
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
     : false;
-  const { performaId, createdAt, dueDate, status, customer: invoiceTo, totalAmount } = row;
+  const { performaId, createdAt, dueDate, status, customer: invoiceTo, totalAmount, order } = row;
 
   const confirm = useBoolean();
 
@@ -70,7 +70,7 @@ export default function InvoiceTableRow({
             }
           />
         </TableCell>
-
+        <TableCell>{order?.orderId}</TableCell>
         <TableCell>
           <ListItemText
             primary={format(new Date(createdAt), 'dd MMM yyyy')}

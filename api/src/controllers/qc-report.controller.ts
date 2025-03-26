@@ -307,7 +307,6 @@ export class QcReportController {
       materials.length > 0 && materials.every(mat => mat.status === 2);
 
     if (allQcCompleted && allMaterialsCompleted && order.isPaid) {
-      const order = await this.orderRepository.findById(orderId);
       const orderTimeline = order.timeline || [];
 
       const newEntry = {
@@ -319,6 +318,7 @@ export class QcReportController {
       const isAlreadyPresent = orderTimeline.some(
         (entry: any) => entry.id === 3,
       );
+
       if (!isAlreadyPresent) {
         orderTimeline.push(newEntry);
       }
@@ -328,15 +328,26 @@ export class QcReportController {
         timeline: orderTimeline,
       });
 
-      await this.dispatchRepository.create({
-        orderId,
-        status: 0,
-        customerId: order.customerId,
+      // Check if a dispatch record already exists for the order
+      const existingDispatch = await this.dispatchRepository.findOne({
+        where: {orderId},
       });
 
-      console.log(
-        `Order ${orderId} marked as 'Ready to Dispatch' and dispatch record created.`,
-      );
+      if (!existingDispatch) {
+        await this.dispatchRepository.create({
+          orderId,
+          status: 0,
+          customerId: order.customerId,
+        });
+
+        console.log(
+          `Order ${orderId} marked as 'Ready to Dispatch' and dispatch record created.`,
+        );
+      } else {
+        console.log(
+          `Dispatch already exists for order ${orderId}, skipping creation.`,
+        );
+      }
     }
   }
 }
