@@ -170,7 +170,7 @@ export class OrderController {
       const paymentData: Partial<Payment> = {
         orderId: createdOrder.id,
         performaId: formattedInvoiceId,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 45)),
+        dueDate: new Date(),
         totalAmount: grandTotal,
         customerId: challan.customerId,
       };

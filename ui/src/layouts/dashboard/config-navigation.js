@@ -313,20 +313,20 @@ export function useNavData() {
             ],
           },
 
-          // QC REPORT
-          {
-            title: t('qc Report'),
-            path: paths.dashboard.qcReport.root,
-            icon: ICONS.qcReport,
-            roles: ['super_admin', 'customer'],
-            children: [
-              {
-                title: t('list'),
-                path: paths.dashboard.qcReport.root,
-                roles: ['super_admin', 'customer'],
-              },
-            ],
-          },
+          // // QC REPORT
+          // {
+          //   title: t('qc Report'),
+          //   path: paths.dashboard.qcReport.root,
+          //   icon: ICONS.qcReport,
+          //   roles: ['super_admin', 'customer'],
+          //   children: [
+          //     {
+          //       title: t('list'),
+          //       path: paths.dashboard.qcReport.root,
+          //       roles: ['super_admin', 'customer'],
+          //     },
+          //   ],
+          // },
 
           // INVOICE
           {
