@@ -187,7 +187,7 @@ export default function InvoiceToolbar({
               onClick={handleForceDispatch}
               loading={isLoading} // Set loading state
             >
-              Force Dispatch
+              Dispatch Unpaid
             </LoadingButton>
           )}
 
