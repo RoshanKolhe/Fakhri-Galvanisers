@@ -26,6 +26,13 @@ export class QcReport extends Entity {
   status?: number; // 0:Pending, 1:Completed
 
   @property({
+    type: 'array',
+    itemType: 'string',
+    required: false,
+  })
+  images?: string[];
+
+  @property({
     type: 'date',
   })
   createdAt?: Date;

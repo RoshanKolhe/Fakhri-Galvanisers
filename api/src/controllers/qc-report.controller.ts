@@ -94,16 +94,26 @@ export class QcReportController {
       content: {
         'application/json': {
           schema: {
-            type: 'array',
-            items: getModelSchemaRef(QcTest, {
-              title: 'NewQcTestReport',
-              exclude: ['id'],
-            }),
+            type: 'object',
+            properties: {
+              qcTests: {
+                type: 'array',
+                items: getModelSchemaRef(QcTest, {
+                  title: 'NewQcTestReport',
+                  exclude: ['id'],
+                }),
+              },
+              images: {
+                type: 'array',
+                items: {type: 'string'}, // Image URLs or base64 strings
+              },
+            },
+            required: ['qcTests'],
           },
         },
       },
     })
-    qcTests: Omit<QcTest, 'id'>[],
+    body: {qcTests: Omit<QcTest, 'id'>[]; images?: string[]},
   ): Promise<QcTest[]> {
     const repo = new DefaultTransactionalRepository(QcReport, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
@@ -113,28 +123,22 @@ export class QcReportController {
         throw new HttpErrors.BadRequest('Qc Report does not exist');
       }
 
-      // Delete existing QcTests for the given QcReportId
-      await this.qcTestRepository.deleteAll(
-        {qcReportId},
-        {
-          transaction: tx,
-        },
-      );
+      await this.qcTestRepository.deleteAll({qcReportId}, {transaction: tx});
 
       // Create new QC Tests
       const data = await this.qcTestRepository.createAll(
-        qcTests.map(test => ({...test, qcReportId})),
-        {
-          transaction: tx,
-        },
+        body.qcTests.map(test => ({...test, qcReportId})),
+        {transaction: tx},
       );
-      await this.qcReportRepository.updateById(
-        qcReportId,
-        {status: 1},
-        {
-          transaction: tx,
-        },
-      );
+      const inputData: any = {
+        status: 1,
+      };
+      if (body.images && body.images.length) {
+        inputData.images = body.images;
+      }
+      await this.qcReportRepository.updateById(qcReportId, inputData, {
+        transaction: tx,
+      });
       tx.commit();
       await this.checkAllQcStatusAndCreateDispatch(qcReport.orderId);
       return data;
