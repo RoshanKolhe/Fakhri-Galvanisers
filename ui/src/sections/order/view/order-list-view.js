@@ -277,6 +277,7 @@ export default function OrderListView() {
                       tableData.map((row) => row.id)
                     )
                   }
+                  showCheckbox={false}
                 />
 
                 <TableBody>
