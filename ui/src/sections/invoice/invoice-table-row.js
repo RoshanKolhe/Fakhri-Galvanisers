@@ -37,7 +37,7 @@ export default function InvoiceTableRow({
   const isAdmin = user
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
     : false;
-  const { performaId, createdAt, dueDate, status, customer: invoiceTo, totalAmount } = row;
+  const { performaId, createdAt, dueDate, status, customer: invoiceTo, totalAmount, order } = row;
 
   const confirm = useBoolean();
 
@@ -70,7 +70,7 @@ export default function InvoiceTableRow({
             }
           />
         </TableCell>
-
+        <TableCell>{order?.orderId}</TableCell>
         <TableCell>
           <ListItemText
             primary={format(new Date(createdAt), 'dd MMM yyyy')}
@@ -103,9 +103,8 @@ export default function InvoiceTableRow({
           <Label
             variant="soft"
             color={
-              (status === 1 && 'success') ||
-              (status === 0 && 'warning') ||
-              (status === 2 && 'error') ||
+              (status === 1 && 'success') || // Paid
+              (status === 0 && 'warning') || // Pending
               (status === 3 && 'info') || // Pending Approval
               (status === 4 && 'secondary') || // Request Reupload
               'default'
@@ -113,7 +112,6 @@ export default function InvoiceTableRow({
           >
             {(status === 0 && 'Pending') ||
               (status === 1 && 'Paid') ||
-              (status === 2 && 'Overdue') ||
               (status === 3 && 'Pending Approval') ||
               (status === 4 && 'Request Reupload')}
           </Label>

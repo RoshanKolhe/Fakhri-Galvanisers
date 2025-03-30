@@ -26,6 +26,7 @@ import { DialogContent, DialogTitle, Typography } from '@mui/material';
 import { useSnackbar } from 'src/components/snackbar';
 import { MultiFilePreview } from 'src/components/upload';
 import axiosInstance from 'src/utils/axios';
+import { LoadingButton } from '@mui/lab';
 import InvoicePDF from './invoice-pdf';
 import InvoicePaymentProofModal from './invoice-payment-proof-modal';
 
@@ -41,6 +42,7 @@ export default function InvoiceToolbar({
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState(false);
   const [openApproval, setOpenApproval] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -95,6 +97,22 @@ export default function InvoiceToolbar({
         variant: 'error',
       });
       handleCloseApproval();
+    }
+  };
+
+  const handleForceDispatch = async () => {
+    setIsLoading(true);
+    try {
+      await axiosInstance.post(`/orders/${invoice?.order?.id}/dispatch`);
+      enqueueSnackbar('Dispatch Created Successfully');
+      refreshPayment();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -160,6 +178,17 @@ export default function InvoiceToolbar({
             >
               Verify Payment
             </Button>
+          )}
+
+          {isAdmin && !invoice?.isPaidSkip && invoice?.status !== 1 && (
+            <LoadingButton
+              variant="contained"
+              startIcon={<Iconify icon="mdi:fast-forward" />}
+              onClick={handleForceDispatch}
+              loading={isLoading} // Set loading state
+            >
+              Dispatch Unpaid
+            </LoadingButton>
           )}
 
           <TextField

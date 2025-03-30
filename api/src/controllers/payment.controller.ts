@@ -213,9 +213,11 @@ export class PaymentController {
       if (!paymentDetails) {
         throw new HttpErrors.BadRequest('Invoice not found');
       }
+
       const customer: any = await this.customerRepository.findById(
         paymentDetails.customerId,
       );
+
       if (payment.status && payment.status === 1) {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
@@ -239,39 +241,51 @@ export class PaymentController {
           qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
 
         if (allMaterialsCompleted && allQcCompleted) {
-          await this.dispatchRepository.create(
-            {
-              orderId: paymentDetails.orderId,
-              customerId: paymentDetails.customerId,
-            },
-            {transaction: tx},
-          );
+          // Check if a dispatch record already exists
+          const existingDispatch = await this.dispatchRepository.findOne({
+            where: {orderId: paymentDetails.orderId},
+          });
 
-          // Update order timeline with 'Ready to Dispatch' entry
-          const order = await this.orderRepository.findById(
-            paymentDetails.orderId,
-          );
-          const orderTimeline = order.timeline || [];
+          if (!existingDispatch) {
+            await this.dispatchRepository.create(
+              {
+                orderId: paymentDetails.orderId,
+                customerId: paymentDetails.customerId,
+              },
+              {transaction: tx},
+            );
 
-          const newEntry = {
-            id: 3,
-            title: 'Ready to Dispatch',
-            time: new Date().toISOString(),
-          };
+            // Update order timeline with 'Ready to Dispatch' entry
+            const order = await this.orderRepository.findById(
+              paymentDetails.orderId,
+            );
+            const orderTimeline = order.timeline || [];
 
-          if (!orderTimeline.some((entry: any) => entry.id === 3)) {
-            orderTimeline.push(newEntry);
+            const newEntry = {
+              id: 3,
+              title: 'Ready to Dispatch',
+              time: new Date().toISOString(),
+            };
+
+            if (!orderTimeline.some((entry: any) => entry.id === 3)) {
+              orderTimeline.push(newEntry);
+            }
+
+            await this.orderRepository.updateById(
+              paymentDetails.orderId,
+              {
+                status: 3,
+                timeline: orderTimeline,
+              },
+              {transaction: tx},
+            );
+          } else {
+            console.log(
+              `Dispatch already exists for order ${paymentDetails.orderId}, skipping creation.`,
+            );
           }
-
-          await this.orderRepository.updateById(
-            paymentDetails.orderId,
-            {
-              status: 3,
-              timeline: orderTimeline,
-            },
-            {transaction: tx},
-          );
         }
+
         await this.notificationRepository.create(
           {
             avatarUrl: customer?.avatar?.fileUrl
@@ -352,5 +366,80 @@ export class PaymentController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.paymentRepository.deleteById(id);
+  }
+
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN],
+    },
+  })
+  @post('/orders/{orderId}/dispatch')
+  async createDispatch(
+    @param.path.number('orderId') orderId: number,
+  ): Promise<void> {
+    const qcReports = await this.qcReportRepository.find({where: {orderId}});
+    const order = await this.orderRepository.findById(orderId);
+    const allQcCompleted =
+      qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
+
+    const materials = await this.materialRepository.find({where: {orderId}});
+    const allMaterialsCompleted =
+      materials.length > 0 && materials.every(mat => mat.status === 2);
+
+    if (!allQcCompleted || !allMaterialsCompleted) {
+      throw new HttpErrors.BadRequest(
+        `QC is not completed for order ${order?.orderId}.`,
+      );
+    }
+
+    // Check if a dispatch record already exists for the order
+    const existingDispatch = await this.dispatchRepository.findOne({
+      where: {orderId},
+    });
+
+    if (existingDispatch) {
+      throw new HttpErrors.Conflict(
+        `Dispatch record already exists for order ${orderId}.`,
+      );
+    }
+
+    const orderTimeline = order.timeline || [];
+    const newEntry = {
+      id: 3,
+      title: 'Ready to Dispatch',
+      time: new Date().toISOString(),
+    };
+
+    if (!orderTimeline.some((entry: any) => entry.id === 3)) {
+      orderTimeline.push(newEntry);
+    }
+
+    // Update order status and timeline
+    await this.orderRepository.updateById(orderId, {
+      status: 3,
+      timeline: orderTimeline,
+    });
+
+    // Find the invoice related to this order
+    const invoice = await this.paymentRepository.findOne({where: {orderId}});
+
+    if (!invoice) {
+      throw new HttpErrors.NotFound(`Invoice not found for order ${orderId}.`);
+    }
+
+    // Update isPaidSkip in the invoice table
+    await this.paymentRepository.updateById(invoice.id, {isPaidSkip: true});
+
+    // Create a new dispatch record
+    await this.dispatchRepository.create({
+      orderId,
+      status: 0,
+      customerId: order.customerId,
+    });
+
+    console.log(
+      `Order ${orderId} marked as 'Ready to Dispatch', isPaidSkip set to true in invoice, and dispatch record created.`,
+    );
   }
 }

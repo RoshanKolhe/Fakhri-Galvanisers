@@ -1,14 +1,14 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-plusplus */
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { Grid, Stack, MenuItem, Button } from '@mui/material';
 import { useSnackbar } from 'src/components/snackbar';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
@@ -36,10 +36,12 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
         })
       )
       .min(1, 'At least one Qc Tests is required'),
+    images: Yup.array().min(1, 'Images is required'),
   });
 
   const defaultValues = useMemo(
     () => ({
+      images: currentQcReport?.images || [],
       qcTests: currentQcReport?.qcTests?.length
         ? currentQcReport.qcTests.map((qcTest) => ({
             specification: qcTest.specification || '',
@@ -69,11 +71,14 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
   const {
     reset,
     watch,
+    getValues,
     control,
     setValue,
     handleSubmit,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting },
   } = methods;
+
+  const values = watch();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -83,7 +88,8 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
   const onSubmit = handleSubmit(async (formData) => {
     try {
       console.info('DATA', formData);
-      const inputData = formData.qcTests;
+      const inputData = { qcTests: formData.qcTests, images: formData.images };
+      console.log(inputData);
       await axiosInstance.post(`/qc-reports/${currentQcReport.id}/create-tests`, inputData);
       reset();
       enqueueSnackbar('Qc Tests Added Successfully');
@@ -95,6 +101,46 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
       });
     }
   });
+
+  const handleDrop = useCallback(
+    async (acceptedFiles) => {
+      console.log(acceptedFiles);
+      if (!acceptedFiles.length) return;
+      const formData = new FormData();
+      acceptedFiles.forEach((file) => {
+        formData.append('files[]', file); // Ensure backend supports array uploads
+      });
+      try {
+        const response = await axiosInstance.post('/files', formData);
+        const { data } = response;
+        console.log(data);
+        const newFiles = data.files.map((res) => res.fileUrl);
+
+        // Get the current images from the form
+        const currentImages = getValues('images') || [];
+
+        // Merge new images with existing ones
+        setValue('images', [...currentImages, ...newFiles], {
+          shouldValidate: true,
+        });
+      } catch (err) {
+        console.error('Error uploading files:', err);
+      }
+    },
+    [getValues, setValue]
+  );
+
+  const handleRemoveFile = useCallback(
+    (inputFile) => {
+      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
+      setValue('images', filtered);
+    },
+    [setValue, values.images]
+  );
+
+  const handleRemoveAllFiles = useCallback(() => {
+    setValue('images', []);
+  }, [setValue]);
 
   useEffect(() => {
     if (currentQcReport) {
@@ -164,14 +210,40 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
               </Button>
             </Grid>
           )}
-          <Stack alignItems="flex-start" sx={{ mt: 3 }}>
-            {isAdmin && (
-              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                Submit QC Tests
-              </LoadingButton>
-            )}
-          </Stack>
         </Grid>
+
+        <Grid item xs={12}>
+          <RHFUpload
+            multiple
+            thumbnail
+            name="images"
+            maxSize={3145728}
+            accept={{
+              'image/*': [],
+              'video/*': [],
+              'application/pdf': [],
+              'application/msword': [],
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+              'application/vnd.ms-excel': [],
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+              'application/zip': [],
+              'application/x-rar-compressed': [],
+              'text/plain': [],
+            }}
+            onDrop={handleDrop}
+            onRemove={handleRemoveFile}
+            onRemoveAll={handleRemoveAllFiles}
+            sx={{ mb: 3 }}
+          />
+        </Grid>
+
+        <Stack alignItems="flex-start" sx={{ mt: 3 }}>
+          {isAdmin && (
+            <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+              Submit QC Tests
+            </LoadingButton>
+          )}
+        </Stack>
       </Grid>
     </FormProvider>
   );

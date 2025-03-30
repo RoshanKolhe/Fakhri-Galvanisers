@@ -49,6 +49,12 @@ export class Payment extends Entity {
   status?: number; //0:Pending, 1:Paid,2:Overdue,3:pending Approval,4:request requpload
 
   @property({
+    type: 'boolean',
+    default: false,
+  })
+  isPaidSkip?: boolean;
+
+  @property({
     type: 'date',
   })
   createdAt?: Date;

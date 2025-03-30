@@ -50,6 +50,7 @@ import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 
 const TABLE_HEAD = [
   { id: 'performaId', label: 'Customer' },
+  { id: 'order.orderId', label: 'Order Id' },
   { id: 'createdAt', label: 'Create' },
   { id: 'dueDate', label: 'Due' },
   { id: 'totalAmount', label: 'Amount' },
@@ -113,6 +114,12 @@ export default function InvoiceListView() {
 
   const getInvoiceLength = (status) => tableData.filter((item) => item.status === status).length;
 
+  const getOverdueCount = () => {
+    const today = new Date();
+    return tableData.filter((invoice) => invoice.status !== 1 && new Date(invoice.dueDate) < today)
+      .length;
+  };
+
   const getTotalAmount = (status) =>
     sumBy(
       tableData.filter((item) => item.status === status),
@@ -121,11 +128,21 @@ export default function InvoiceListView() {
 
   const getPercentByStatus = (status) => (getInvoiceLength(status) / tableData.length) * 100;
 
+  const getOverduePercent = () => {
+    const overdueCount = getOverdueCount();
+    return overdueCount ? (overdueCount / tableData.length) * 100 : 0;
+  };
+
+  const getOverdueTotalAmount = () =>
+    tableData
+      .filter((invoice) => invoice.status !== 1 && new Date(invoice.dueDate) < new Date())
+      .reduce((total, invoice) => total + invoice.totalAmount, 0);
+
   const TABS = [
     { value: 'all', label: 'All', color: 'default', count: tableData.length },
     { value: 1, label: 'Paid', color: 'success', count: getInvoiceLength(1) },
     { value: 0, label: 'Pending', color: 'warning', count: getInvoiceLength(0) },
-    { value: 2, label: 'Overdue', color: 'error', count: getInvoiceLength(2) },
+    { value: 2, label: 'Overdue', color: 'error', count: getOverdueCount() },
     { value: 3, label: 'Pending Approval', color: 'info', count: getInvoiceLength(3) },
     { value: 4, label: 'Request Reupload', color: 'secondary', count: getInvoiceLength(4) },
   ];
@@ -260,22 +277,28 @@ export default function InvoiceListView() {
                   icon: 'solar:cloud-upload-bold-duotone',
                   color: theme.palette.secondary.main,
                 },
-              ].map((analytic, index) => (
-                <Fragment key={analytic.title}>
-                  <InvoiceAnalytic
-                    title={analytic.title}
-                    total={getInvoiceLength(analytic.status)}
-                    percent={getPercentByStatus(analytic.status)}
-                    price={getTotalAmount(analytic.status)}
-                    icon={analytic.icon}
-                    color={analytic.color}
-                  />
-                  {/* Add divider only if it's not the last item */}
-                  {index < 5 && (
-                    <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />
-                  )}
-                </Fragment>
-              ))}
+              ].map((analytic, index) => {
+                // Special handling for Overdue invoices
+                const isOverdue = analytic.status === 2;
+
+                return (
+                  <Fragment key={analytic.title}>
+                    <InvoiceAnalytic
+                      title={analytic.title}
+                      total={isOverdue ? getOverdueCount() : getInvoiceLength(analytic.status)}
+                      percent={
+                        isOverdue ? getOverduePercent() : getPercentByStatus(analytic.status)
+                      }
+                      price={isOverdue ? getOverdueTotalAmount() : getTotalAmount(analytic.status)}
+                      icon={analytic.icon}
+                      color={analytic.color}
+                    />
+                    {index < 5 && (
+                      <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />
+                    )}
+                  </Fragment>
+                );
+              })}
             </Stack>
           </Scrollbar>
         </Card>
@@ -479,7 +502,13 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((invoice) => invoice.status === status);
+    if (status === 2) {
+      inputData = inputData.filter(
+        (invoice) => invoice.status !== 1 && new Date(invoice.dueDate) < new Date()
+      );
+    } else {
+      inputData = inputData.filter((invoice) => invoice.status === status);
+    }
   }
 
   if (service.length) {
