@@ -88,7 +88,11 @@ const SortableChips = ({ value, index, props, setValue, disabled }) => {
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={disabled ? [] : sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <SortableContext items={value} strategy={verticalListSortingStrategy}>
         {value.map((item, index1) => {
           const { key, onDelete } = props({ index: index1 });
