@@ -87,7 +87,11 @@ export class PaymentController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.CUSTOMER],
+      required: [
+        PermissionKeys.SUPER_ADMIN,
+        PermissionKeys.ADMIN,
+        PermissionKeys.CUSTOMER,
+      ],
     },
   })
   @get('/payments')

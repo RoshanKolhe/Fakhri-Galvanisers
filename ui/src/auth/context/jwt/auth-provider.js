@@ -9,7 +9,6 @@ import { isValidToken, setSession } from './utils';
 
 // ----------------------------------------------------------------------
 
-
 const initialState = {
   user: null,
   loading: true,
@@ -129,7 +128,7 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
     console.log(user);
-    if (user && user.permissions.includes('super_admin')) {
+    if (user && (user.permissions.includes('super_admin') || user.permissions.includes('admin'))) {
       setSession(accessToken);
       sessionStorage.setItem(PERMISSION_KEY, user.permissions[0]);
     } else throw new Error("User Doesn't have permission");

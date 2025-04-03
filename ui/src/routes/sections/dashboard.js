@@ -96,7 +96,7 @@ export const dashboardRoutes = [
       { path: 'customer-profile', element: <CustomerAccountPage /> },
       {
         path: 'user',
-        element: <RolesAuthRoute roles={['super_admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
         children: [
           { element: <UserListPage />, index: true },
           { path: 'list', element: <UserListPage /> },
@@ -108,7 +108,7 @@ export const dashboardRoutes = [
       },
       {
         path: 'customer',
-        element: <RolesAuthRoute roles={['super_admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
         children: [
           { element: <CustomerListPage />, index: true },
           { path: 'list', element: <CustomerListPage /> },
@@ -119,7 +119,7 @@ export const dashboardRoutes = [
       },
       {
         path: 'inquiry',
-        element: <RolesAuthRoute roles={['super_admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
         children: [
           { element: <InquiryListPage />, index: true },
           { path: 'list', element: <InquiryListPage /> },
@@ -138,7 +138,7 @@ export const dashboardRoutes = [
       },
       {
         path: 'hsnMaster',
-        element: <RolesAuthRoute roles={['super_admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
         children: [
           { element: <HsnMasterListPage />, index: true },
           { path: 'list', element: <HsnMasterListPage /> },
@@ -149,7 +149,7 @@ export const dashboardRoutes = [
       },
       {
         path: 'processes',
-        element: <RolesAuthRoute roles={['super_admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
         children: [
           { element: <ProcessesListPage />, index: true },
           { path: 'list', element: <ProcessesListPage /> },
@@ -185,7 +185,7 @@ export const dashboardRoutes = [
           { path: 'list', element: <QcReportListPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
             children: [{ path: 'edit', element: <QcReportEditPage /> }],
           },
           { path: ':id/view', element: <QcReportViewPage /> },
@@ -198,7 +198,7 @@ export const dashboardRoutes = [
           { path: 'list', element: <DispatchListPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
             children: [{ path: 'edit', element: <DispatchEditPage /> }],
           },
           { path: ':id/view', element: <DispatchViewPage /> },
@@ -212,7 +212,7 @@ export const dashboardRoutes = [
           { path: ':id', element: <InvoiceDetailsPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
             children: [{ path: 'edit', element: <InvoiceEditPage /> }],
           },
           { path: 'new', element: <InvoiceCreatePage /> },

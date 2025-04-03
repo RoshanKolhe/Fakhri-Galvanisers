@@ -82,7 +82,7 @@ export default function UserNewEditForm({ currentUser }) {
       dob: currentUser?.dob || '',
       employeeId: currentUser?.employeeId || '',
       email: currentUser?.email || '',
-      isActive: !!currentUser?.isActive,
+      isActive: currentUser?.isActive ?? 1,
       avatarUrl: currentUser?.avatar?.fileUrl || null,
       phoneNumber: currentUser?.phoneNumber || '',
       address: currentUser?.fullAddress || '',

@@ -496,7 +496,11 @@ export class UserController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.CUSTOMER],
+      required: [
+        PermissionKeys.SUPER_ADMIN,
+        PermissionKeys.ADMIN,
+        PermissionKeys.CUSTOMER,
+      ],
     },
   })
   @get('/getDashboardCounts')
@@ -507,8 +511,8 @@ export class UserController {
     let totalActiveOrders = 0;
     let totalOrdersReadyToDispatch = 0;
     let totalPendingRfq = 0;
-    let totalConversions = 0; 
-    let totalChallan = 0; 
+    let totalConversions = 0;
+    let totalChallan = 0;
     let last10DaysDispatchCounts: number[] = [];
     let last10DaysRfqCounts: number[] = [];
     let last10DaysActiveOrdersCounts: number[] = [];
@@ -627,7 +631,7 @@ export class UserController {
         totalActiveOrders,
         totalOrdersReadyToDispatch,
         totalPendingRfq,
-        totalConversions, 
+        totalConversions,
         totalChallan,
         last10DaysActiveOrdersCounts,
         last10DaysDispatchCounts,
@@ -635,7 +639,7 @@ export class UserController {
         percentageChangeActiveOrders: percentageChangeActiveOrders.toFixed(2),
         percentageChangeDispatch: percentageChangeDispatch.toFixed(2),
         percentageChangeRfq: percentageChangeRfq.toFixed(2),
-        invoiceCounts, 
+        invoiceCounts,
       };
     }
   }
