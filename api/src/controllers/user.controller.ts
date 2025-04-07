@@ -522,7 +522,7 @@ export class UserController {
 
     const user = await this.userRepository.findById(currnetUser.id);
 
-    if (user.permissions.includes('super_admin')) {
+    if (user.permissions.includes('super_admin') || user.permissions.includes('admin')) {
       totalConversions = (
         await this.inquiryRepository.count({
           status: 2,
