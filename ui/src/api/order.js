@@ -30,19 +30,19 @@ export function useGetOrders() {
 
 export function useGetOrder(orderId) {
   const URL = orderId ? [endpoints.order.details(orderId)] : null;
-  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
+  const refreshOrder = () => {
+    // Use the `mutate` function to trigger a revalidation
+    mutate();
+  };
 
-  const memoizedValue = useMemo(
-    () => ({
-      order: data,
-      orderLoading: isLoading,
-      orderError: error,
-      orderValidating: isValidating,
-    }),
-    [data, error, isLoading, isValidating]
-  );
-
-  return memoizedValue;
+  return {
+    order: data,
+    orderLoading: isLoading,
+    orderError: error,
+    orderValidating: isValidating,
+    refreshOrder, // Include the refresh function separately
+  };
 }
 
 // ----------------------------------------------------------------------
@@ -71,4 +71,3 @@ export function useGetOrdersWithFilter(filter) {
     refreshFilterOrders, // Include the refresh function separately
   };
 }
-

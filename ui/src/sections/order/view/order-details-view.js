@@ -24,7 +24,7 @@ export default function OrderDetailsView() {
   const params = useParams();
 
   const { id } = params;
-  const { order } = useGetOrder(id);
+  const { order, refreshOrder } = useGetOrder(id);
   const [currentOrder, setCurrentOrder] = useState();
   const [status, setStatus] = useState();
 
@@ -49,6 +49,7 @@ export default function OrderDetailsView() {
         status={status}
         onChangeStatus={handleChangeStatus}
         statusOptions={ORDER_STATUS_OPTIONS}
+        refreshOrder={refreshOrder}
       />
 
       <Grid container spacing={3}>

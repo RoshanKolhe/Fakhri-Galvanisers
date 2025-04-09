@@ -127,14 +127,14 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
     (index, fileToRemove) => {
       const currentImages = getValues(`qcTests[${index}].images`) || [];
       const updatedImages = currentImages.filter((file) => file !== fileToRemove);
-      setValue(`qcTests[${index}].images`, updatedImages, { shouldValidate: true });
+      setValue(`qcTests[${index}].images`, updatedImages);
     },
     [getValues, setValue]
   );
 
   const handleRemoveAllFiles = useCallback(
     (index) => {
-      setValue(`qcTests[${index}].images`, [], { shouldValidate: true });
+      setValue(`qcTests[${index}].images`, []);
     },
     [setValue]
   );

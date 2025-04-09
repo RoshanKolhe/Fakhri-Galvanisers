@@ -30,6 +30,7 @@ export default function OrderDetailsToolbar({
   orderNumber,
   statusOptions,
   onChangeStatus,
+  refreshOrder,
 }) {
   const popover = usePopover();
   const { enqueueSnackbar } = useSnackbar();
@@ -53,6 +54,7 @@ export default function OrderDetailsToolbar({
     try {
       console.info('DATA', data);
       await axiosInstance.post(`/orders/${order.id}/order-qc-tests`, data.qcTests);
+      refreshOrder();
       enqueueSnackbar('Qc Tests Added Successfully');
       handleCloseOrderQcDetails();
     } catch (error) {
@@ -220,4 +222,5 @@ OrderDetailsToolbar.propTypes = {
   orderNumber: PropTypes.string,
   status: PropTypes.number,
   statusOptions: PropTypes.array,
+  refreshOrder: PropTypes.func,
 };
