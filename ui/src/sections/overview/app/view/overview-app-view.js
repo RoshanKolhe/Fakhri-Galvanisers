@@ -88,7 +88,7 @@ export default function OverviewAppView() {
         </Grid>
         <Grid xs={12} lg={8}>
           <AppNewInvoice
-            title="Invoices"
+            title="Performa Invoices"
             tableData={filteredPayments}
             tableLabels={[
               { id: 'id', label: 'Invoice ID' },
@@ -101,7 +101,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={6} lg={4}>
           <AppCurrentDownload
-            title="Invoice Counts"
+            title="Performa Invoice Counts"
             chart={{
               series: dashboardCounts?.invoiceCounts || [],
             }}
