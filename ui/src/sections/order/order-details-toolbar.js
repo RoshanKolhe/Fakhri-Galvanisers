@@ -16,6 +16,9 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { MultiFilePreview } from 'src/components/upload';
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
+import axiosInstance from 'src/utils/axios';
+import OrderQcDetailsModal from './order-qc-details-modal';
 
 // ----------------------------------------------------------------------
 
@@ -29,16 +32,35 @@ export default function OrderDetailsToolbar({
   onChangeStatus,
 }) {
   const popover = usePopover();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [showDocument, setOpenShowDocument] = useState(false);
+  const [showOrderQcDetails, setOrderQcDetails] = useState(false);
 
   const handleOpenShowDocument = () => setOpenShowDocument(true);
   const handleCloseShowDocument = () => setOpenShowDocument(false);
+
+  const handleOpenOrderQcDetails = () => setOrderQcDetails(true);
+  const handleCloseOrderQcDetails = () => setOrderQcDetails(false);
 
   const getStatusLabel = (currentStatus) => {
     const foundStatus = statusOptions.find((res) => res.value === currentStatus);
     if (foundStatus) return foundStatus.label;
     return 'Unknown Status';
+  };
+
+  const onSubmitQcDetails = async (data) => {
+    try {
+      console.info('DATA', data);
+      await axiosInstance.post(`/orders/${order.id}/order-qc-tests`, data.qcTests);
+      enqueueSnackbar('Qc Tests Added Successfully');
+      handleCloseOrderQcDetails();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -90,6 +112,17 @@ export default function OrderDetailsToolbar({
           alignItems="center"
           justifyContent="flex-end"
         >
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Iconify icon="eva:file-text-outline" />}
+            onClick={() => {
+              handleOpenOrderQcDetails();
+            }}
+            sx={{ textTransform: 'capitalize' }}
+          >
+            Qc Details
+          </Button>
           <Button
             variant="contained"
             color="primary"
@@ -168,6 +201,13 @@ export default function OrderDetailsToolbar({
           </Box>
         </DialogContent>
       </Dialog>
+
+      <OrderQcDetailsModal
+        currentQcReport={order?.orderQcTests || []}
+        open={showOrderQcDetails}
+        onClose={handleCloseOrderQcDetails}
+        onSubmitForm={onSubmitQcDetails}
+      />
     </>
   );
 }

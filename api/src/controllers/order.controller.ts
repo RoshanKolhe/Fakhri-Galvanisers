@@ -20,13 +20,21 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {LotProcesses, Material, Order, Payment, QcReport} from '../models';
+import {
+  LotProcesses,
+  Material,
+  Order,
+  OrderQcTest,
+  Payment,
+  QcReport,
+} from '../models';
 import {
   ChallanRepository,
   LotProcessesRepository,
   LotsRepository,
   MaterialRepository,
   MaterialUserRepository,
+  OrderQcTestRepository,
   OrderRepository,
   PaymentRepository,
   QcReportRepository,
@@ -57,6 +65,8 @@ export class OrderController {
     public lotProcessesRepository: LotProcessesRepository,
     @repository(QcReportRepository)
     public qcReportRepository: QcReportRepository,
+    @repository(OrderQcTestRepository)
+    public orderQcTestRepository: OrderQcTestRepository,
   ) {}
 
   @authenticate({
@@ -269,6 +279,7 @@ export class OrderController {
             ],
           },
         },
+        {relation: 'orderQcTests'},
         {relation: 'customer'},
         {relation: 'challan'},
         {relation: 'payment'},
@@ -748,6 +759,12 @@ export class OrderController {
     }
   }
 
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [PermissionKeys.SUPER_ADMIN],
+    },
+  })
   @del('/orders/{id}')
   @response(204, {
     description: 'Order DELETE success',
@@ -864,5 +881,64 @@ export class OrderController {
       status: orderStatus,
       timeline: orderTimeline,
     });
+  }
+
+  @post('/orders/{orderId}/order-qc-tests')
+  @response(200, {
+    description: 'Multiple OrderQcTest model instances created',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: {'x-ts-type': OrderQcTest},
+        },
+      },
+    },
+  })
+  async createMultipleOrderQcTests(
+    @param.path.number('orderId') orderId: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: [
+                'specification',
+                'testDetails',
+                'requirement',
+                'observed',
+              ],
+              properties: {
+                specification: {type: 'string'},
+                testDetails: {type: 'string'},
+                requirement: {type: 'string'},
+                testResult: {type: 'string'},
+                observed: {type: 'string'},
+                images: {type: 'array', items: {type: 'string'}},
+                status: {type: 'number'},
+                remark: {type: 'string'},
+              },
+            },
+          },
+        },
+      },
+    })
+    tests: Array<
+      Omit<
+        OrderQcTest,
+        'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'isDeleted' | 'orderId'
+      >
+    >,
+  ): Promise<OrderQcTest[]> {
+    await this.orderQcTestRepository.deleteAll({orderId});
+    const records = tests.map(test => ({
+      ...test,
+      orderId,
+      isDeleted: false,
+    }));
+
+    return this.orderQcTestRepository.createAll(records);
   }
 }

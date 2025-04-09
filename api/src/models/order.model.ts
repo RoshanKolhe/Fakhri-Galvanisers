@@ -10,6 +10,7 @@ import {Customer} from './customer.model';
 import {QcReport} from './qc-report.model';
 import {Payment} from './payment.model';
 import {Dispatch} from './dispatch.model';
+import {OrderQcTest} from './order-qc-test.model';
 
 @model()
 export class Order extends Entity {
@@ -146,6 +147,9 @@ export class Order extends Entity {
 
   @hasOne(() => Dispatch)
   dispatch: Dispatch;
+
+  @hasMany(() => OrderQcTest)
+  orderQcTests: OrderQcTest[];
 
   constructor(data?: Partial<Order>) {
     super(data);
