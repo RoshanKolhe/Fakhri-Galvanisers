@@ -176,7 +176,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('invoice'),
+            title: t('performa invoice'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
@@ -330,7 +330,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('invoice'),
+            title: t('performa invoice'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
@@ -484,7 +484,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('invoice'),
+            title: t('performa invoice'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
