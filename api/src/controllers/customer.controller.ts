@@ -31,6 +31,9 @@ import {
   param,
   patch,
   del,
+  RestBindings,
+  Request,
+  Response,
 } from '@loopback/rest';
 import {Customer} from '../models';
 import {validateCredentials} from '../services/validator';
@@ -41,6 +44,12 @@ import {UserProfile} from '@loopback/security';
 import {PermissionKeys} from '../authorization/permission-keys';
 import generateResetPasswordTemplate from '../templates/reset-password.template';
 import SITE_SETTINGS from '../utils/config';
+import multer from 'multer';
+import * as stream from 'stream';
+import csvParser from 'csv-parser';
+
+const memoryStorage = multer.memoryStorage();
+const upload = multer({storage: memoryStorage});
 
 export class CustomerController {
   constructor(
@@ -645,5 +654,104 @@ export class CustomerController {
       ordersPercentage, // Percentage of each order status
       latestOrder, // Returning full latest order data
     };
+  }
+
+  @post('/customers/import', {
+    responses: {
+      '200': {
+        description: 'Customer CSV Import',
+        content: {'application/json': {schema: {type: 'object'}}},
+      },
+    },
+  })
+  @authenticate('jwt')
+  async importCustomers(
+    @inject(RestBindings.Http.REQUEST) request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+    @inject(AuthenticationBindings.CURRENT_USER)
+    currentUser: UserProfile,
+  ): Promise<object> {
+    return new Promise<object>((resolve, reject) => {
+      upload.single('file')(request, response, async (err: any) => {
+        if (err) {
+          return reject(err);
+        }
+        if (!request.file || !request.file.buffer) {
+          return reject({message: 'No file uploaded.'});
+        }
+
+        const customers: Partial<Customer>[] = [];
+
+        try {
+          const bufferStream = new stream.PassThrough();
+          bufferStream.end(request.file.buffer);
+
+          await new Promise<void>((res, rej) => {
+            bufferStream
+              .pipe(csvParser())
+              .on('data', row => {
+                customers.push({
+                  firstName: row.firstName,
+                  lastName: row.lastName,
+                  dob: row.dob,
+                  fullAddress: row.fullAddress,
+                  city: row.city,
+                  state: row.state,
+                  gstNo: row.gstNo,
+                  email: row.email,
+                  phoneNumber: row.phoneNumber,
+                });
+              })
+              .on('end', () => res())
+              .on('error', (err: any) => rej(err));
+          });
+
+          let imported = 0;
+          let skipped = 0;
+
+          for (const customerData of customers) {
+            if (!customerData.phoneNumber) {
+              skipped++;
+              continue;
+            }
+            const existingCustomer = await this.customerRepository.findOne({
+              where: {email: customerData.email},
+            });
+
+            if (existingCustomer) {
+              skipped++;
+              continue;
+            }
+
+            const hashedPassword = await this.hasher.hashPassword('Test@123');
+
+            const customerToSave: Omit<Customer, 'id'> = {
+              ...customerData,
+              password: hashedPassword,
+              permissions: [PermissionKeys.CUSTOMER],
+              isActive: 1,
+              isEmailVerified: true,
+              createdByType: 'admin',
+              createdBy: currentUser.id,
+              updatedByType: 'admin',
+              updatedBy: currentUser.id,
+              isDeleted: false,
+            } as Omit<Customer, 'id'>;
+
+            await this.customerRepository.create(customerToSave);
+            imported++;
+          }
+
+          resolve({
+            success: true,
+            message: 'Customer import completed.',
+            imported,
+            skipped,
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
   }
 }
