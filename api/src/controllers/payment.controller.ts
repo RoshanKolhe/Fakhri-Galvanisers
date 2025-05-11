@@ -36,6 +36,11 @@ import {PermissionKeys} from '../authorization/permission-keys';
 import {inject} from '@loopback/core';
 import {UserProfile} from '@loopback/security';
 import {FakhriGalvanisersDataSource} from '../datasources';
+import SITE_SETTINGS from '../utils/config';
+import {EmailManagerBindings} from '../keys';
+import {EmailManager} from '../services/email.service';
+import generatePaymentApprovedTemplate from '../templates/payment-approved.template';
+import generatePaymentRejectedTemplate from '../templates/payment-rejected.template';
 
 export class PaymentController {
   constructor(
@@ -55,6 +60,8 @@ export class PaymentController {
     public dispatchRepository: DispatchRepository,
     @repository(QcReportRepository)
     public qcReportRepository: QcReportRepository,
+    @inject(EmailManagerBindings.SEND_MAIL)
+    public emailManager: EmailManager,
   ) {}
 
   @authenticate({
@@ -305,6 +312,24 @@ export class PaymentController {
           },
           {transaction: tx},
         );
+        const template = generatePaymentApprovedTemplate({
+          userData: customer,
+        });
+        console.log(template);
+        const mailOptions = {
+          from: SITE_SETTINGS.fromMail,
+          to: customer.email,
+          subject: template.subject,
+          html: template.html,
+        };
+
+        try {
+          await this.emailManager.sendMail(mailOptions);
+        } catch (err) {
+          throw new HttpErrors.UnprocessableEntity(
+            err.message || 'Mail sending failed',
+          );
+        }
       } else {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
@@ -347,6 +372,26 @@ export class PaymentController {
           },
           {transaction: tx},
         );
+
+        const template = generatePaymentRejectedTemplate({
+          userData: customer,
+          invoiceId: paymentDetails.performaId,
+        });
+        console.log(template);
+        const mailOptions = {
+          from: SITE_SETTINGS.fromMail,
+          to: customer.email,
+          subject: template.subject,
+          html: template.html,
+        };
+
+        try {
+          await this.emailManager.sendMail(mailOptions);
+        } catch (err) {
+          throw new HttpErrors.UnprocessableEntity(
+            err.message || 'Mail sending failed',
+          );
+        }
       }
 
       await this.paymentRepository.updateById(id, payment, {transaction: tx});

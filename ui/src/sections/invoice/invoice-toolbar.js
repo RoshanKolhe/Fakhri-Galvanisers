@@ -65,6 +65,7 @@ export default function InvoiceToolbar({
   }, [invoice, router]);
 
   const handleRequestReupload = async () => {
+    setIsLoading(true);
     try {
       const inputData = {
         status: 4,
@@ -73,16 +74,19 @@ export default function InvoiceToolbar({
       refreshPayment();
       enqueueSnackbar('Re-upload requested successfully');
       handleCloseApproval();
+      setIsLoading(false);
     } catch (error) {
       console.error(error);
       enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
         variant: 'error',
       });
       handleCloseApproval();
+      setIsLoading(false);
     }
   };
 
   const handleApprovePayment = async () => {
+    setIsLoading(true);
     try {
       const inputData = {
         status: 1,
@@ -91,12 +95,14 @@ export default function InvoiceToolbar({
       enqueueSnackbar('Payment Proof Approved Successfully');
       refreshPayment();
       handleCloseApproval();
+      setIsLoading(false);
     } catch (error) {
       console.error(error);
       enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
         variant: 'error',
       });
       handleCloseApproval();
+      setIsLoading(false);
     }
   };
 
@@ -253,12 +259,22 @@ export default function InvoiceToolbar({
         </DialogContent>
 
         <DialogActions sx={{ p: 1.5 }}>
-          <Button color="inherit" variant="outlined" onClick={handleRequestReupload}>
+          <LoadingButton
+            color="inherit"
+            variant="outlined"
+            onClick={handleRequestReupload}
+            loading={isLoading} // your loading state here
+          >
             Request Re-Upload
-          </Button>
-          <Button color="inherit" variant="contained" onClick={handleApprovePayment}>
+          </LoadingButton>
+          <LoadingButton
+            color="inherit"
+            variant="contained"
+            onClick={handleApprovePayment}
+            loading={isLoading} // your loading state here
+          >
             Approve Payment
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </>
