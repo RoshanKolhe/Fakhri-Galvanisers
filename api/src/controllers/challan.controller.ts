@@ -18,12 +18,12 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {Challan} from '../models';
-import {ChallanRepository, OrderRepository} from '../repositories';
-import {authenticate, AuthenticationBindings} from '@loopback/authentication';
-import {PermissionKeys} from '../authorization/permission-keys';
-import {inject} from '@loopback/core';
-import {UserProfile} from '@loopback/security';
+import { Challan } from '../models';
+import { ChallanRepository, OrderRepository } from '../repositories';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
+import { PermissionKeys } from '../authorization/permission-keys';
+import { inject } from '@loopback/core';
+import { UserProfile } from '@loopback/security';
 
 export class ChallanController {
   constructor(
@@ -31,7 +31,7 @@ export class ChallanController {
     public challanRepository: ChallanRepository,
     @repository(OrderRepository)
     public orderRepository: OrderRepository,
-  ) {}
+  ) { }
 
   @authenticate({
     strategy: 'jwt',
@@ -46,7 +46,7 @@ export class ChallanController {
   @post('/challans')
   @response(200, {
     description: 'Challan model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Challan)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Challan) } },
   })
   async create(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
@@ -64,7 +64,7 @@ export class ChallanController {
   ): Promise<Challan> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
-        and: [{poNumber: challan.poNumber}, {customerId: currnetUser.id}],
+        and: [{ poNumber: challan.poNumber }, { customerId: currnetUser.id }],
       },
     });
     console.log('existingChallan', existingChallan);
@@ -95,7 +95,7 @@ export class ChallanController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Challan, {includeRelations: true}),
+          items: getModelSchemaRef(Challan, { includeRelations: true }),
         },
       },
     },
@@ -114,7 +114,7 @@ export class ChallanController {
         {
           relation: 'quotation',
           scope: {
-            include: [{relation: 'customer'}],
+            include: [{ relation: 'customer' }],
           },
         },
         {
@@ -152,7 +152,7 @@ export class ChallanController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Challan, {includeRelations: true}),
+          items: getModelSchemaRef(Challan, { includeRelations: true }),
         },
       },
     },
@@ -169,7 +169,7 @@ export class ChallanController {
         id: {
           nin: (
             await this.orderRepository.find({
-              fields: {challanId: true},
+              fields: { challanId: true },
             })
           ).map(order => order.challanId),
         },
@@ -178,7 +178,7 @@ export class ChallanController {
         {
           relation: 'quotation',
           scope: {
-            include: [{relation: 'customer'}],
+            include: [{ relation: 'customer' }],
           },
         },
       ],
@@ -202,13 +202,13 @@ export class ChallanController {
     description: 'Challan model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Challan, {includeRelations: true}),
+        schema: getModelSchemaRef(Challan, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Challan, {exclude: 'where'})
+    @param.filter(Challan, { exclude: 'where' })
     filter?: FilterExcludingWhere<Challan>,
   ): Promise<Challan> {
     filter = {
@@ -216,10 +216,13 @@ export class ChallanController {
       include: [
         {
           relation: 'quotation',
-          scope: {
-            include: [{relation: 'customer'}],
-          },
         },
+        {
+          relation: 'customer',
+          scope: {
+            fields: { permissions: false, password: false }
+          }
+        }
       ],
     };
     return this.challanRepository.findById(id, filter);
@@ -245,7 +248,7 @@ export class ChallanController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Challan, {partial: true}),
+          schema: getModelSchemaRef(Challan, { partial: true }),
         },
       },
     })
@@ -253,20 +256,17 @@ export class ChallanController {
   ): Promise<void> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
-        and: [{poNumber: challan.poNumber}, {customerId: currnetUser.id}],
+        and: [
+          { poNumber: challan.poNumber },
+          { customerId: currnetUser.id },
+          { id: { neq: id } }
+        ],
       },
     });
-    console.log('existingChallan', existingChallan);
+
     if (existingChallan) {
-      let errorMessage = '';
-      if (existingChallan.poNumber === challan.poNumber) {
-        errorMessage += 'PO Number is already used in another Challan.';
-      }
-
-      throw new HttpErrors.BadRequest(errorMessage.trim());
+      throw new HttpErrors.BadRequest('PO Number is already used in another Challan.');
     }
-
-    // If validation passes, update the challan
     await this.challanRepository.updateById(id, challan);
   }
 

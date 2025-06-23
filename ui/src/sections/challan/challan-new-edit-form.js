@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,8 +25,9 @@ import FormProvider, {
 } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { formatRFQId } from 'src/utils/constants';
-import { Autocomplete, MenuItem, TextField, Typography } from '@mui/material';
+import { Autocomplete, Button, MenuItem, TextField, Typography } from '@mui/material';
 import { useGetHsnMasters } from 'src/api/hsnMaster';
+import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -33,11 +35,13 @@ export default function ChallanNewEditForm({ currentChallan }) {
   const router = useRouter();
   const [quotationOptions, setQuotationOptions] = useState([]);
   const { hsnMasters, hsnMastersLoading, hsnMastersEmpty, refreshQuotations } = useGetHsnMasters();
+  const [customerOptions, setCustomerOptions] = useState([]);
 
   const { enqueueSnackbar } = useSnackbar();
 
   const NewChallanSchema = Yup.object().shape({
-    quotation: Yup.object().required('Quotation is Required'),
+    customerName: Yup.object().required('Customer Name is Required'),
+    quotation: Yup.object().nullable(),
     vehicleNumber: Yup.string().required('Vehicle Number is required'),
     grossWeight: Yup.number()
       .min(1, 'Value must be greater than 0')
@@ -70,6 +74,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
 
   const defaultValues = useMemo(
     () => ({
+      customerName: currentChallan?.customer || null,
       quotation: currentChallan?.quotation || null,
       vehicleNumber: currentChallan?.vehicleNumber || '',
       grossWeight: currentChallan?.grossWeight || 0,
@@ -79,16 +84,25 @@ export default function ChallanNewEditForm({ currentChallan }) {
       images: currentChallan?.images || [],
       materials: currentChallan?.materials?.length
         ? currentChallan.materials.map((material) => ({
-            materialType: material.materialType || '',
-            quantity: material.quantity || null,
-            billingUnit: material.billingUnit || '',
-            hsnNo: material.hsnNo || null,
-            microns: material.microns || 0,
-            tax: material.tax || 0,
-            pricePerUnit: material.pricePerUnit || 0,
-            priceAfterTax: material.priceAfterTax || 0,
-          }))
-        : [],
+          materialType: material.materialType || '',
+          quantity: material.quantity || null,
+          billingUnit: material.billingUnit || '',
+          hsnNo: material.hsnNo || null,
+          microns: material.microns || 0,
+          tax: material.tax || 0,
+          pricePerUnit: material.pricePerUnit || 0,
+          priceAfterTax: material.priceAfterTax || 0,
+        }))
+        : [{
+          materialType: '',
+          quantity: null,
+          billingUnit: '',
+          hsnNo: null,
+          microns: 0,
+          tax: 0,
+          pricePerUnit: 0,
+          priceAfterTax: 0,
+        }],
       status: currentChallan?.status || 1,
       remark: currentChallan?.remark || '',
     }),
@@ -118,7 +132,6 @@ export default function ChallanNewEditForm({ currentChallan }) {
 
   const materials = watch('materials');
   const values = watch();
-  console.log(materials);
 
   const fetchQuotations = async (event) => {
     console.log(event?.target?.value);
@@ -152,8 +165,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
         remark: formData.remark,
         tareWeight: formData.tareWeight,
         vehicleNumber: formData.vehicleNumber,
-        quotationId: formData.quotation.id,
-        customerId: formData.quotation.customer.id,
+        quotationId: formData?.quotation?.id || null,
+        customerId: formData.customerName.id,
         status: formData.status ? 1 : 0,
         materials: formData.materials,
         images: formData.images,
@@ -198,7 +211,6 @@ export default function ChallanNewEditForm({ currentChallan }) {
             <RHFTextField
               name={`materials[${index}].materialType`}
               label="Material Type"
-              disabled
             />
 
             <RHFTextField
@@ -210,7 +222,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                 calculatePriceAfterTax(index);
               }}
             />
-            <RHFSelect name={`materials[${index}].billingUnit`} label="Billing Unit" disabled>
+            <RHFSelect name={`materials[${index}].billingUnit`} label="Billing Unit">
               <MenuItem key="kg" value="kg">
                 Kg
               </MenuItem>
@@ -229,7 +241,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   {...fieldProps}
                   options={hsnMasters}
                   getOptionLabel={(option) => (option ? option.hsnCode : '')}
-                  isOptionEqualToValue={(option, value) => option.hsnCode === value.hsnCode}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
                   onChange={(_, selectedOption) => {
                     onChange(selectedOption);
                     if (selectedOption) {
@@ -250,7 +262,6 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   sx={{
                     width: '100%',
                   }}
-                  disabled
                 />
               )}
             />
@@ -264,15 +275,15 @@ export default function ChallanNewEditForm({ currentChallan }) {
               disabled
             />
 
-            <RHFTextField name={`materials[${index}].microns`} label="Microns" disabled />
+            <RHFTextField name={`materials[${index}].microns`} label="Microns" />
 
             <RHFTextField
               name={`materials[${index}].pricePerUnit`}
               label="Price Per Unit"
               onChange={(e) => {
                 setValue(`materials[${index}].pricePerUnit`, e.target.value);
+                calculatePriceAfterTax(index);
               }}
-              disabled
             />
 
             <RHFTextField
@@ -281,8 +292,44 @@ export default function ChallanNewEditForm({ currentChallan }) {
               disabled
             />
           </Stack>
+          <Button
+            size="small"
+            color="error"
+            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+            onClick={() => remove(index)}
+          >
+            Remove
+          </Button>
         </Stack>
+
       ))}
+
+      <Stack
+        spacing={3}
+        direction={{ xs: 'column', md: 'row' }}
+        alignItems={{ xs: 'flex-end', md: 'center' }}
+      >
+        <Button
+          size="small"
+          color="primary"
+          startIcon={<Iconify icon="mingcute:add-line" />}
+          onClick={() =>
+            append({
+              materialType: '',
+              quantity: null,
+              billingUnit: '',
+              hsnNo: null,
+              microns: 0,
+              tax: 0,
+              pricePerUnit: 0,
+              priceAfterTax: 0,
+            })
+          }
+          sx={{ flexShrink: 0 }}
+        >
+          Add Item
+        </Button>
+      </Stack>
     </Stack>
   );
 
@@ -313,6 +360,32 @@ export default function ChallanNewEditForm({ currentChallan }) {
     },
     [getValues, setValue]
   );
+
+
+  const fetchCustomers = async (event) => {
+    try {
+      if (event && event?.target?.value && event.target.value.length >= 3) {
+        const filter = {
+          where: {
+            or: [
+              { email: { like: `%${event.target.value}%` } },
+              { firstName: { like: `%${event.target.value}%` } },
+              { lastName: { like: `%${event.target.value}%` } },
+              { phoneNumber: { like: `%${event.target.value}%` } },
+            ],
+          },
+        };
+        const filterString = encodeURIComponent(JSON.stringify(filter));
+        const { data } = await axiosInstance.get(`/customer/list?filter=${filterString}`);
+        setCustomerOptions(data);
+        console.log(data);
+      } else {
+        setCustomerOptions([]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleRemoveFile = useCallback(
     (inputFile) => {
@@ -352,6 +425,32 @@ export default function ChallanNewEditForm({ currentChallan }) {
         <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <RHFAutocomplete
+                  name="customerName"
+                  label="Customer Name"
+                  onInputChange={(event) => fetchCustomers(event)}
+                  options={customerOptions}
+                  getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
+                  filterOptions={(x) => x}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      <div>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          {`${option?.firstName} ${option?.lastName}`}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {option.email}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {option.phoneNumber}
+                        </Typography>
+                      </div>
+                    </li>
+                  )}
+                />
+              </Grid>
               <Grid item xs={12} sm={6} md={4}>
                 <RHFAutocomplete
                   name="quotation"

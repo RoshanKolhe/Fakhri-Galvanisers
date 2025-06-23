@@ -72,11 +72,11 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     customerName: isAdmin
       ? Yup.object().required('Customer Name is Required')
       : Yup.object().nullable(),
-    firstname: Yup.string(),
-    lastName: Yup.string(),
-    gstNo: Yup.string(),
-    phoneNumber: Yup.string(),
-    company: Yup.string(),
+    firstname: Yup.string().nullable(),
+    lastName: Yup.string().nullable(),
+    gstNo: Yup.string().nullable(),
+    phoneNumber: Yup.string().nullable(),
+    company: Yup.string().nullable(),
     materials: Yup.array()
       .of(
         Yup.object().shape({
@@ -103,50 +103,50 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       firstName: currentQuotation
         ? currentQuotation?.customer?.firstName
         : !isAdmin
-        ? user?.firstName
-        : '',
+          ? user?.firstName
+          : '',
       lastName: currentQuotation
         ? currentQuotation?.customer?.lastName
         : !isAdmin
-        ? user?.lastName
-        : '',
+          ? user?.lastName
+          : '',
       gstNo: currentQuotation ? currentQuotation?.customer?.gstNo : !isAdmin ? user?.gstNo : '',
       phoneNumber: currentQuotation
         ? currentQuotation?.customer?.phoneNumber
         : !isAdmin
-        ? user?.phoneNumber
-        : '',
+          ? user?.phoneNumber
+          : '',
       company: currentQuotation
         ? currentQuotation?.customer?.company
         : !isAdmin
-        ? user?.company
-        : '',
+          ? user?.company
+          : '',
       adminNote: currentQuotation?.adminNote || '',
       customerNote: currentQuotation?.customerNote || '',
       rejectedReason: currentQuotation?.rejectedReason || '',
       materials: currentQuotation?.materials?.length
         ? currentQuotation.materials.map((material) => ({
-            materialType: material.materialType || '',
-            quantity: material.quantity || null,
-            billingUnit: material.billingUnit || '',
-            hsnNo: material.hsnNo || null,
-            microns: material.microns || 0,
-            tax: material.tax || 0,
-            pricePerUnit: material.pricePerUnit || 0,
-            priceAfterTax: material.priceAfterTax || 0,
-          }))
+          materialType: material.materialType || '',
+          quantity: material.quantity || null,
+          billingUnit: material.billingUnit || '',
+          hsnNo: material.hsnNo || null,
+          microns: material.microns || 0,
+          tax: material.tax || 0,
+          pricePerUnit: material.pricePerUnit || 0,
+          priceAfterTax: material.priceAfterTax || 0,
+        }))
         : [
-            {
-              materialType: '',
-              quantity: null,
-              billingUnit: '',
-              hsnNo: null,
-              microns: 0,
-              tax: 0,
-              pricePerUnit: 0,
-              priceAfterTax: 0,
-            },
-          ],
+          {
+            materialType: '',
+            quantity: null,
+            billingUnit: '',
+            hsnNo: null,
+            microns: 0,
+            tax: 0,
+            pricePerUnit: 0,
+            priceAfterTax: 0,
+          },
+        ],
     }),
     [currentQuotation, isAdmin, user]
   );
@@ -703,8 +703,8 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       </LoadingButton>
     ) : null} */}
                 {isAdmin ||
-                !currentQuotation ||
-                (currentQuotation && currentQuotation?.status === 4) ? (
+                  !currentQuotation ||
+                  (currentQuotation && currentQuotation?.status === 4) ? (
                   <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
                     Send Quotation
                   </LoadingButton>
