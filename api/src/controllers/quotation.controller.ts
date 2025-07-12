@@ -49,6 +49,7 @@ export class QuotationController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -120,6 +121,7 @@ export class QuotationController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -174,6 +176,7 @@ export class QuotationController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -205,6 +208,7 @@ export class QuotationController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })

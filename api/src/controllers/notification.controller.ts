@@ -64,6 +64,7 @@ export class NotificationController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })

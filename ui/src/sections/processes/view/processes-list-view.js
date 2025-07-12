@@ -52,7 +52,9 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...COMMON_STATUS_OPTIONS
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
+  { id: 'group', label: 'Process Group' },
   { id: 'description', label: 'Description', width: 180 },
+  // { id: 'duration', label: 'Duration'},
   { id: 'status', label: 'Status', width: 180 },
   { id: '', width: 88 },
 ];

@@ -39,19 +39,27 @@ export class MaterialRepository extends TimeStampRepositoryMixin<
 
   public readonly qcReports: HasManyRepositoryFactory<QcReport, typeof Material.prototype.id>;
 
+  public readonly preTreatmentUser: BelongsToAccessor<User, typeof Material.prototype.id>;
+
+  public readonly galvanizingUser: BelongsToAccessor<User, typeof Material.prototype.id>;
+
   constructor(
     @inject('datasources.fakhriGalvanisers')
     dataSource: FakhriGalvanisersDataSource, @repository.getter('OrderRepository') protected orderRepositoryGetter: Getter<OrderRepository>, @repository.getter('MaterialUserRepository') protected materialUserRepositoryGetter: Getter<MaterialUserRepository>, @repository.getter('UserRepository') protected userRepositoryGetter: Getter<UserRepository>, @repository.getter('MaterialProcessRepository') protected materialProcessRepositoryGetter: Getter<MaterialProcessRepository>, @repository.getter('ProcessesRepository') protected processesRepositoryGetter: Getter<ProcessesRepository>, @repository.getter('LotsRepository') protected lotsRepositoryGetter: Getter<LotsRepository>, @repository.getter('QcReportRepository') protected qcReportRepositoryGetter: Getter<QcReportRepository>,
   ) {
     super(Material, dataSource);
+    this.galvanizingUser = this.createBelongsToAccessorFor('galvanizingUser', userRepositoryGetter,);
+    this.registerInclusionResolver('galvanizingUser', this.galvanizingUser.inclusionResolver);
+    this.preTreatmentUser = this.createBelongsToAccessorFor('preTreatmentUser', userRepositoryGetter,);
+    this.registerInclusionResolver('preTreatmentUser', this.preTreatmentUser.inclusionResolver);
     this.qcReports = this.createHasManyRepositoryFactoryFor('qcReports', qcReportRepositoryGetter,);
     this.registerInclusionResolver('qcReports', this.qcReports.inclusionResolver);
     this.lots = this.createHasManyRepositoryFactoryFor('lots', lotsRepositoryGetter,);
     this.registerInclusionResolver('lots', this.lots.inclusionResolver);
     this.processes = this.createHasManyThroughRepositoryFactoryFor('processes', processesRepositoryGetter, materialProcessRepositoryGetter,);
     this.registerInclusionResolver('processes', this.processes.inclusionResolver);
-    this.users = this.createHasManyThroughRepositoryFactoryFor('users', userRepositoryGetter, materialUserRepositoryGetter,);
-    this.registerInclusionResolver('users', this.users.inclusionResolver);
+    // this.users = this.createHasManyThroughRepositoryFactoryFor('users', userRepositoryGetter, materialUserRepositoryGetter,);
+    // this.registerInclusionResolver('users', this.users.inclusionResolver);
     this.order = this.createBelongsToAccessorFor('order', orderRepositoryGetter,);
     this.registerInclusionResolver('order', this.order.inclusionResolver);
   }

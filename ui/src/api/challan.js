@@ -72,3 +72,25 @@ export function useGetChallansWithFilter(filter) {
   };
 }
 
+// --------------------------------------------------------------------------------------------------
+
+export function useGetOrderPendingChallans() {
+  const URL = endpoints.challan.orderPendingChallan;
+
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
+
+  const refreshChallans = () => {
+    // Use the `mutate` function to trigger a revalidation
+    mutate();
+  };
+
+  return {
+    challans: data || [],
+    challansLoading: isLoading,
+    challansError: error,
+    challansValidating: isValidating,
+    challansEmpty: !isLoading && !data?.length,
+    refreshChallans, // Include the refresh function separately
+  };
+}
+

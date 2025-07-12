@@ -17,16 +17,16 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Processes} from '../models';
-import {ProcessesRepository} from '../repositories';
-import {authenticate} from '@loopback/authentication';
-import {PermissionKeys} from '../authorization/permission-keys';
+import { Processes } from '../models';
+import { ProcessesRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
+import { PermissionKeys } from '../authorization/permission-keys';
 
 export class ProcessesController {
   constructor(
     @repository(ProcessesRepository)
     public processesRepository: ProcessesRepository,
-  ) {}
+  ) { }
 
   @authenticate({
     strategy: 'jwt',
@@ -37,7 +37,7 @@ export class ProcessesController {
   @post('/processes')
   @response(200, {
     description: 'Processes model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Processes)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Processes) } },
   })
   async create(
     @requestBody({
@@ -62,6 +62,7 @@ export class ProcessesController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -72,7 +73,7 @@ export class ProcessesController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Processes, {includeRelations: true}),
+          items: getModelSchemaRef(Processes, { includeRelations: true }),
         },
       },
     },
@@ -101,13 +102,13 @@ export class ProcessesController {
     description: 'Processes model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Processes, {includeRelations: true}),
+        schema: getModelSchemaRef(Processes, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Processes, {exclude: 'where'})
+    @param.filter(Processes, { exclude: 'where' })
     filter?: FilterExcludingWhere<Processes>,
   ): Promise<Processes> {
     return this.processesRepository.findById(id, filter);
@@ -128,7 +129,7 @@ export class ProcessesController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Processes, {partial: true}),
+          schema: getModelSchemaRef(Processes, { partial: true }),
         },
       },
     })
@@ -149,5 +150,27 @@ export class ProcessesController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.processesRepository.deleteById(id);
+  }
+
+  // fetch processes by group...
+  @authenticate({
+    strategy: 'jwt',
+  })
+  @get('/processes/processes-by-group/{groupId}')
+  async fetchProcessesByGroup(
+    @param.path.number('groupId') groupId: number,
+  ): Promise<Processes[]> {
+    try {
+      const processes = await this.processesRepository.find({
+        where: {
+          processGroup: groupId
+        },
+        order: ['createdAt DESC']
+      });
+
+      return processes;
+    } catch (error) {
+      throw error;
+    }
   }
 }

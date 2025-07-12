@@ -50,7 +50,10 @@ export default function ChallanViewForm({ currentChallan }) {
       .required('Net Weight is required'),
     poNumber: Yup.string().required('PO Number is required'),
     remark: Yup.string(),
-    images: Yup.array().min(1, 'Images is required'),
+    challanImages: Yup.array().nullable(),
+    poImages: Yup.array().nullable(),
+    vehicleImages: Yup.array().nullable(),
+    materialImages: Yup.array().nullable(),
     materials: Yup.array()
       .of(
         Yup.object().shape({
@@ -76,18 +79,21 @@ export default function ChallanViewForm({ currentChallan }) {
       tareWeight: currentChallan?.tareWeight || 0,
       netWeight: currentChallan?.netWeight || 0,
       poNumber: currentChallan?.poNumber || '',
-      images: currentChallan?.images || [],
+      challanImages: currentChallan?.challanImages || [],
+      poImages: currentChallan?.poImages || [],
+      vehicleImages: currentChallan?.vehicleImages || [],
+      materialImages: currentChallan?.materialImages || [],
       materials: currentChallan?.materials?.length
         ? currentChallan.materials.map((material) => ({
-            materialType: material.materialType || '',
-            quantity: material.quantity || null,
-            billingUnit: material.billingUnit || '',
-            hsnNo: material.hsnNo || null,
-            microns: material.microns || 0,
-            tax: material.tax || 0,
-            pricePerUnit: material.pricePerUnit || 0,
-            priceAfterTax: material.priceAfterTax || 0,
-          }))
+          materialType: material.materialType || '',
+          quantity: material.quantity || null,
+          billingUnit: material.billingUnit || '',
+          hsnNo: material.hsnNo || null,
+          microns: material.microns || 0,
+          tax: material.tax || 0,
+          pricePerUnit: material.pricePerUnit || 0,
+          priceAfterTax: material.priceAfterTax || 0,
+        }))
         : [],
       status: currentChallan?.status || 1,
       remark: currentChallan?.remark || '',
@@ -379,11 +385,21 @@ export default function ChallanViewForm({ currentChallan }) {
             <Box mt={5}>{renderMaterialDetailsForm}</Box>
 
             <Grid container spacing={2} mt={5}>
+
+              {/* challan images */}
               <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload challan images
+                  </Typography>
+                </Box>
+
                 <RHFUpload
+                  disabled
                   multiple
                   thumbnail
-                  name="images"
+                  name="challanImages"
                   maxSize={3145728}
                   accept={{
                     'image/*': [],
@@ -397,11 +413,120 @@ export default function ChallanViewForm({ currentChallan }) {
                     'application/x-rar-compressed': [],
                     'text/plain': [],
                   }}
-                  onDrop={handleDrop}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'challanImages');
+                  }}
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* PO images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload PO images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
                   disabled
+                  multiple
+                  thumbnail
+                  name="poImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'poImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* Vehicle images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload vehicle images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
+                  disabled
+                  multiple
+                  thumbnail
+                  name="vehicleImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'vehicleImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* Material images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload material images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
+                  disabled
+                  multiple
+                  thumbnail
+                  name="materialImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'materialImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
                 />
               </Grid>
             </Grid>

@@ -118,6 +118,16 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/edit`,
       view: (id) => `${ROOTS.DASHBOARD}/hsnMaster/${id}/view`,
     },
+
+    // ITEMS MASTER
+    itemsMaster: {
+      root: `${ROOTS.DASHBOARD}/itemsMaster`,
+      new: `${ROOTS.DASHBOARD}/itemsMaster/new`,
+      list: `${ROOTS.DASHBOARD}/itemsMaster/list`,
+      edit: (id) => `${ROOTS.DASHBOARD}/itemsMaster/${id}/edit`,
+      view: (id) => `${ROOTS.DASHBOARD}/itemsMaster/${id}/view`,
+    },
+    
     processes: {
       root: `${ROOTS.DASHBOARD}/processes`,
       new: `${ROOTS.DASHBOARD}/processes/new`,
@@ -136,6 +146,7 @@ export const paths = {
     order: {
       root: `${ROOTS.DASHBOARD}/order`,
       details: (id) => `${ROOTS.DASHBOARD}/order/${id}`,
+      new: `${ROOTS.DASHBOARD}/order/new`
     },
     qcReport: {
       root: `${ROOTS.DASHBOARD}/qcReport`,

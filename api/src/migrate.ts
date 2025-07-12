@@ -28,6 +28,8 @@ export async function migrate(args: string[]) {
       'Dispatch',
       'Notification',
       'OrderQcTest',
+      'Items',
+      'ItemProcess'
     ],
   });
 

@@ -311,6 +311,7 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFSelect fullWidth name="role" label="Role">
                 {[
                   { value: 'admin', name: 'Admin' },
+                  { value: 'supervisor', name: 'Supervisor' },
                   { value: 'worker', name: 'Worker' },
                   { value: 'qc_admin', name: 'Qc Admin' },
                   { value: 'dispatch', name: 'Dispatch' },

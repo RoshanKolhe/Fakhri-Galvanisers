@@ -401,6 +401,7 @@ function applyFilter({ inputData, comparator, filters }) {
     worker: 'Worker',
     qc_Admin: 'Qc Admin',
     dispatch: 'Dispatch',
+    supervisor: 'Supervisor'
   };
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);

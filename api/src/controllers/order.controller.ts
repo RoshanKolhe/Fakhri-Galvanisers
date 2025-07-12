@@ -39,11 +39,11 @@ import {
   PaymentRepository,
   QcReportRepository,
 } from '../repositories';
-import {authenticate, AuthenticationBindings} from '@loopback/authentication';
-import {PermissionKeys} from '../authorization/permission-keys';
-import {inject} from '@loopback/core';
-import {FakhriGalvanisersDataSource} from '../datasources';
-import {UserProfile} from '@loopback/security';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
+import { PermissionKeys } from '../authorization/permission-keys';
+import { inject } from '@loopback/core';
+import { FakhriGalvanisersDataSource } from '../datasources';
+import { UserProfile } from '@loopback/security';
 
 export class OrderController {
   constructor(
@@ -67,7 +67,7 @@ export class OrderController {
     public qcReportRepository: QcReportRepository,
     @repository(OrderQcTestRepository)
     public orderQcTestRepository: OrderQcTestRepository,
-  ) {}
+  ) { }
 
   @authenticate({
     strategy: 'jwt',
@@ -75,7 +75,7 @@ export class OrderController {
   @post('/orders')
   @response(200, {
     description: 'Order model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Order)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Order) } },
   })
   async create(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
@@ -95,14 +95,15 @@ export class OrderController {
         },
       },
     })
-    orderData: Omit<Order, 'id' | 'orderId'> & {materials: object[]},
+    orderData: Omit<Order, 'id' | 'orderId'> & { materials: object[] },
   ): Promise<Order> {
+    const { materials, ...orderFields } = orderData;
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
     try {
       const challan = await this.challanRepository.findById(
         orderData.challanId,
-        {include: ['order']},
+        { include: ['order'] },
       );
       if (challan.order) {
         throw new HttpErrors.BadRequest(
@@ -110,8 +111,12 @@ export class OrderController {
         );
       }
       const inputData: Partial<Order> = {
-        ...orderData,
+        ...orderFields,
         customerId: challan.customerId,
+        challanImages: challan.challanImages,
+        poImages: challan.poImages,
+        vehicleImages: challan.vehicleImages,
+        materialImages: challan.materialImages,
         status: 0,
         isPaid: false,
         timeline: [
@@ -141,12 +146,17 @@ export class OrderController {
         },
       );
 
-      if (challan.materials && challan.materials.length > 0) {
-        const mappedMaterials = challan.materials.map((material: any) => ({
+      if (orderData.materials && orderData.materials.length > 0) {
+        const mappedMaterials = orderData.materials.map((material: any) => ({
           microns: material.microns,
-          hsnCode: material.hsnNo.hsnCode,
-          totalQuantity: material.quantity,
+          hsnCode: material.hsnCode,
+          totalQuantity: material.totalQuantity,
           materialType: material.materialType,
+          noOfLots: material.noOfLots,
+          startDate: material.startDate,
+          endDate: material.endDate,
+          preTreatmentUserId: material.preTreatmentUserId,
+          galvanizingUserId: material.galvanizingUserId,
           orderId: createdOrder.id,
           status: 0,
           createdBy: currnetUser.id,
@@ -158,6 +168,44 @@ export class OrderController {
         await this.materialRepository.createAll(mappedMaterials, {
           transaction: tx,
         });
+      }
+
+      const savedMaterials = await this.materialRepository.find({
+        where: { orderId: createdOrder.id },
+        order: ['id ASC'], // to match input index
+      }, { transaction: tx });
+
+      for (let i = 0; i < orderData.materials.length; i += 1) {
+        const material = orderData.materials[i];
+        const savedMaterial = savedMaterials[i];
+
+        if (material.status === 0 && material.lots && material.lots.length > 0) {
+          for (const lotData of material.lots) {
+            const lot: any = lotData;
+            const savedLot = await this.lotsRepository.create({
+              lotNumber: lot.lotNumber.toString(),
+              materialId: savedMaterial.id,
+              quantity: lot.quantity,
+              filing: lot.filing,
+              visualInspection: lot.visualInspection,
+              status: 0,
+            }, { transaction: tx });
+
+            const combinedProcesses = [
+              ...(lot.preTreatmentProcesses || []),
+              ...(lot.galvanizingProcesses || []),
+            ];
+
+            for (const process of combinedProcesses) {
+              await this.lotProcessesRepository.create({
+                lotsId: savedLot.id,
+                processesId: process.processId,
+                duration: process.duration,
+                status: 0,
+              }, { transaction: tx });
+            }
+          }
+        }
       }
       let subtotal = 0;
       let totalTax = 0;
@@ -187,6 +235,8 @@ export class OrderController {
       await this.paymentRepository.create(paymentData, {
         transaction: tx,
       });
+
+      await this.challanRepository.updateById(orderData?.challanId, { status: 3 }, { transaction: tx });
       tx.commit();
       return this.orderRepository.findById(createdOrder.id, {
         include: ['materials'],
@@ -207,7 +257,7 @@ export class OrderController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Order, {includeRelations: true}),
+          items: getModelSchemaRef(Order, { includeRelations: true }),
         },
       },
     },
@@ -223,11 +273,11 @@ export class OrderController {
         isDeleted: false,
       },
       include: [
-        {relation: 'materials'},
-        {relation: 'customer'},
-        {relation: 'challan'},
-        {relation: 'payment'},
-        {relation: 'dispatch'},
+        { relation: 'materials' },
+        { relation: 'customer' },
+        { relation: 'challan' },
+        { relation: 'payment' },
+        { relation: 'dispatch' },
       ],
       order: ['createdAt DESC'],
     };
@@ -256,13 +306,13 @@ export class OrderController {
     description: 'Order model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Order, {includeRelations: true}),
+        schema: getModelSchemaRef(Order, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Order, {exclude: 'where'})
+    @param.filter(Order, { exclude: 'where' })
     filter?: FilterExcludingWhere<Order>,
   ): Promise<any> {
     // Include relations like materials, users, processes, etc.
@@ -273,17 +323,18 @@ export class OrderController {
           relation: 'materials',
           scope: {
             include: [
-              {relation: 'users'},
-              {relation: 'processes'},
-              {relation: 'lots', scope: {include: ['processes']}},
+              { relation: 'preTreatmentUser' },
+              { relation: 'galvanizingUser' },
+              { relation: 'processes' },
+              { relation: 'lots', scope: { include: ['processes'] } },
             ],
           },
         },
-        {relation: 'orderQcTests'},
-        {relation: 'customer'},
-        {relation: 'challan'},
-        {relation: 'payment'},
-        {relation: 'dispatch'},
+        { relation: 'orderQcTests' },
+        { relation: 'customer' },
+        { relation: 'challan' },
+        { relation: 'payment' },
+        { relation: 'dispatch' },
       ],
     };
 
@@ -313,12 +364,12 @@ export class OrderController {
               if (matchedProcess) {
                 process['processesDetails'] = matchedProcess;
               }
-              return {...process};
+              return { ...process };
             });
-            return {...lot};
+            return { ...lot };
           });
 
-          return {...material};
+          return { ...material };
         }
         return material;
       });
@@ -332,7 +383,7 @@ export class OrderController {
   @patch('/orders/{id}')
   @response(200, {
     description: 'Order model updated successfully',
-    content: {'application/json': {schema: getModelSchemaRef(Order)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Order) } },
   })
   async updateOrder(
     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
@@ -349,20 +400,20 @@ export class OrderController {
               }).definitions?.UpdateOrder?.properties,
               materialsData: {
                 type: 'array',
-                items: {type: 'object'}, // Accepts materials array
+                items: { type: 'object' }, // Accepts materials array
               },
             },
           },
         },
       },
     })
-    orderData: Partial<Omit<Order, 'id' | 'orderId'>> & {materialsData?: any[]},
+    orderData: Partial<Omit<Order, 'id' | 'orderId'>> & { materialsData?: any[] },
   ): Promise<any> {
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
 
     try {
-      const {materialsData, ...orderWithoutMaterials} = orderData;
+      const { materialsData, ...orderWithoutMaterials } = orderData;
 
       // Ensure the order exists
       const existingOrder = await this.orderRepository.findById(orderId);
@@ -378,13 +429,14 @@ export class OrderController {
           updatedBy: currentUser.id,
           updatedByType: currentUser.userType,
         },
-        {transaction: tx},
+        { transaction: tx },
       );
 
       if (materialsData && materialsData.length > 0) {
         for (const material of materialsData) {
           const materialId = material.id;
 
+          console.log(material);
           await this.materialRepository.updateById(
             materialId,
             {
@@ -392,48 +444,52 @@ export class OrderController {
               endDate: material.endDate,
               status: material.status,
               noOfLots: material.noOfLots,
+              preTreatmentUserId: material.preTreatmentUser?.id,
+              galvanizingUserId: material.galvanizingUser?.id,
               remark: material.remark,
             },
-            {transaction: tx},
+            { transaction: tx },
           );
-          const existingProcesses = await this.materialRepository
-            .processes(materialId)
-            .find();
+          // const existingProcesses = await this.materialRepository
+          //   .processes(materialId)
+          //   .find();
 
-          if (existingProcesses.length > 0) {
-            await this.materialRepository
-              .processes(materialId)
-              .unlinkAll({transaction: tx});
-          }
+          // if (existingProcesses.length > 0) {
+          //   await this.materialRepository
+          //     .processes(materialId)
+          //     .unlinkAll({ transaction: tx });
+          // }
 
-          const existingUsers = await this.materialRepository
-            .users(materialId)
-            .find();
+          // const existingUsers = await this.materialRepository
+          //   .users(materialId)
+          //   .find();
 
-          if (existingUsers.length > 0) {
-            await this.materialRepository
-              .users(materialId)
-              .unlinkAll({transaction: tx});
-          }
+          // if (existingUsers.length > 0) {
+          //   await this.materialRepository
+          //     .users(materialId)
+          //     .unlinkAll({ transaction: tx });
+          // }
 
-          for (const process of material.processes) {
-            await this.materialRepository
-              .processes(materialId)
-              .link(process.id, {transaction: tx});
-          }
+          // for (const process of material.processes) {
+          //   await this.materialRepository
+          //     .processes(materialId)
+          //     .link(process.id, { transaction: tx });
+          // }
 
-          // Update or insert assigned workers
-          for (const worker of material.users) {
-            await this.materialRepository
-              .users(materialId)
-              .link(worker.id, {transaction: tx});
-          }
+          // // Update or insert assigned workers
+          // for (const worker of material.users) {
+          //   await this.materialRepository
+          //     .users(materialId)
+          //     .link(worker.id, { transaction: tx });
+          // }
           const materialLots = await this.lotsRepository.find({
             where: {
               materialId: materialId,
             },
             include: ['processes'],
           });
+
+          console.log('material lots', materialLots);
           for (const lot of material.lots) {
             if (material.status === 0) {
               if (materialLots && materialLots.length > 0) {
@@ -445,9 +501,17 @@ export class OrderController {
                       visualInspection: lot.visualInspection,
                     });
                     for (const lotProcess of materialLot.processes) {
-                      const foundLotFromMaterial = lot.processes.find(
+                      console.log('lotProcess', lotProcess);
+                      console.log('lot.proccesses', lot);
+                      const allProcesses = [
+                        ...(lot.galvanizingProcesses || []),
+                        ...(lot.preTreatmentProcesses || []),
+                      ];
+
+                      const foundLotFromMaterial = allProcesses.find(
                         (res: any) => res.processId === lotProcess.id,
                       );
+                      console.log('foundLotsProcesses', foundLotFromMaterial)
                       if (foundLotFromMaterial) {
                         await this.lotProcessesRepository.updateAll(
                           {
@@ -457,7 +521,7 @@ export class OrderController {
                             lotsId: materialLot.id,
                             processesId: foundLotFromMaterial.processId,
                           },
-                          {transaction: tx},
+                          { transaction: tx },
                         );
                       }
                     }
@@ -473,10 +537,10 @@ export class OrderController {
                     visualInspection: lot.visualInspection,
                     status: 0,
                   },
-                  {transaction: tx},
+                  { transaction: tx },
                 );
 
-                for (const processData of lot.processes) {
+                for (const processData of [...lot.preTreatmentProcesses, ...lot.galvanizingProcesses]) {
                   await this.lotProcessesRepository.create(
                     {
                       lotsId: savedLot.id,
@@ -484,7 +548,7 @@ export class OrderController {
                       duration: processData.duration,
                       status: 0,
                     },
-                    {transaction: tx},
+                    { transaction: tx },
                   );
                 }
               }
@@ -501,7 +565,18 @@ export class OrderController {
             scope: {
               include: [
                 {
-                  relation: 'users',
+                  relation: 'galvanizingUser',
+                  scope: {
+                    fields: {
+                      password: false,
+                      otp: false,
+                      otpExpireAt: false,
+                      permissions: false,
+                    },
+                  },
+                },
+                {
+                  relation: 'preTreatmentUser',
                   scope: {
                     fields: {
                       password: false,
@@ -517,8 +592,8 @@ export class OrderController {
               ],
             },
           },
-          {relation: 'customer'},
-          {relation: 'challan'},
+          { relation: 'customer' },
+          { relation: 'challan' },
         ],
       });
     } catch (err) {
@@ -538,7 +613,7 @@ export class OrderController {
           schema: {
             type: 'object',
             properties: {
-              materialId: {type: 'number'},
+              materialId: { type: 'number' },
             },
             required: ['materialId'],
           },
@@ -549,7 +624,7 @@ export class OrderController {
       materialId: number;
     },
   ) {
-    const {materialId} = requestData;
+    const { materialId } = requestData;
     const lots = await this.lotsRepository.find({
       where: {
         materialId: materialId,
@@ -595,7 +670,7 @@ export class OrderController {
 
     // Step 1: Get material IDs assigned to this user from junction table
     const assignedMaterials = await this.materialUserRepository.find({
-      where: {userId: userId},
+      where: { userId: userId },
     });
 
     // Extract material IDs
@@ -607,8 +682,8 @@ export class OrderController {
 
     // Step 2: Fetch materials by their IDs and include related orders
     const materials = await this.materialRepository.find({
-      where: {id: {inq: materialIds}}, // Filter materials by IDs
-      include: [{relation: 'order'}], // Include order details
+      where: { id: { inq: materialIds } }, // Filter materials by IDs
+      include: [{ relation: 'order' }], // Include order details
     });
 
     return materials;
@@ -628,7 +703,7 @@ export class OrderController {
           schema: {
             type: 'object',
             properties: {
-              materialId: {type: 'number'},
+              materialId: { type: 'number' },
             },
             required: ['materialId'],
           },
@@ -643,8 +718,8 @@ export class OrderController {
       requestData.materialId,
       {
         include: [
-          {relation: 'order'},
-          {relation: 'lots', scope: {include: ['processes']}},
+          { relation: 'order' },
+          { relation: 'lots', scope: { include: ['processes'] } },
         ],
       },
     );
@@ -677,12 +752,12 @@ export class OrderController {
                 : null,
             };
           }
-          return {...process};
+          return { ...process };
         });
-        return {...lot};
+        return { ...lot };
       });
     }
-    return {...materialWithLots};
+    return { ...materialWithLots };
   }
 
   @authenticate({
@@ -699,12 +774,12 @@ export class OrderController {
           schema: {
             type: 'object',
             properties: {
-              lotsId: {type: 'number'},
-              processesId: {type: 'number'},
+              lotsId: { type: 'number' },
+              processesId: { type: 'number' },
               processData: {
                 type: 'object',
                 properties: {
-                  timeTaken: {type: 'string', format: 'date-time'},
+                  timeTaken: { type: 'string', format: 'date-time' },
                   status: {
                     type: 'number',
                   },
@@ -729,7 +804,7 @@ export class OrderController {
     const repo = new DefaultTransactionalRepository(Order, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);
     try {
-      const {lotsId, processesId, processData} = requestData;
+      const { lotsId, processesId, processData } = requestData;
 
       const updateData: Partial<LotProcesses> = {};
       updateData.status = processData?.status ? processData.status : 1;
@@ -745,7 +820,7 @@ export class OrderController {
           lotsId: lotsId,
           processesId: processesId,
         },
-        {transaction: tx},
+        { transaction: tx },
       );
       tx.commit();
       await this.updateOrderAndMaterialStatus(orderId);
@@ -777,8 +852,8 @@ export class OrderController {
     // Fetch all materials related to the order
     const order = await this.orderRepository.findById(orderId);
     const materials = await this.materialRepository.find({
-      where: {orderId},
-      include: [{relation: 'lots'}],
+      where: { orderId },
+      include: [{ relation: 'lots' }],
     });
 
     let allMaterialsCompleted = true;
@@ -793,7 +868,7 @@ export class OrderController {
 
       // Fetch lot processes separately using lotIds from the junction table
       const lotProcesses: any = await this.lotProcessesRepository.find({
-        where: {lotsId: {inq: lotIds}},
+        where: { lotsId: { inq: lotIds } },
       });
 
       // Group lot processes by lotId
@@ -821,7 +896,7 @@ export class OrderController {
 
         // Update lot status
         const lotStatus = lotInProgress ? 1 : allProcessesCompleted ? 2 : 0;
-        await this.lotsRepository.updateById(lot.id, {status: lotStatus});
+        await this.lotsRepository.updateById(lot.id, { status: lotStatus });
         if (allProcessesCompleted) {
           const alreadyPresent = await this.qcReportRepository.findOne({
             where: {
@@ -856,8 +931,8 @@ export class OrderController {
     const orderStatus = allMaterialsCompleted ? 2 : 1;
     const orderTimeline = order.timeline || [];
     const statusTimelineMap = {
-      1: {id: 1, title: 'In Process'},
-      2: {id: 2, title: 'Material Ready'},
+      1: { id: 1, title: 'In Process' },
+      2: { id: 2, title: 'Material Ready' },
     };
 
     if (orderStatus in statusTimelineMap) {
@@ -890,7 +965,7 @@ export class OrderController {
       'application/json': {
         schema: {
           type: 'array',
-          items: {'x-ts-type': OrderQcTest},
+          items: { 'x-ts-type': OrderQcTest },
         },
       },
     },
@@ -909,16 +984,18 @@ export class OrderController {
                 'testDetails',
                 'requirement',
                 'observed',
+                'micronTestValues'
               ],
               properties: {
-                specification: {type: 'string'},
-                testDetails: {type: 'string'},
-                requirement: {type: 'string'},
-                testResult: {type: 'string'},
-                observed: {type: 'string'},
-                images: {type: 'array', items: {type: 'string'}},
-                status: {type: 'number'},
-                remark: {type: 'string'},
+                specification: { type: 'string' },
+                testDetails: { type: 'string' },
+                requirement: { type: 'string' },
+                testResult: { type: 'string' },
+                observed: { type: 'string' },
+                micronTestValues: {type: 'array', items: {type: 'number'}},
+                images: { type: 'array', items: { type: 'string' } },
+                status: { type: 'number' },
+                remark: { type: 'string' },
               },
             },
           },
@@ -932,7 +1009,7 @@ export class OrderController {
       >
     >,
   ): Promise<OrderQcTest[]> {
-    await this.orderQcTestRepository.deleteAll({orderId});
+    await this.orderQcTestRepository.deleteAll({ orderId });
     const records = tests.map(test => ({
       ...test,
       orderId,

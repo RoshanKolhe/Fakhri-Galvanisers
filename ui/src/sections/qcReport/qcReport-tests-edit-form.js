@@ -4,9 +4,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import { Grid, Stack, MenuItem, Button } from '@mui/material';
+import { Grid, Stack, MenuItem, Button, TextField, Chip, Autocomplete } from '@mui/material';
 import { useSnackbar } from 'src/components/snackbar';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
 import { useAuthContext } from 'src/auth/hooks';
@@ -33,6 +33,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
           requirement: Yup.string().required('Requirement is required'),
           testResult: Yup.string().required('Test Result is required'),
           observed: Yup.string().required('Observed is required'),
+          micronTestValues: Yup.array().of(Yup.number()).min(5, 'Five micron test values required').max(5, 'Five micron test values required')
         })
       )
       .min(1, 'At least one Qc Tests is required'),
@@ -44,21 +45,23 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
       images: currentQcReport?.images || [],
       qcTests: currentQcReport?.qcTests?.length
         ? currentQcReport.qcTests.map((qcTest) => ({
-            specification: qcTest.specification || '',
-            testDetails: qcTest.testDetails || '',
-            requirement: qcTest.requirement || '',
-            testResult: qcTest.testResult || '',
-            observed: qcTest?.observed || '',
-          }))
+          specification: qcTest.specification || '',
+          testDetails: qcTest.testDetails || '',
+          requirement: qcTest.requirement || '',
+          testResult: qcTest.testResult || '',
+          observed: qcTest?.observed || '',
+          micronTestValues: qcTest?.micronTestValues || []
+        }))
         : [
-            {
-              specification: '',
-              testDetails: '',
-              requirement: '',
-              testResult: '',
-              observed: '',
-            },
-          ],
+          {
+            specification: '',
+            testDetails: '',
+            requirement: '',
+            testResult: '',
+            observed: '',
+            micronTestValues: []
+          },
+        ],
     }),
     [currentQcReport]
   );
@@ -154,19 +157,19 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
         <Grid item xs={12} md={12}>
           {fields.map((item, index) => (
             <Grid container key={item.id} spacing={2} mt={1} alignItems="center">
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={4}>
                 <RHFTextField name={`qcTests[${index}].specification`} label="Specification" />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={4}>
                 <RHFTextField name={`qcTests[${index}].testDetails`} label="Test Details" />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={4}>
                 <RHFTextField name={`qcTests[${index}].requirement`} label="Requirement" />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={4}>
                 <RHFTextField name={`qcTests[${index}].testResult`} label="Test Result" />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={4}>
                 <RHFSelect name={`qcTests[${index}].observed`} label="Observed">
                   <MenuItem key="satisfactory" value="satisfactory">
                     Satisfactory
@@ -175,6 +178,41 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
                     Unsatisfactory
                   </MenuItem>
                 </RHFSelect>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Controller
+                  name={`qcTests[${index}].micronTestValues`}
+                  control={control}
+                  defaultValue={[]}
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Autocomplete
+                      multiple
+                      freeSolo
+                      options={[]} 
+                      value={value || []}
+                      onChange={(event, newValue) => {
+                        // Only allow numeric values
+                        const numericValues = newValue.filter(val => !Number.isNaN(val));
+                        onChange(numericValues);
+                      }}
+                      // eslint-disable-next-line no-shadow
+                      renderTags={(value, getTagProps) =>
+                        // eslint-disable-next-line no-shadow
+                        value.map((option, index) => (
+                          <Chip key={index} label={option} {...getTagProps({ index })} />
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Micron Test Values"
+                          error={!!error}
+                          helperText={error ? error.message : ''}
+                        />
+                      )}
+                    />
+                  )}
+                />
               </Grid>
               {isAdmin && (
                 <Grid item xs={12} md={2}>

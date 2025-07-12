@@ -306,6 +306,7 @@ export class QcReportController {
     const allMaterialsCompleted =
       materials.length > 0 && materials.every(mat => mat.status === 2);
 
+    console.log('order', order);
     if (allQcCompleted && allMaterialsCompleted && order.isPaid) {
       const orderTimeline = order.timeline || [];
 

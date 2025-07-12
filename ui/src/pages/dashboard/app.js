@@ -9,7 +9,7 @@ import { OverviewAppView } from 'src/sections/overview/app/view';
 export default function OverviewAppPage() {
   const { user } = useAuthContext();
   const isAdmin = user
-    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin') || user.permissions.includes('supervisor')
     : false;
   return (
     <>

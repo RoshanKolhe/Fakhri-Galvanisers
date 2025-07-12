@@ -10,9 +10,11 @@ import {
   Grid,
   MenuItem,
   Stack,
+  Chip,
+  Autocomplete,
 } from '@mui/material';
 import PropTypes from 'prop-types';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axiosInstance from 'src/utils/axios';
 import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
@@ -36,6 +38,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
           testResult: Yup.string().required('Test Result is required'),
           observed: Yup.string().required('Observed is required'),
           images: Yup.array().min(1, 'Images is required'),
+          micronTestValues: Yup.array().of(Yup.number()).min(5, 'Five micron test values required').max(5, 'Five micron test values required')
         })
       )
       .min(1, 'At least one Qc Tests is required'),
@@ -45,23 +48,25 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
     () => ({
       qcTests: currentQcReport?.length
         ? currentQcReport.map((qcTest) => ({
-            specification: qcTest.specification || '',
-            testDetails: qcTest.testDetails || '',
-            requirement: qcTest.requirement || '',
-            testResult: qcTest.testResult || '',
-            observed: qcTest?.observed || '',
-            images: qcTest?.images || [],
-          }))
+          specification: qcTest.specification || '',
+          testDetails: qcTest.testDetails || '',
+          requirement: qcTest.requirement || '',
+          testResult: qcTest.testResult || '',
+          observed: qcTest?.observed || '',
+          images: qcTest?.images || [],
+          micronTestValues: qcTest?.micronTestValues || []
+        }))
         : [
-            {
-              specification: '',
-              testDetails: '',
-              requirement: '',
-              testResult: '',
-              observed: '',
-              images: [],
-            },
-          ],
+          {
+            specification: '',
+            testDetails: '',
+            requirement: '',
+            testResult: '',
+            observed: '',
+            images: [],
+            micronTestValues: []
+          },
+        ],
     }),
     [currentQcReport]
   );
@@ -153,35 +158,35 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
             <Grid item xs={12} md={12}>
               {fields.map((item, index) => (
                 <Grid container key={item.id} spacing={2} mt={1} alignItems="center">
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={4}>
                     <RHFTextField
                       name={`qcTests[${index}].specification`}
                       label="Specification"
                       disabled={!isAdmin}
                     />
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={4}>
                     <RHFTextField
                       name={`qcTests[${index}].testDetails`}
                       label="Test Details"
                       disabled={!isAdmin}
                     />
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={4}>
                     <RHFTextField
                       name={`qcTests[${index}].requirement`}
                       label="Requirement"
                       disabled={!isAdmin}
                     />
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={4}>
                     <RHFTextField
                       name={`qcTests[${index}].testResult`}
                       label="Test Result"
                       disabled={!isAdmin}
                     />
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid item xs={12} md={4}>
                     <RHFSelect
                       name={`qcTests[${index}].observed`}
                       label="Observed"
@@ -194,6 +199,41 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
                         Unsatisfactory
                       </MenuItem>
                     </RHFSelect>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Controller
+                      name={`qcTests[${index}].micronTestValues`}
+                      control={control}
+                      defaultValue={[]}
+                      render={({ field: { onChange, value }, fieldState: { error } }) => (
+                        <Autocomplete
+                          multiple
+                          freeSolo
+                          options={[]}
+                          value={value || []}
+                          onChange={(event, newValue) => {
+                            // Only allow numeric values
+                            const numericValues = newValue.filter(val => !Number.isNaN(val));
+                            onChange(numericValues);
+                          }}
+                          // eslint-disable-next-line no-shadow
+                          renderTags={(value, getTagProps) =>
+                            // eslint-disable-next-line no-shadow
+                            value.map((option, index) => (
+                              <Chip key={index} label={option} {...getTagProps({ index })} />
+                            ))
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Micron Test Values"
+                              error={!!error}
+                              helperText={error ? error.message : ''}
+                            />
+                          )}
+                        />
+                      )}
+                    />
                   </Grid>
                   <Grid item xs={12}>
                     <RHFUpload

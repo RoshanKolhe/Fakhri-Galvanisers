@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class QcTest extends Entity {
@@ -37,6 +37,13 @@ export class QcTest extends Entity {
     required: true,
   })
   observed: string;
+
+  @property({
+    type: 'array',
+    itemType: 'number',
+    required: true,
+  })
+  micronTestValues: number[];
 
   @property({
     type: 'number',

@@ -19,7 +19,7 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import { Challan } from '../models';
-import { ChallanRepository, OrderRepository } from '../repositories';
+import { ChallanRepository, NotificationRepository, OrderRepository } from '../repositories';
 import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
 import { inject } from '@loopback/core';
@@ -31,6 +31,8 @@ export class ChallanController {
     public challanRepository: ChallanRepository,
     @repository(OrderRepository)
     public orderRepository: OrderRepository,
+    @repository(NotificationRepository)
+    public notificationRepository: NotificationRepository,
   ) { }
 
   @authenticate({
@@ -40,6 +42,7 @@ export class ChallanController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -49,6 +52,7 @@ export class ChallanController {
     content: { 'application/json': { schema: getModelSchemaRef(Challan) } },
   })
   async create(
+
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @requestBody({
       content: {
@@ -67,14 +71,22 @@ export class ChallanController {
         and: [{ poNumber: challan.poNumber }, { customerId: currnetUser.id }],
       },
     });
-    console.log('existingChallan', existingChallan);
     if (existingChallan && existingChallan.poNumber == challan.poNumber) {
       throw new HttpErrors.BadRequest(
         'PO Number is already used in another Challan for this customer.',
       );
     }
 
-    return this.challanRepository.create(challan);
+    const createdChallan = await this.challanRepository.create(challan);
+
+    if (!createdChallan || !createdChallan.id) {
+      throw new HttpErrors.BadRequest('Something went wrong');
+    }
+
+    const formattedChallanId = `CHALLAN${createdChallan.id.toString().padStart(5, '0')}`;
+    await this.challanRepository.updateById(createdChallan.id, { challanId: formattedChallanId });
+
+    return createdChallan;
   }
 
   @authenticate({
@@ -85,6 +97,7 @@ export class ChallanController {
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
         PermissionKeys.DISPATCH,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -120,13 +133,17 @@ export class ChallanController {
         {
           relation: 'order',
         },
+        {
+          relation: 'customer',
+        },
       ],
       order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
+      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('supervisor')
     ) {
       return this.challanRepository.find(filter);
     } else {
@@ -142,7 +159,7 @@ export class ChallanController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [PermissionKeys.DISPATCH],
+      required: [PermissionKeys.DISPATCH, PermissionKeys.SUPERVISOR],
     },
   })
   @get('/challans/inwardChallans')
@@ -166,6 +183,7 @@ export class ChallanController {
       where: {
         ...filter?.where,
         isDeleted: false,
+        status: 2,
         id: {
           nin: (
             await this.orderRepository.find({
@@ -181,6 +199,9 @@ export class ChallanController {
             include: [{ relation: 'customer' }],
           },
         },
+        {
+          relation: 'customer'
+        }
       ],
     };
 
@@ -194,6 +215,7 @@ export class ChallanController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -235,6 +257,8 @@ export class ChallanController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
+
       ],
     },
   })
@@ -276,5 +300,47 @@ export class ChallanController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.challanRepository.deleteById(id);
+  }
+
+  // material arraived to notify customer
+  @authenticate({
+    strategy: 'jwt'
+  })
+  @post('/challans/material-arrived/{id}')
+  async materialArrived(
+    @param.path.number('id') id: number
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const challanDetails: any = await this.challanRepository.findById(id, { include: [{ relation: 'customer' }] });
+      if (!challanDetails) {
+        throw new HttpErrors.NotFound('Challan not found');
+      }
+
+      // sending notification to customer...
+      if (!challanDetails?.customerId) {
+        throw new HttpErrors.BadRequest('Customer details are missing')
+      }
+
+      await this.notificationRepository.create({
+        avatarUrl: challanDetails?.customer?.avatar?.fileUrl ? challanDetails?.customer?.avatar?.fileUrl : null,
+        title: `Material with challan ${challanDetails?.challanId} arrived`,
+        type: 'material',
+        status: 0,
+        userId: 0,
+        customerId: challanDetails?.customerId,
+        extraDetails: {
+          challanId: challanDetails.id,
+        },
+      });
+
+      await this.challanRepository.updateById(challanDetails?.id, { status: 1 });
+
+      return {
+        success: true,
+        message: 'Material Arrived notification sent'
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 }

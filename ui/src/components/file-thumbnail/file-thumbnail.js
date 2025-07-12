@@ -55,8 +55,8 @@ export default function FileThumbnail({ file, tooltip, imageView, onDownload, sx
         }}
         onClick={() => {
           console.log('here', isValidUrl(file));
-          if (isValidUrl(file)) {
-            window.open(file, '_blank'); // Open URL in a new tab
+          if (isValidUrl(typeof file === 'string' ? file : file.fileUrl)) {
+            window.open(typeof file === 'string' ? file : file.fileUrl, '_blank'); // Open URL in a new tab
           }
         }}
       />

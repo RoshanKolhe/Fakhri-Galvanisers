@@ -38,6 +38,8 @@ import {
 //
 import { useGetOrders } from 'src/api/order';
 import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
+import { useAuthContext } from 'src/auth/hooks';
+import { RouterLink } from 'src/routes/components';
 import OrderTableRow from '../order-table-row';
 import OrderTableToolbar from '../order-table-toolbar';
 import OrderTableFiltersResult from '../order-table-filters-result';
@@ -65,6 +67,7 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 export default function OrderListView() {
+  const { user } = useAuthContext();
   const table = useTable({ defaultOrderBy: 'orderId' });
 
   const settings = useSettingsContext();
@@ -175,6 +178,18 @@ export default function OrderListView() {
             },
             { name: 'List' },
           ]}
+          action={
+            ['super_admin', 'admin', 'supervisor'].some(role => user?.permissions?.includes(role)) ? (
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.order.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                New Order
+              </Button>
+            ) : null
+          }
           sx={{
             mb: { xs: 3, md: 5 },
           }}

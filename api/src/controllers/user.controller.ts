@@ -500,6 +500,7 @@ export class UserController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -522,7 +523,7 @@ export class UserController {
 
     const user = await this.userRepository.findById(currnetUser.id);
 
-    if (user.permissions.includes('super_admin') || user.permissions.includes('admin')) {
+    if (user.permissions.includes('super_admin') || user.permissions.includes('admin') || user.permissions.includes('supervisor')) {
       totalConversions = (
         await this.inquiryRepository.count({
           status: 2,

@@ -26,7 +26,7 @@ export default function ChallanView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Edit"
+        heading="View"
         links={[
           {
             name: 'Dashboard',
