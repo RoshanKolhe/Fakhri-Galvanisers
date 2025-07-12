@@ -127,12 +127,18 @@ export class Material extends Entity {
   @belongsTo(() => Order)
   orderId: number;
 
-  @hasMany(() => User, {through: {model: () => MaterialUser}})
-  users: User[];
+  // @hasMany(() => User, {through: {model: () => MaterialUser}})
+  // users: User[];
 
   @hasMany(() => Processes, {through: {model: () => MaterialProcess}})
   processes: Processes[];
 
+  @belongsTo(() => User)
+  preTreatmentUserId: number;
+
+  @belongsTo(() => User)
+  galvanizingUserId: number;
+  
   @hasMany(() => Lots)
   lots: Lots[];
 

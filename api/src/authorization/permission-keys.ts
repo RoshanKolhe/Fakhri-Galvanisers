@@ -5,4 +5,5 @@ export const enum PermissionKeys {
   WORKER = 'worker',
   QC_ADMIN = 'qc_admin',
   DISPATCH = 'dispatch',
+  SUPERVISOR = 'supervisor'
 }

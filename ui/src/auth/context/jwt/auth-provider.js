@@ -128,7 +128,7 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
     console.log(user);
-    if (user && (user.permissions.includes('super_admin') || user.permissions.includes('admin'))) {
+    if (user && (user.permissions.includes('super_admin') || user.permissions.includes('admin') || user.permissions.includes('supervisor'))) {
       setSession(accessToken);
       sessionStorage.setItem(PERMISSION_KEY, user.permissions[0]);
     } else throw new Error("User Doesn't have permission");

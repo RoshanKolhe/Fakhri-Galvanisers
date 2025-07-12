@@ -34,6 +34,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useGetOrderPendingChallans } from 'src/api/challan';
 import { useGetProcessess } from 'src/api/processes';
 import OrderLotProcessModal from './order-lot-process-modal';
 
@@ -113,36 +114,56 @@ export default function OrderMaterialForm({ currentOrder }) {
   const [jobCardLots, setJobCardLots] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
+  const [challansData, setChallansData] = useState([]);
+  const { challans } = useGetOrderPendingChallans();
+
+  useEffect(() => {
+    if (challans && challans.length > 0) {
+      setChallansData(challans);
+    }
+  }, [challans]);
 
   const handleCloseModal = () => {
     setModalOpen(false);
     setModalData(null); // Clear modal data on close
   };
 
+  const randomIdGenerator = (length = 10) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let id = '';
+    for (let i = 0; i < length; i += 1) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+  };
+
+
   const handleJobCardClick = (material) => {
     setModalData({
-      processes: material.processes,
+      galvanizingProcesses: material.galvanizingProcesses || [],
+      preTreatmentProcesses: material.preTreatmentProcesses || [],
       noOfLots: material.noOfLots,
       totalQuantity: material.totalQuantity,
       materialName: material.materialType,
       materialId: material.id,
-      orderId: currentOrder.orderId,
+      orderId: currentOrder?.orderId || 'NA',
       microns: material.microns,
-      customer: currentOrder.customer,
+      customer: currentOrder?.customer ? currentOrder?.customer : values.challan?.customer,
     });
     setModalOpen(true); // Open the modal
   };
 
   const { user } = useAuthContext();
   const isAdmin = user
-    ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
+    ? user.permissions.includes('super_admin') || user.permissions.includes('admin') || user.permissions.includes('supervisor')
     : false;
 
   const NewOrderMaterialSchema = Yup.object().shape({
+    challan: Yup.object().required('Challan Id is required').nullable(),
     firstname: Yup.string(),
     lastName: Yup.string(),
     rfqRef: Yup.string(),
-    company: Yup.string(),
+    company: Yup.string().nullable(),
     materials: Yup.array().of(
       Yup.object().shape({
         materialType: Yup.string().required('Material type is required'),
@@ -166,35 +187,41 @@ export default function OrderMaterialForm({ currentOrder }) {
           .required('No Of Lots is required')
           .min(1, 'Value must be greater than 0'),
         remark: Yup.string(),
-        users: Yup.array().min(1, 'Must have at least 1 Worker'),
-        processes: Yup.array().min(1, 'Must have at least 1 Process'),
+        preTreatmentUser: Yup.object().required('Worker is required'),
+        galvanizingUser: Yup.object().required('Worker is required'),
+        preTreatmentProcesses: Yup.array().min(1, 'Must have at least 1 Process'),
+        galvanizingProcesses: Yup.array().min(1, 'Must have at least 1 Process'),
       })
     ),
   });
 
   const defaultValues = useMemo(
     () => ({
+      challan: currentOrder ? currentOrder?.challan : null,
       firstName: currentOrder ? currentOrder?.customer?.firstName : '',
       lastName: currentOrder ? currentOrder?.customer?.lastName : '',
-      rfqRef: currentOrder ? formatRFQId(currentOrder?.challan?.quotationId) : '',
+      rfqRef: currentOrder?.challan?.quotationId ? formatRFQId(currentOrder?.challan?.quotationId) : '',
       company: currentOrder ? currentOrder?.customer?.company : !isAdmin ? user?.company : '',
       materials: currentOrder?.materials?.length
         ? currentOrder.materials.map((material) => ({
-            id: material.id || '',
-            materialType: material.materialType || '',
-            microns: material.microns || 0,
-            totalQuantity: material.totalQuantity || null,
-            startDate: material.startDate ? new Date(material.startDate) : '',
-            endDate: material.endDate ? new Date(material.endDate) : '',
-            remark: material.remark || '',
-            status: material.status !== undefined && material.status !== null ? material.status : 0,
-            noOfLots: material.noOfLots || 0,
-            users: material.users || [],
-            processes: material.processes || processOptions,
-          }))
+          id: material.id || '',
+          materialType: material.materialType || '',
+          microns: material.microns || 0,
+          hsnCode: material.hsnCode || '',
+          totalQuantity: material.totalQuantity || null,
+          startDate: material.startDate ? new Date(material.startDate) : '',
+          endDate: material.endDate ? new Date(material.endDate) : '',
+          remark: material.remark || '',
+          status: material.status !== undefined && material.status !== null ? material.status : 0,
+          noOfLots: material.noOfLots || 0,
+          galvanizingUser: material.galvanizingUser || [],
+          preTreatmentUser: material.preTreatmentUser || [],
+          preTreatmentProcesses: material?.lots && material?.lots?.length > 0 ? material?.lots[0]?.processes.filter(p => p.processGroup === 0) : [],
+          galvanizingProcesses: material?.lots && material?.lots?.length > 0 ? material?.lots[0]?.processes.filter(p => p.processGroup === 1) : [],
+        }))
         : [],
     }),
-    [currentOrder, isAdmin, processOptions, user?.company]
+    [currentOrder, isAdmin, user?.company]
   );
 
   const methods = useForm({
@@ -215,7 +242,6 @@ export default function OrderMaterialForm({ currentOrder }) {
     name: 'materials',
   });
   const values = watch();
-  console.log(values);
   const { processess, processessLoading, processessEmpty, refreshProcessess } = useGetProcessess();
 
   const onSubmit = handleSubmit(async (formData) => {
@@ -231,13 +257,38 @@ export default function OrderMaterialForm({ currentOrder }) {
         return material;
       });
       console.info('DATA', updatedMaterials);
-      const inputData = {
-        materialsData: updatedMaterials,
-      };
-      const { data } = await axiosInstance.patch(`/orders/${currentOrder.id}`, inputData);
-      console.log(data);
-      enqueueSnackbar('Order Details Updated Successfully');
-      router.push(paths.dashboard.order.root);
+      console.info('LOTS', jobCardLots);
+
+      if (!currentOrder) {
+        const newMaterialUpdatedData = updatedMaterials?.map((material) => {
+          const matchedLotsData = jobCardLots.find((lotCard) => lotCard.materialId === material.id);
+
+          return {
+            ...material,
+            preTreatmentUserId: material.preTreatmentUser?.id,
+            galvanizingUserId: material.galvanizingUser?.id,
+            lots: matchedLotsData?.lots
+          }
+        });
+
+        const createOrderData = {
+          materials: newMaterialUpdatedData,
+          challanId: formData.challan?.id
+        };
+
+        const response = await axiosInstance.post('/orders', createOrderData);
+        if (response.data) {
+          enqueueSnackbar('Order Created Successfully');
+          router.push(paths.dashboard.order.root);
+        }
+      } else {
+        const inputData = {
+          materialsData: updatedMaterials,
+        };
+        const { data } = await axiosInstance.patch(`/orders/${currentOrder.id}`, inputData);
+        enqueueSnackbar('Order Details Updated Successfully');
+        router.push(paths.dashboard.order.root);
+      }
     } catch (error) {
       console.error(error);
       enqueueSnackbar(typeof error === 'string' ? error : error.error.message, {
@@ -410,8 +461,14 @@ export default function OrderMaterialForm({ currentOrder }) {
                         });
                         return;
                       }
-                      if (values.materials[index].processes.length <= 0) {
-                        enqueueSnackbar('Please Select at least one process', {
+                      if (values.materials[index].preTreatmentProcesses.length <= 0) {
+                        enqueueSnackbar('Please Select at least one pre treatment process', {
+                          variant: 'error',
+                        });
+                        return;
+                      }
+                      if (values.materials[index].galvanizingProcesses.length <= 0) {
+                        enqueueSnackbar('Please Select at least one galvanizing process', {
                           variant: 'error',
                         });
                         return;
@@ -424,11 +481,12 @@ export default function OrderMaterialForm({ currentOrder }) {
                 ) : null}
               </Stack>
             </Grid>
+
+            {/* Pre treatment */}
             <Grid item xs={12} md={6}>
               <RHFAutocomplete
-                multiple
-                name={`materials[${index}].users`}
-                label="Assign Workers"
+                name={`materials[${index}].preTreatmentUser`}
+                label="Assign Pre Treatment Workers"
                 onInputChange={(event) => fetchUsers(event)}
                 options={userOptions || []}
                 getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
@@ -468,8 +526,8 @@ export default function OrderMaterialForm({ currentOrder }) {
             <Grid item xs={12} md={6}>
               <RHFAutocomplete
                 multiple
-                name={`materials[${index}].processes`}
-                label="Processes"
+                name={`materials[${index}].preTreatmentProcesses`}
+                label="Pre Treatment Processes"
                 options={processOptions || []}
                 getOptionLabel={(option) => `${option?.name}` || ''}
                 filterOptions={(options, { inputValue }) =>
@@ -499,6 +557,83 @@ export default function OrderMaterialForm({ currentOrder }) {
                 disabled={item.status !== 0 || !isAdmin}
               />
             </Grid>
+
+            {/* Galvalnizing */}
+            <Grid item xs={12} md={6}>
+              <RHFAutocomplete
+                name={`materials[${index}].galvanizingUser`}
+                label="Assign Pre Treatment Workers"
+                onInputChange={(event) => fetchUsers(event)}
+                options={userOptions || []}
+                getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}
+                filterOptions={(x) => x}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {`${option?.firstName} ${option?.lastName}`}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {option.email}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {option.phoneNumber}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                renderTags={(selected, getTagProps) =>
+                  selected.map((option, tagIndex) => (
+                    <Chip
+                      {...getTagProps({ index: tagIndex })}
+                      key={option.id}
+                      label={`${option.firstName} ${option.lastName}`}
+                      size="small"
+                      color="info"
+                      variant="soft"
+                      {...(isAdmin ? {} : { onDelete: undefined })}
+                    />
+                  ))
+                }
+                disabled={!isAdmin}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFAutocomplete
+                multiple
+                name={`materials[${index}].galvanizingProcesses`}
+                label="Galvanizing Processes"
+                options={processOptions || []}
+                getOptionLabel={(option) => `${option?.name}` || ''}
+                filterOptions={(options, { inputValue }) =>
+                  options.filter((option) =>
+                    option.name.toLowerCase().includes(inputValue.toLowerCase())
+                  )
+                }
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <div>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {`${option?.name}`}
+                      </Typography>
+                    </div>
+                  </li>
+                )}
+                renderTags={(value, props) => (
+                  <SortableChips
+                    index={index}
+                    value={value}
+                    props={props}
+                    setValue={setValue}
+                    disabled={item.status !== 0 || !isAdmin}
+                  />
+                )}
+                disabled={item.status !== 0 || !isAdmin}
+              />
+            </Grid>
+
             <Grid item xs={12}>
               <RHFTextField
                 name={`materials[${index}].remark`}
@@ -540,7 +675,6 @@ export default function OrderMaterialForm({ currentOrder }) {
             })),
           })) || [],
       }));
-      console.log(transformedOrder);
       setJobCardLots(transformedOrder);
     }
   }, [currentOrder]);
@@ -551,12 +685,129 @@ export default function OrderMaterialForm({ currentOrder }) {
     }
   }, [processess]);
 
+  const fetchItemProcesses = async (id) => {
+    try {
+      const response = await axiosInstance.get(`/items/get-by-challanId/${id}`);
+      if (response?.data?.success) {
+        return response?.data;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error while fetching item processes', error);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    if (values.challan && !currentOrder) {
+      (async () => {
+        const response = await fetchItemProcesses(values.challan?.id);
+        const itemProcessData = response?.data || [];
+
+        setValue('firstName', values.challan?.customer?.firstName || '');
+        setValue('lastName', values.challan?.customer?.lastName || '');
+        setValue('rfqRef', values.challan?.quotationId ? formatRFQId(values.challan?.quotationId) : '');
+        setValue(
+          'company',
+          values.challan?.customer?.company || (!isAdmin ? user?.company : '')
+        );
+
+        setValue(
+          'materials',
+          values.challan?.materials?.length
+            ? values.challan.materials.map((material) => {
+              const itemId = Number(material?.itemType?.id);
+              const matchedItem = itemProcessData.find((item) => item.itemsId === itemId);
+              return {
+                id: material.id || randomIdGenerator(),
+                materialType: material.materialType || '',
+                hsnCode: material.hsnNo.hsnCode || '',
+                microns: material.microns || 0,
+                totalQuantity: material.quantity || null,
+                startDate: material.startDate ? new Date(material.startDate) : '',
+                endDate: material.endDate ? new Date(material.endDate) : '',
+                remark: material.remark || '',
+                status:
+                  material.status !== undefined && material.status !== null
+                    ? material.status
+                    : 0,
+                noOfLots: material.noOfLots || 0,
+                users: material.users || [],
+                preTreatmentProcesses: matchedItem?.preTreatmentProcesses || [],
+                galvanizingProcesses: matchedItem?.galvanizingProcesses || [],
+              };
+            })
+            : []
+        );
+      })();
+    }
+  }, [isAdmin, processOptions, setValue, user?.company, values.challan, currentOrder]);
+
+  const handleNoOfLots = (materialId, lotsCount) => {
+    const newMaterials = values.materials?.map((material) => {
+      if (material.id === materialId) {
+        return {
+          ...material,
+          noOfLots: lotsCount
+        }
+      }
+
+      return material;
+    });
+    setValue('materials', newMaterials, { shouldValidate: true });
+
+    const matchedMaterial = newMaterials?.find((material) => material.id === materialId);
+
+    setModalData({
+      galvanizingProcesses: matchedMaterial?.galvanizingProcesses || [],
+      preTreatmentProcesses: matchedMaterial?.preTreatmentProcesses || [],
+      noOfLots: matchedMaterial?.noOfLots,
+      totalQuantity: matchedMaterial?.totalQuantity,
+      materialName: matchedMaterial?.materialType,
+      materialId: matchedMaterial?.id,
+      orderId: currentOrder?.orderId || 'NA',
+      microns: matchedMaterial?.microns,
+      customer: currentOrder?.customer ? currentOrder?.customer : values.challan?.customer,
+    });
+  }
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
         <Grid xs={12} md={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <RHFAutocomplete
+                  name='challan'
+                  label="Select Challan"
+                  options={challansData || []}
+                  getOptionLabel={(option) => `${option?.challanId}` || ''}
+                  filterOptions={(options, { inputValue }) =>
+                    options.filter((option) =>
+                      String(option?.challanId).includes(inputValue)
+                    )
+                  }
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      <div>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          {`${option?.challanId}`}
+                        </Typography>
+                      </div>
+                    </li>
+                  )}
+                  renderTags={(value, props) => (
+                    <Chip
+                      value={value}
+                      disabled={!isAdmin}
+                    />
+                  )}
+                  disabled={!isAdmin}
+                />
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <RHFTextField name="firstName" label="Customer First Name" disabled />
               </Grid>
@@ -587,7 +838,8 @@ export default function OrderMaterialForm({ currentOrder }) {
         <OrderLotProcessModal
           open={modalOpen}
           onClose={handleCloseModal}
-          processes={modalData?.processes}
+          preTreatmentProcesses={modalData?.preTreatmentProcesses}
+          galvanizingProcesses={modalData?.galvanizingProcesses}
           noOfLots={modalData?.noOfLots}
           totalQuantity={modalData?.totalQuantity}
           materialName={modalData?.materialName}
@@ -597,6 +849,7 @@ export default function OrderMaterialForm({ currentOrder }) {
           customer={modalData?.customer}
           jobCardLots={jobCardLots}
           setJobCardLots={setJobCardLots}
+          handleNoOfLots={(materialId, lotsCount) => handleNoOfLots(materialId, lotsCount)}
         />
       )}
     </FormProvider>

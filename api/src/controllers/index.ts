@@ -12,3 +12,8 @@ export * from './qc-report.controller';
 export * from './payment.controller';
 export * from './dispatch.controller';
 export * from './notification.controller';
+export * from './items-user.controller';
+export * from './items-hsn-master.controller';
+export * from './items-processes.controller';
+export * from './items.controller';
+export * from './material-user.controller';

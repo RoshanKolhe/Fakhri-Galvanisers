@@ -17,3 +17,5 @@ export * from './payment.model';
 export * from './dispatch.model';
 export * from './notification.model';
 export * from './order-qc-test.model';
+export * from './items.model';
+export * from './item-process.model';

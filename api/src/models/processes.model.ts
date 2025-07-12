@@ -22,6 +22,18 @@ export class Processes extends Entity {
 
   @property({
     type: 'number',
+    required: true
+  })
+  processGroup: number;     // 0 for 'pre treatment' and 1 for 'galvanizing'
+
+  // @property({
+  //   type: 'string',
+  //   required: true
+  // })
+  // duration: string;
+
+  @property({
+    type: 'number',
     default: 0,
   })
   status: number;

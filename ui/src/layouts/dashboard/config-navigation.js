@@ -51,6 +51,7 @@ const ICONS = {
   ecommerce: icon('ic_ecommerce'),
   analytics: icon('ic_analytics'),
   dashboard: icon('ic_dashboard'),
+  items: icon('ic_material'),
 };
 
 // ----------------------------------------------------------------------
@@ -138,12 +139,12 @@ export function useNavData() {
               {
                 title: t('list'),
                 path: paths.dashboard.challan.list,
-                roles: ['super_admin', 'customer'],
+                roles: ['super_admin', 'customer', 'supervisor'],
               },
               {
                 title: t('create'),
                 path: paths.dashboard.challan.new,
-                roles: ['super_admin', 'customer'],
+                roles: ['super_admin', 'customer', 'supervisor'],
               },
             ],
           },
@@ -153,12 +154,17 @@ export function useNavData() {
             title: t('order'),
             path: paths.dashboard.order.root,
             icon: ICONS.order,
-            roles: ['super_admin', 'customer'],
+            roles: ['super_admin', 'customer', 'supervisor'],
             children: [
               {
                 title: t('list'),
                 path: paths.dashboard.order.root,
-                roles: ['super_admin', 'customer'],
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.order.new,
+                roles: ['super_admin', 'supervisor'],
               },
             ],
           },
@@ -170,7 +176,7 @@ export function useNavData() {
             icon: ICONS.qcReport,
             roles: ['super_admin'],
             children: [
-              { title: t('list'), path: paths.dashboard.qcReport.root, roles: ['super_admin'] },
+              { title: t('list'), path: paths.dashboard.qcReport.root, roles: ['super_admin', 'supervisor'] },
             ],
           },
 
@@ -187,12 +193,12 @@ export function useNavData() {
             title: t('dispatch'),
             path: paths.dashboard.dispatch.root,
             icon: ICONS.dispatch,
-            roles: ['super_admin', 'customer'],
+            roles: ['super_admin', 'customer', 'supervisor'],
             children: [
               {
                 title: t('list'),
                 path: paths.dashboard.dispatch.root,
-                roles: ['super_admin', 'customer'],
+                roles: ['super_admin', 'customer', 'supervisor'],
               },
             ],
           },
@@ -216,6 +222,26 @@ export function useNavData() {
               {
                 title: t('create'),
                 path: paths.dashboard.hsnMaster.new,
+                roles: ['super_admin'],
+              },
+            ],
+          },
+
+          // ITEMS MASTER
+          {
+            title: t('Items Master'),
+            path: paths.dashboard.itemsMaster.root,
+            icon: ICONS.items,
+            roles: ['super_admin'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.itemsMaster.list,
+                roles: ['super_admin'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.itemsMaster.new,
                 roles: ['super_admin'],
               },
             ],
@@ -501,6 +527,128 @@ export function useNavData() {
                 title: t('list'),
                 path: paths.dashboard.dispatch.root,
                 roles: ['super_admin', 'customer'],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+  }
+
+    if (user && user.permissions.includes('supervisor')) {
+    data = [
+      // OVERVIEW
+      // ----------------------------------------------------------------------
+      {
+        subheader: t('overview'),
+        items: [{ title: t('dashboard'), path: paths.dashboard.root, icon: ICONS.dashboard }],
+      },
+
+      // MANAGEMENT
+      // ----------------------------------------------------------------------
+      {
+        subheader: t('management'),
+        items: [
+          // INQUIRY
+          {
+            title: t('inquiry'),
+            path: paths.dashboard.inquiry.root,
+            icon: ICONS.inquiry,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.inquiry.list, roles: ['super_admin', 'supervisor'] },
+            ],
+          },
+
+          // QUOTATION
+          {
+            title: t('quotation'),
+            path: paths.dashboard.quotation.root,
+            icon: ICONS.quotation,
+            roles: ['super_admin', 'customer', 'supervisor'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.quotation.list,
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.quotation.new,
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+            ],
+          },
+
+          // CHALLAN
+          {
+            title: t('challan'),
+            path: paths.dashboard.challan.root,
+            icon: ICONS.challan,
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.challan.list,
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.challan.new,
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+            ],
+          },
+
+          // ORDER
+          {
+            title: t('order'),
+            path: paths.dashboard.order.root,
+            icon: ICONS.order,
+            roles: ['super_admin', 'customer', 'supervisor'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.order.root,
+                roles: ['super_admin', 'customer', 'supervisor'],
+              },
+              {
+                title: t('create'),
+                path: paths.dashboard.order.new,
+                roles: ['super_admin', 'supervisor'],
+              },
+            ],
+          },
+
+          // QC REPORT
+          {
+            title: t('qc Report'),
+            path: paths.dashboard.qcReport.root,
+            icon: ICONS.qcReport,
+            roles: ['super_admin'],
+            children: [
+              { title: t('list'), path: paths.dashboard.qcReport.root, roles: ['super_admin', 'supervisor'] },
+            ],
+          },
+
+          // INVOICE
+          {
+            title: t('performa invoice'),
+            path: paths.dashboard.invoice.root,
+            icon: ICONS.invoice,
+            children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
+          },
+
+          // Dispatch
+          {
+            title: t('dispatch'),
+            path: paths.dashboard.dispatch.root,
+            icon: ICONS.dispatch,
+            roles: ['super_admin', 'customer', 'supervisor'],
+            children: [
+              {
+                title: t('list'),
+                path: paths.dashboard.dispatch.root,
+                roles: ['super_admin', 'customer', 'supervisor'],
               },
             ],
           },

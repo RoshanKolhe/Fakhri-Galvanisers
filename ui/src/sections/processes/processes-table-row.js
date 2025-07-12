@@ -16,8 +16,22 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { format } from 'date-fns';
 
 // ----------------------------------------------------------------------
+
+function ProcessGroupLabel({ value }) {
+  let label;
+  switch (value) {
+    case 0: label = 'Pre Treatment'; break;
+    case 1: label = 'Galvanizing'; break;
+    default: label = 'NA';
+  }
+  return <>{label}</>;
+}
+ProcessGroupLabel.propTypes = {
+  value: PropTypes.number
+}
 
 export default function ProcessesTableRow({
   row,
@@ -29,7 +43,7 @@ export default function ProcessesTableRow({
   quickEdit,
   handleQuickEditRow,
 }) {
-  const { name, description, status } = row;
+  const { name, processGroup, description, status } = row;
 
   const confirm = useBoolean();
 
@@ -43,8 +57,9 @@ export default function ProcessesTableRow({
         </TableCell> */}
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{name}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}><ProcessGroupLabel value={processGroup}/></TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{description}</TableCell>
-
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{duration ? format(new Date(duration), 'mm:ss') : 'NA'}</TableCell> */}
         <TableCell>
           <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>
             {status ? 'Active' : 'In-Active'}

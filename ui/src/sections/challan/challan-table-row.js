@@ -20,6 +20,28 @@ import { formatChallanId, formatRFQId } from 'src/utils/constants';
 
 // ----------------------------------------------------------------------
 
+function CheckStatusColor(status) {
+  switch(status){
+    case 0: return 'info';
+    case 1: return 'error';
+    case 2: return 'warning';
+    case 3: return 'success';
+
+    default: return 'default';
+  }
+}
+
+function CheckStatusName(status) {
+  switch(status){
+    case 0: return 'Challan Created';
+    case 1: return 'Inward Pending';
+    case 2: return 'Order Creation Pending';
+    case 3: return 'Order Created';
+
+    default: return 'NA';
+  }
+}
+
 export default function ChallanTableRow({
   row,
   selected,
@@ -44,17 +66,17 @@ export default function ChallanTableRow({
         </TableCell> */}
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatChallanId(id)}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatRFQId(quotationId)}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{quotationId ? formatRFQId(quotationId) : 'NA'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{vehicleNumber}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{grossWeight}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{netWeight}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{order ? order?.orderId : '-'}</TableCell>
 
-        {/* <TableCell>
-          <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>
-            {status ? 'Active' : 'In-Active'}
+        <TableCell>
+          <Label variant="soft" color={CheckStatusColor(status)}>
+            {CheckStatusName(status)}
           </Label>
-        </TableCell> */}
+        </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>

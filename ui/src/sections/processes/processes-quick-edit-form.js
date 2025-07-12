@@ -19,6 +19,8 @@ import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { COMMON_STATUS_OPTIONS, states } from 'src/utils/constants';
 import axiosInstance from 'src/utils/axios';
+import { TextField } from '@mui/material';
+// import { TimePicker } from '@mui/x-date-pickers';
 
 // ----------------------------------------------------------------------
 
@@ -33,6 +35,7 @@ export default function ProcessesQuickEditForm({
 
   const NewProcessesSchema = Yup.object().shape({
     name: Yup.string().required('Hsn Code is required'),
+    // duration: Yup.string().required('Duration is required'),
     description: Yup.string(),
     status: Yup.boolean(),
   });
@@ -41,6 +44,7 @@ export default function ProcessesQuickEditForm({
     () => ({
       name: currentProcesses?.name || '',
       description: currentProcesses?.description || '',
+      // duration: currentProcesses?.duration ? new Date(currentProcesses?.duration) : null,
       status: currentProcesses?.status ? 1 : 0,
     }),
     [currentProcesses]
@@ -64,6 +68,7 @@ export default function ProcessesQuickEditForm({
       const inputData = {
         name: formData.name,
         description: formData.description,
+        // duration: formData.duration,
         status: formData.status ? 1 : 0,
       };
       await axiosInstance.patch(`/processes/${currentProcesses.id}`, inputData);
@@ -117,6 +122,39 @@ export default function ProcessesQuickEditForm({
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
             <RHFTextField name="name" label="Name" />
             <RHFTextField name="description" label="Description" />
+            {/* <Controller
+              name="duration"
+              control={control}
+              render={({ field, fieldState }) => {
+                console.log('fieldState', fieldState.error);
+                return (
+                  <TimePicker
+                    {...field}
+                    label="Duration"
+                    ampm={false}
+                    views={['minutes', 'seconds']}
+                    format="mm:ss"
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                      />
+                    )}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                    sx={{ minWidth: '140px', marginTop: 2 }}
+                  />
+                )
+              }}
+            /> */}
           </Box>
         </DialogContent>
 

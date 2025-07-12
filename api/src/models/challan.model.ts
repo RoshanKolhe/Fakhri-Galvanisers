@@ -15,6 +15,11 @@ export class Challan extends Entity {
   @property({
     type: 'string',
   })
+  challanId: string;
+
+  @property({
+    type: 'string',
+  })
   vehicleNumber: string;
 
   @property({
@@ -51,15 +56,38 @@ export class Challan extends Entity {
     type: 'number',
     default: 0,
   })
-  status?: number;
+  status?: number;  // 0: challan created; 1: inward pending; 2: order creation pending; 3: order created
+
+ @property({
+    type: 'number',
+    default: 0,       
+  })
+  challanStatus?: number;   
 
   @property({
     type: 'array',
-    itemType: 'string',
-    required: false,
+    itemType: 'object',
   })
-  images?: string[];
+  challanImages?: object[];
 
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  poImages?: object[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  vehicleImages?: object[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
+  })
+  materialImages?: object[];
+  
   @property({
     type: 'date',
   })

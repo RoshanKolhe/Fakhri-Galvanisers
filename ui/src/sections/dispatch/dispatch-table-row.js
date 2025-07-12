@@ -53,7 +53,7 @@ export default function DispatchTableRow({
 
       <TableCell>{formatDispatchId(id)}</TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{order.orderId}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{order?.orderId || "N/A"}</TableCell>
 
       <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar

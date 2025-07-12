@@ -29,7 +29,7 @@ export default function NotificationItem({ notification, drawer }) {
   const renderAvatar = (
     <ListItemAvatar>
       {notification.avatarUrl ? (
-        <Avatar src={notification.avatarUrl} sx={{ bgcolor: 'background.neutral' }} />
+        <Avatar src={notification?.avatarUrl} sx={{ bgcolor: 'background.neutral' }} />
       ) : (
         <Stack
           alignItems="center"
@@ -43,12 +43,12 @@ export default function NotificationItem({ notification, drawer }) {
         >
           <Box
             component="img"
-            src={`/assets/icons/notification/${
-              (notification.type === 'order' && 'ic_order') ||
+            src={`/assets/icons/notification/${(notification.type === 'order' && 'ic_order') ||
               (notification.type === 'quotation' && 'ic_quotation') ||
               (notification.type === 'mail' && 'ic_mail') ||
-              (notification.type === 'delivery' && 'ic_delivery')
-            }.svg`}
+              (notification.type === 'delivery' && 'ic_delivery') ||
+              (notification.type === 'material' && 'ic_material')
+              }.svg`}
             sx={{ width: 24, height: 24 }}
           />
         </Stack>
@@ -222,6 +222,24 @@ export default function NotificationItem({ notification, drawer }) {
     </Stack>
   );
 
+  const materialActions = (
+    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+      {notification?.extraDetails?.challanId && (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            drawer.onFalse();
+            router.push(paths.dashboard.challan.view(notification.extraDetails.challanId));
+          }}
+        >
+          View Challan
+        </Button>
+      )}
+
+    </Stack>
+  );
+
   return (
     <ListItemButton
       disableRipple
@@ -242,6 +260,7 @@ export default function NotificationItem({ notification, drawer }) {
         {notification.type === 'file' && fileAction}
         {notification.type === 'tags' && tagsAction}
         {notification.type === 'payment' && paymentAction}
+        {notification.type === 'material' && materialActions}
       </Stack>
     </ListItemButton>
   );

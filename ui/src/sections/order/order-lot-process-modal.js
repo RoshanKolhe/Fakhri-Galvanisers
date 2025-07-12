@@ -20,6 +20,7 @@ import {
   Stack,
   Select,
   MenuItem,
+  duration,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
 import axiosInstance from 'src/utils/axios';
@@ -29,7 +30,8 @@ import { formatTime } from 'src/utils/constants';
 export default function OrderLotProcessModal({
   open,
   onClose,
-  processes,
+  preTreatmentProcesses,
+  galvanizingProcesses,
   noOfLots,
   totalQuantity,
   materialName,
@@ -39,30 +41,79 @@ export default function OrderLotProcessModal({
   customer,
   jobCardLots,
   setJobCardLots,
+  handleNoOfLots
 }) {
-  console.log(jobCardLots);
   const { enqueueSnackbar } = useSnackbar();
+  const processes = [...preTreatmentProcesses, ...galvanizingProcesses];
+  const preCount = preTreatmentProcesses.length;
+  const galCount = galvanizingProcesses.length;
   const [lots, setLots] = useState([]);
-  console.log('lots', lots);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [times, setTimes] = useState([]);
-  console.log('times', times);
 
   const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedProcesses, setSelectedProcesses] = useState([]);
   const [bulkTime, setBulkTime] = useState(null);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    initializeLots(noOfLots, totalQuantity, jobCardLots);
+    if (Number(noOfLots) >= Number(totalQuantity)) {
+      setIsButtonDisabled(true);
+    }
+  }, [noOfLots]);
+
+  useEffect(() => {
+    if (noOfLots <= totalQuantity) {
+      initializeLots(noOfLots, totalQuantity, jobCardLots);
+    }
   }, [noOfLots, totalQuantity, jobCardLots]);
+
+  console.log('job card lots', jobCardLots);
 
   const initializeLots = (count, totalQty, existingLots = []) => {
     try {
-      console.log(existingLots.length);
       const foundMaterial = existingLots.find((res) => res.materialId === materialId);
 
-      if (foundMaterial && foundMaterial.lots.length > 0) {
-        // Use existing lots data if available
-        const newLots = foundMaterial.lots.map((lot) => ({
+      if (foundMaterial) {
+        console.log('Existing lots', existingLots);
+        const lockedLots = foundMaterial.lots.filter(lot => lot.status !== 0);
+        let editableLots = foundMaterial.lots.filter(lot => lot.status === 0);
+
+        const lockedQty = lockedLots.reduce((sum, lot) => sum + Number(lot.quantity), 0);
+        const remainingQty = totalQty - lockedQty;
+
+        const totalEditableNeeded = count - lockedLots.length;
+        const missingLotsCount = totalEditableNeeded - editableLots.length;
+
+        // Add missing lots if count is higher
+        console.log('processes', processes);
+        const additionalLots = Array.from({ length: missingLotsCount > 0 ? missingLotsCount : 0 }, (_, i) => ({
+          lotNumber: `${editableLots.length + lockedLots.length + i + 1}`,
+          quantity: 0,
+          filing: '',
+          visualInspection: '',
+          processes: processes?.map((p) => ({
+            processId: p.id,
+            duration: p.processesDetails?.duration,
+            status: 0,
+            timeTaken: null
+          })),
+          status: 0,
+        }));
+
+        console.log('additional lots', additionalLots);
+
+        editableLots = [...editableLots, ...additionalLots];
+
+        const baseQty = Math.floor(remainingQty / totalEditableNeeded);
+        const remainder = remainingQty % totalEditableNeeded;
+
+        const updatedEditableLots = editableLots.map((lot, i) => ({
+          ...lot,
+          quantity: baseQty + (i < remainder ? 1 : 0),
+        }));
+
+        const newLots = [...lockedLots, ...updatedEditableLots].map((lot) => ({
           lotNumber: lot.lotNumber,
           quantity: lot.quantity,
           filing: lot.filing,
@@ -71,20 +122,19 @@ export default function OrderLotProcessModal({
           status: lot.status,
         }));
 
+        console.log('new lots', newLots);
         setLots(newLots);
 
-        // Ensure `times` is properly initialized with process details
-        const newTimes = foundMaterial.lots.map((lot) =>
-          lot.processes.map((process) => ({
+        const newTimes = [...lockedLots, ...updatedEditableLots].map((lot) =>
+          (lot.processes || []).map((process) => ({
             duration: process.duration ? new Date(process.duration) : null,
             status: process.status || 0,
             timeTaken: process.timeTaken ? new Date(process.timeTaken) : null,
           }))
         );
-
         setTimes(newTimes);
       } else {
-        console.log('here');
+        // Fresh lot generation logic
         const baseQty = Math.floor(totalQty / count);
         const remainder = totalQty % count;
 
@@ -96,21 +146,20 @@ export default function OrderLotProcessModal({
             filing: '',
             visualInspection: '',
             status: 0,
-            processes: processes.map(() => ({
-              duration: null,
+            processes: processes.map((p) => ({
+              duration: p.duration ? new Date(p.duration) : null,
               status: 0,
               timeTaken: null,
-            })), // Initialize processes properly
+            })),
           }));
 
         setLots(newLots);
 
-        // Ensure `times` matches `processes` structure
         const newTimes = Array(count)
           .fill(null)
           .map(() =>
-            processes.map(() => ({
-              duration: null,
+            processes.map((p) => ({
+              duration: p.duration ? new Date(p.duration) : null,
               status: 0,
               timeTaken: null,
             }))
@@ -119,7 +168,7 @@ export default function OrderLotProcessModal({
         setTimes(newTimes);
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -165,6 +214,12 @@ export default function OrderLotProcessModal({
     );
   };
 
+  const handleSelectedProcess = (index) => {
+    setSelectedProcesses((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  }
+
   const toggleSelectAll = () => {
     if (selectedRows.length === lots.length) {
       setSelectedRows([]);
@@ -176,20 +231,23 @@ export default function OrderLotProcessModal({
       setSelectedRows(filteredIndexes);
     }
   };
+
   const applyBulkTime = () => {
-    if (!bulkTime) return;
+    if (!bulkTime || selectedRows.length === 0) return;
 
     const updatedTimes = [...times];
 
     selectedRows.forEach((lotIndex) => {
-      // Ensure the lot has an array to store process times
       updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
 
-      processes.forEach((_, processIndex) => {
-        // Ensure each process entry exists before modifying
+      const targetProcesses = selectedProcesses.length > 0
+        ? selectedProcesses
+        : processes.map((_, index) => index); // apply to all processes if none selected
+
+      targetProcesses.forEach((processIndex) => {
         updatedTimes[lotIndex][processIndex] = {
           ...(updatedTimes[lotIndex][processIndex] || {}),
-          duration: bulkTime, // Apply only the duration field
+          duration: bulkTime,
         };
       });
     });
@@ -233,15 +291,27 @@ export default function OrderLotProcessModal({
       filing: lot.filing,
       visualInspection: lot.visualInspection,
       status: lot.status,
-      processes:
+      galvanizingProcesses:
         times[index]?.map((process, processIndex) => ({
           processId: processes[processIndex].id,
           duration: process.duration,
           timeTaken: process?.timeTaken ? process.timeTaken : null,
-          status: process?.status ? process.status : 0,
+          status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
         })) || [],
+      preTreatmentProcesses:
+        times[index]?.map((process, processIndex) => ({
+          processId: processes[processIndex].id,
+          duration: process.duration,
+          timeTaken: process?.timeTaken ? process.timeTaken : null,
+          status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
+        })) || [],
+      processes: times[index]?.map((process, processIndex) => ({
+        processId: processes[processIndex].id,
+        duration: process.duration,
+        timeTaken: process?.timeTaken ? process.timeTaken : null,
+        status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
+      })) || [],
     }));
-    console.log('submissionData', submissionData);
     // Check if materialId; already exists in jobCardLots
     const existingJobCardLotIndex = jobCardLots.findIndex((lot) => lot.materialId === materialId);
 
@@ -257,10 +327,8 @@ export default function OrderLotProcessModal({
       // If materialId doesn't exist, add new entry
       setJobCardLots((prevLots) => [...prevLots, { materialId, lots: submissionData }]);
     }
-
     onClose();
   };
-  console.log('processes', processes);
 
   const getFontColor = (process) => {
     if (!process?.duration || !process?.timeTaken) {
@@ -297,11 +365,11 @@ export default function OrderLotProcessModal({
         }}
       >
         <Grid container>
-          <Grid item xs={12} md={4}>
+          {orderId !== 'NA' && <Grid item xs={12} md={4}>
             <Typography variant="body1">
               <strong>Order Id:</strong> {orderId}
             </Typography>
-          </Grid>
+          </Grid>}
           <Grid item xs={12} md={4}>
             <Typography variant="body1">
               <strong>Customer:</strong> {customer?.firstName} {customer?.lastName}
@@ -329,7 +397,7 @@ export default function OrderLotProcessModal({
           </Grid>
         </Grid>
 
-        {selectedRows.length > 0 && (
+        {(selectedRows.length > 0 || selectedProcesses.length > 0) && (
           <Grid
             container
             spacing={2}
@@ -363,22 +431,67 @@ export default function OrderLotProcessModal({
         <TableContainer sx={{ maxHeight: 400, marginTop: '20px' }}>
           <Table stickyHeader>
             <TableHead>
+              {/* First Header Row: Grouping */}
               <TableRow>
-                <TableCell>
+                <TableCell rowSpan={2}>
                   <Checkbox
                     checked={selectedRows.length === lots.length && lots.length > 0}
                     indeterminate={selectedRows.length > 0 && selectedRows.length < lots.length}
                     onChange={toggleSelectAll}
                   />
                 </TableCell>
-                <TableCell>Lot</TableCell>
-                {processes.map((process, index) => (
-                  <TableCell key={index}>{process.name}</TableCell>
-                ))}
-                <TableCell>Quantity</TableCell>
-                <TableCell>Filing</TableCell>
-                <TableCell>Visual Inspection</TableCell>
+                <TableCell rowSpan={2}>Lot</TableCell>
+
+                {preCount > 0 && (
+                  <TableCell colSpan={preCount} align="center" sx={{ backgroundColor: '#e3f2fd' }}>
+                    Pre-Treatment
+                  </TableCell>
+                )}
+                {galCount > 0 && (
+                  <TableCell colSpan={galCount} align="center" sx={{ backgroundColor: '#fbe9e7' }}>
+                    Galvanizing
+                  </TableCell>
+                )}
+
+                <TableCell rowSpan={2}>Quantity</TableCell>
+                <TableCell rowSpan={2}>Filing</TableCell>
+                <TableCell rowSpan={2}>Visual Inspection</TableCell>
               </TableRow>
+
+              {/* Second Header Row: Individual Process Names */}
+              <TableRow>
+                {preTreatmentProcesses.map((process, index) => (
+                  <TableCell
+                    key={`pre-${index}`}
+                    sx={{ backgroundColor: '#e3f2fd', textAlign: 'center' }}
+                  >
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Checkbox
+                        checked={process.checked}
+                        onChange={() => handleSelectedProcess(index)}
+                        size="small"
+                      />
+                      {process.name}
+                    </Box>
+                  </TableCell>
+                ))}
+                {galvanizingProcesses.map((process, index) => (
+                  <TableCell
+                    key={`gal-${index}`}
+                    sx={{ backgroundColor: '#fbe9e7', textAlign: 'center' }}
+                  >
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Checkbox
+                        checked={process.checked}
+                        onChange={() => handleSelectedProcess(index)}
+                        size="small"
+                      />
+                      {process.name}
+                    </Box>
+                  </TableCell>
+                ))}
+              </TableRow>
+
             </TableHead>
             <TableBody>
               {lots.map((lot, lotIndex) => (
@@ -391,7 +504,7 @@ export default function OrderLotProcessModal({
                     />
                   </TableCell>
                   <TableCell>{`Lot${lot.lotNumber}`}</TableCell>
-                  {processes.map((process, processIndex) => (
+                  {lot?.processes?.map((process, processIndex) => (
                     <TableCell key={processIndex}>
                       {times[lotIndex]?.[processIndex]?.status === 1 ? (
                         <TimePicker
@@ -490,9 +603,14 @@ export default function OrderLotProcessModal({
             </TableBody>
           </Table>
         </TableContainer>
-        <Button variant="contained" sx={{ mt: 2, ml: 2 }} onClick={handleSubmit}>
-          Submit
-        </Button>
+        <Stack spacing={1} direction='row'>
+          <Button variant="contained" sx={{ mt: 2, ml: 2 }} onClick={handleSubmit}>
+            Submit
+          </Button>
+          <Button disabled={!!isButtonDisabled} variant="contained" sx={{ mt: 2, ml: 2 }} onClick={() => handleNoOfLots(materialId, Number(noOfLots) + 1)}>
+            + Add lot
+          </Button>
+        </Stack>
       </Box>
     </Modal>
   );
@@ -501,7 +619,8 @@ export default function OrderLotProcessModal({
 OrderLotProcessModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  processes: PropTypes.arrayOf(PropTypes.object).isRequired,
+  galvanizingProcesses: PropTypes.arrayOf(PropTypes.object).isRequired,
+  preTreatmentProcesses: PropTypes.arrayOf(PropTypes.object).isRequired,
   noOfLots: PropTypes.number.isRequired,
   totalQuantity: PropTypes.number.isRequired,
   materialName: PropTypes.string.isRequired,
@@ -511,4 +630,5 @@ OrderLotProcessModal.propTypes = {
   customer: PropTypes.object.isRequired,
   jobCardLots: PropTypes.array,
   setJobCardLots: PropTypes.func,
+  handleNoOfLots: PropTypes.func,
 };

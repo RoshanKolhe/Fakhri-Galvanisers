@@ -25,9 +25,10 @@ import FormProvider, {
 } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { formatRFQId } from 'src/utils/constants';
-import { Autocomplete, Button, MenuItem, TextField, Typography } from '@mui/material';
+import { Autocomplete, Button, Chip, MenuItem, TextField, Typography } from '@mui/material';
 import { useGetHsnMasters } from 'src/api/hsnMaster';
 import Iconify from 'src/components/iconify';
+import { useGetItemsMasters } from 'src/api/itemsMaster';
 
 // ----------------------------------------------------------------------
 
@@ -35,8 +36,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
   const router = useRouter();
   const [quotationOptions, setQuotationOptions] = useState([]);
   const { hsnMasters, hsnMastersLoading, hsnMastersEmpty, refreshQuotations } = useGetHsnMasters();
+  const { itemsMasters } = useGetItemsMasters();
   const [customerOptions, setCustomerOptions] = useState([]);
-
   const { enqueueSnackbar } = useSnackbar();
 
   const NewChallanSchema = Yup.object().shape({
@@ -54,10 +55,14 @@ export default function ChallanNewEditForm({ currentChallan }) {
       .required('Net Weight is required'),
     poNumber: Yup.string().required('PO Number is required'),
     remark: Yup.string(),
-    images: Yup.array().min(1, 'Images is required'),
+    challanImages: Yup.array().nullable(),
+    poImages: Yup.array().nullable(),
+    vehicleImages: Yup.array().nullable(),
+    materialImages: Yup.array().nullable(),
     materials: Yup.array()
       .of(
         Yup.object().shape({
+          itemType: Yup.object().required('Material Type is required'),
           materialType: Yup.string().required('Material type is required'),
           quantity: Yup.number().required('Quantity is  required'),
           billingUnit: Yup.string().required('Billing Unit is required'),
@@ -69,7 +74,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         })
       )
       .min(1, 'At least one material is required'),
-    status: Yup.boolean(),
+    status: Yup.number(),
   });
 
   const defaultValues = useMemo(
@@ -81,9 +86,13 @@ export default function ChallanNewEditForm({ currentChallan }) {
       tareWeight: currentChallan?.tareWeight || 0,
       netWeight: currentChallan?.netWeight || 0,
       poNumber: currentChallan?.poNumber || '',
-      images: currentChallan?.images || [],
+      challanImages: currentChallan?.challanImages || [],
+      poImages: currentChallan?.poImages || [],
+      vehicleImages: currentChallan?.vehicleImages || [],
+      materialImages: currentChallan?.materialImages || [],
       materials: currentChallan?.materials?.length
         ? currentChallan.materials.map((material) => ({
+          itemType: material.materialType ? {materialType: material.materialType} : null,
           materialType: material.materialType || '',
           quantity: material.quantity || null,
           billingUnit: material.billingUnit || '',
@@ -94,6 +103,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
           priceAfterTax: material.priceAfterTax || 0,
         }))
         : [{
+          itemType: null,
           materialType: '',
           quantity: null,
           billingUnit: '',
@@ -103,7 +113,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
           pricePerUnit: 0,
           priceAfterTax: 0,
         }],
-      status: currentChallan?.status || 1,
+      status: currentChallan?.status || 0,
       remark: currentChallan?.remark || '',
     }),
     [currentChallan]
@@ -165,11 +175,14 @@ export default function ChallanNewEditForm({ currentChallan }) {
         remark: formData.remark,
         tareWeight: formData.tareWeight,
         vehicleNumber: formData.vehicleNumber,
-        quotationId: formData?.quotation?.id || null,
+        quotationId: formData?.quotation?.id || undefined,
         customerId: formData.customerName.id,
-        status: formData.status ? 1 : 0,
+        status: formData.status ? formData.status : 0,
         materials: formData.materials,
-        images: formData.images,
+        challanImages: formData.challanImages || [],
+        poImages: formData.poImages || [],
+        vehicleImages: formData.vehicleImages || [],
+        materialImages: formData.materialImages || [],
       };
       if (!currentChallan) {
         await axiosInstance.post('/challans', inputData);
@@ -203,14 +216,67 @@ export default function ChallanNewEditForm({ currentChallan }) {
     }
   };
 
+  useEffect(() => {
+    if (
+      currentChallan &&
+      currentChallan.materials?.length > 0 &&
+      itemsMasters?.length > 0
+    ) {
+      currentChallan.materials.forEach((material, index) => {
+        const matchedItem = itemsMasters.find(
+          (item) => item.materialType === material?.materialType
+        );
+
+        console.log('matchedItem', matchedItem);
+        if (matchedItem) {
+          console.log('entered');
+          setValue(`materials[${index}].itemType`, matchedItem, {shouldValidate: true, shouldDirty: true});
+        }
+      });
+    }
+  }, [currentChallan, itemsMasters, setValue]);
+
   const renderMaterialDetailsForm = (
     <Stack spacing={3} mt={2}>
       {fields.map((item, index) => (
         <Stack key={item.id} alignItems="flex-end" spacing={1.5}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
-            <RHFTextField
-              name={`materials[${index}].materialType`}
-              label="Material Type"
+            <Controller
+              name={`materials[${index}].itemType`}
+              control={control}
+              render={({
+                field: { onChange, value: fieldValue, ...fieldProps },
+                fieldState: { error },
+              }) => (
+                <Autocomplete
+                  {...fieldProps}
+                  options={itemsMasters}
+                  getOptionLabel={(option) => (option ? option.materialType : '')}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  onChange={(_, selectedOption) => {
+                    onChange(selectedOption);
+                    if (selectedOption) {
+                      setValue(`materials[${index}].materialType`, selectedOption.materialType || 0);
+                      setValue(`materials[${index}].hsnNo`, selectedOption.hsnMaster || 0);
+                      setValue(`materials[${index}].tax`, selectedOption.hsnMaster?.tax || 0);
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Material Type"
+                      fullWidth
+                      sx={{ flex: 2 }}
+                      error={!!error}
+                      helperText={error ? error?.message : ''}
+                    />
+                  )}
+                  value={fieldValue || null}
+                  sx={{
+                    width: '100%',
+                  }}
+                />
+              )}
             />
 
             <RHFTextField
@@ -334,7 +400,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
   );
 
   const handleDrop = useCallback(
-    async (acceptedFiles) => {
+    async (acceptedFiles, fieldName) => {
       console.log(acceptedFiles);
       if (!acceptedFiles.length) return;
       const formData = new FormData();
@@ -345,13 +411,12 @@ export default function ChallanNewEditForm({ currentChallan }) {
         const response = await axiosInstance.post('/files', formData);
         const { data } = response;
         console.log(data);
-        const newFiles = data.files.map((res) => res.fileUrl);
+        const newFiles = data.files.map((res) => res);
 
         // Get the current images from the form
-        const currentImages = getValues('images') || [];
-
+        const currentImages = getValues(`${fieldName}`) || [];
         // Merge new images with existing ones
-        setValue('images', [...currentImages, ...newFiles], {
+        setValue(`${fieldName}`, [...currentImages, ...newFiles], {
           shouldValidate: true,
         });
       } catch (err) {
@@ -457,13 +522,13 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   label="RFQ Reference"
                   onInputChange={(event) => fetchQuotations(event)}
                   options={quotationOptions}
-                  getOptionLabel={(option) => `${formatRFQId(option.id)}` || ''}
+                  getOptionLabel={(option) => option?.id ? `${formatRFQId(option.id)}` : ''}
                   filterOptions={(x) => x}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  isOptionEqualToValue={(option, value) => option?.id === value?.id}
                   renderOption={(props, option) => (
                     <li {...props}>
                       <Typography variant="subtitle2" fontWeight="bold">
-                        {`${formatRFQId(option.id)}`}
+                        {option?.id ? `${formatRFQId(option?.id)}` : ''}
                       </Typography>
                     </li>
                   )}
@@ -498,11 +563,20 @@ export default function ChallanNewEditForm({ currentChallan }) {
             <Box mt={5}>{renderMaterialDetailsForm}</Box>
 
             <Grid container spacing={2} mt={5}>
+
+              {/* challan images */}
               <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload challan images
+                  </Typography>
+                </Box>
+
                 <RHFUpload
                   multiple
                   thumbnail
-                  name="images"
+                  name="challanImages"
                   maxSize={3145728}
                   accept={{
                     'image/*': [],
@@ -516,7 +590,114 @@ export default function ChallanNewEditForm({ currentChallan }) {
                     'application/x-rar-compressed': [],
                     'text/plain': [],
                   }}
-                  onDrop={handleDrop}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'challanImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* PO images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload PO images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
+                  multiple
+                  thumbnail
+                  name="poImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'poImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* Vehicle images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload vehicle images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
+                  multiple
+                  thumbnail
+                  name="vehicleImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'vehicleImages');
+                  }}
+                  onRemove={handleRemoveFile}
+                  onRemoveAll={handleRemoveAllFiles}
+                  sx={{ mb: 3 }}
+                />
+              </Grid>
+
+              {/* Material images */}
+              <Grid item xs={12}>
+
+                <Box component='div' sx={{ my: 2 }}>
+                  <Typography variant='body1'>
+                    Upload material images
+                  </Typography>
+                </Box>
+
+                <RHFUpload
+                  multiple
+                  thumbnail
+                  name="materialImages"
+                  maxSize={3145728}
+                  accept={{
+                    'image/*': [],
+                    'video/*': [],
+                    'application/pdf': [],
+                    'application/msword': [],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
+                    'application/vnd.ms-excel': [],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
+                    'application/zip': [],
+                    'application/x-rar-compressed': [],
+                    'text/plain': [],
+                  }}
+                  onDrop={(acceptedFiles) => {
+                    handleDrop(acceptedFiles, 'materialImages');
+                  }}
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}

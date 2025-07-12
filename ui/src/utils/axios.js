@@ -63,6 +63,13 @@ export const endpoints = {
     filterList: (filter) => `/hsn-masters?${filter}`,
     details: (id) => `/hsn-masters/${id}`,
   },
+
+  // ITEMS MASTER
+  itemsMaster: {
+    list: '/items',
+    filterList: (filter) => `/items?${filter}`,
+    details: (id) => `/items/${id}`,
+  },
   order: {
     list: '/orders',
     filterList: (filter) => `/orders?${filter}`,
@@ -92,6 +99,7 @@ export const endpoints = {
     list: '/challans',
     filterList: (filter) => `/challans?${filter}`,
     details: (id) => `/challans/${id}`,
+    orderPendingChallan: `/challans/inwardChallans`,
   },
   inquiry: {
     list: '/inquiries',

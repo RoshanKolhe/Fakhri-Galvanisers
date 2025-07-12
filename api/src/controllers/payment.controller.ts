@@ -98,6 +98,7 @@ export class PaymentController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
+        PermissionKeys.SUPERVISOR
       ],
     },
   })
@@ -141,7 +142,8 @@ export class PaymentController {
     const currentUserPermission = currnetUser.permissions;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
+      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('supervisor')
     ) {
       return this.paymentRepository.find(filter);
     } else {

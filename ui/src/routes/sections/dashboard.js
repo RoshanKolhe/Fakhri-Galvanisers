@@ -41,6 +41,12 @@ const HsnMasterCreatePage = lazy(() => import('src/pages/dashboard/hsnMaster/new
 const HsnMasterEditPage = lazy(() => import('src/pages/dashboard/hsnMaster/edit'));
 const HsnMasterViewPage = lazy(() => import('src/pages/dashboard/hsnMaster/view'));
 
+// ITEMSMASTER
+const ItemsMasterListPage = lazy(() => import('src/pages/dashboard/itemsMaster/list'));
+const ItemsMasterCreatePage = lazy(() => import('src/pages/dashboard/itemsMaster/new'));
+const ItemsMasterEditPage = lazy(() => import('src/pages/dashboard/itemsMaster/edit'));
+const ItemsMasterViewPage = lazy(() => import('src/pages/dashboard/itemsMaster/view'));
+
 // PROCESSES
 const ProcessesListPage = lazy(() => import('src/pages/dashboard/processes/list'));
 const ProcessesCreatePage = lazy(() => import('src/pages/dashboard/processes/new'));
@@ -56,6 +62,7 @@ const ChallanViewPage = lazy(() => import('src/pages/dashboard/challan/view'));
 // ORDER
 const OrderListPage = lazy(() => import('src/pages/dashboard/order/list'));
 const OrderDetailsPage = lazy(() => import('src/pages/dashboard/order/details'));
+const OrderNewPage = lazy(() => import('src/pages/dashboard/order/new'))
 
 // QCREPORT
 const QcReportListPage = lazy(() => import('src/pages/dashboard/qcReport/list'));
@@ -119,7 +126,7 @@ export const dashboardRoutes = [
       },
       {
         path: 'inquiry',
-        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
+        element: <RolesAuthRoute roles={['super_admin', 'admin', 'supervisor']} />,
         children: [
           { element: <InquiryListPage />, index: true },
           { path: 'list', element: <InquiryListPage /> },
@@ -145,6 +152,17 @@ export const dashboardRoutes = [
           { path: 'new', element: <HsnMasterCreatePage /> },
           { path: ':id/edit', element: <HsnMasterEditPage /> },
           { path: ':id/view', element: <HsnMasterViewPage /> },
+        ],
+      },
+      {
+        path: 'itemsMaster',
+        element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
+        children: [
+          { element: <ItemsMasterListPage />, index: true },
+          { path: 'list', element: <ItemsMasterListPage /> },
+          { path: 'new', element: <ItemsMasterCreatePage /> },
+          { path: ':id/edit', element: <ItemsMasterEditPage /> },
+          { path: ':id/view', element: <ItemsMasterViewPage /> },
         ],
       },
       {
@@ -174,6 +192,7 @@ export const dashboardRoutes = [
         children: [
           { element: <OrderListPage />, index: true },
           { path: 'list', element: <OrderListPage /> },
+          { path: 'new', element: <OrderNewPage /> },
           { path: ':id', element: <OrderDetailsPage /> },
         ],
       },
@@ -185,7 +204,7 @@ export const dashboardRoutes = [
           { path: 'list', element: <QcReportListPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin', 'supervisor']} />,
             children: [{ path: 'edit', element: <QcReportEditPage /> }],
           },
           { path: ':id/view', element: <QcReportViewPage /> },
@@ -198,7 +217,7 @@ export const dashboardRoutes = [
           { path: 'list', element: <DispatchListPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin', 'supervisor']} />,
             children: [{ path: 'edit', element: <DispatchEditPage /> }],
           },
           { path: ':id/view', element: <DispatchViewPage /> },
@@ -212,7 +231,7 @@ export const dashboardRoutes = [
           { path: ':id', element: <InvoiceDetailsPage /> },
           {
             path: ':id',
-            element: <RolesAuthRoute roles={['super_admin', 'admin']} />,
+            element: <RolesAuthRoute roles={['super_admin', 'admin', 'supervisor']} />,
             children: [{ path: 'edit', element: <InvoiceEditPage /> }],
           },
           { path: 'new', element: <InvoiceCreatePage /> },
