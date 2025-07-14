@@ -42,7 +42,8 @@ export class ChallanController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
-        PermissionKeys.SUPERVISOR
+        PermissionKeys.SUPERVISOR,
+        PermissionKeys.WORKER
       ],
     },
   })
