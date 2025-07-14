@@ -284,9 +284,10 @@ export class OrderController {
     const currentUserPermission = currnetUser.permissions;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
+      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('supervisor')
     ) {
-      return this.orderRepository.find(filter);
+      return this.orderRepository.find({...filter, order: ['createdAt DESC']});
     } else {
       return this.orderRepository.find({
         ...filter,
@@ -294,6 +295,7 @@ export class OrderController {
           ...filter?.where,
           customerId: currnetUser.id,
         },
+        order: ['createdAt DESC']
       });
     }
   }
@@ -822,8 +824,8 @@ export class OrderController {
         },
         { transaction: tx },
       );
-      tx.commit();
       await this.updateOrderAndMaterialStatus(orderId);
+      tx.commit();
       return Promise.resolve({
         status: 1,
         msg: 'Lot process Updated Successfully',

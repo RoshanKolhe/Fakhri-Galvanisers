@@ -29,10 +29,12 @@ import { Autocomplete, Button, Chip, MenuItem, TextField, Typography } from '@mu
 import { useGetHsnMasters } from 'src/api/hsnMaster';
 import Iconify from 'src/components/iconify';
 import { useGetItemsMasters } from 'src/api/itemsMaster';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
 export default function ChallanNewEditForm({ currentChallan }) {
+  const {user} = useAuthContext();
   const router = useRouter();
   const [quotationOptions, setQuotationOptions] = useState([]);
   const { hsnMasters, hsnMastersLoading, hsnMastersEmpty, refreshQuotations } = useGetHsnMasters();
@@ -79,7 +81,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
 
   const defaultValues = useMemo(
     () => ({
-      customerName: currentChallan?.customer || null,
+      customerName: currentChallan?.customer || user?.permissions?.includes('customer') ? user : null,
       quotation: currentChallan?.quotation || null,
       vehicleNumber: currentChallan?.vehicleNumber || '',
       grossWeight: currentChallan?.grossWeight || 0,
@@ -116,7 +118,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
       status: currentChallan?.status || 0,
       remark: currentChallan?.remark || '',
     }),
-    [currentChallan]
+    [currentChallan, user]
   );
 
   const methods = useForm({
@@ -490,7 +492,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
+              {user?.permission?.includes('customer') && <Grid item xs={12} sm={4}>
                 <RHFAutocomplete
                   name="customerName"
                   label="Customer Name"
@@ -515,7 +517,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                     </li>
                   )}
                 />
-              </Grid>
+              </Grid>}
               <Grid item xs={12} sm={6} md={4}>
                 <RHFAutocomplete
                   name="quotation"

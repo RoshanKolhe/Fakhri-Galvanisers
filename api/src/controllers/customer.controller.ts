@@ -192,7 +192,7 @@ export class CustomerController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.SUPERVISOR, PermissionKeys.WORKER],
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.SUPERVISOR, PermissionKeys.WORKER, PermissionKeys.DISPATCH],
     },
   })
   @get('/customer/list')

@@ -43,7 +43,8 @@ export class ChallanController {
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
         PermissionKeys.SUPERVISOR,
-        PermissionKeys.WORKER
+        PermissionKeys.WORKER,
+        PermissionKeys.DISPATCH
       ],
     },
   })
