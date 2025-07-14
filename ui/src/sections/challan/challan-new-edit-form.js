@@ -492,7 +492,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={2}>
-              {user?.permission?.includes('customer') && <Grid item xs={12} sm={4}>
+              {!user?.permission?.includes('customer') && <Grid item xs={12} sm={4}>
                 <RHFAutocomplete
                   name="customerName"
                   label="Customer Name"
