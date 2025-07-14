@@ -32,10 +32,15 @@ export default function ProcessesQuickEditForm({
 }) {
   console.log(currentProcesses);
   const { enqueueSnackbar } = useSnackbar();
+  const processGroupOptions = [
+    { label: 'Pre Treatment', value: 0 },
+    { label: 'Galvanizing', value: 1 }
+  ];
 
   const NewProcessesSchema = Yup.object().shape({
-    name: Yup.string().required('Hsn Code is required'),
+    name: Yup.string().required('Name is required'),
     // duration: Yup.string().required('Duration is required'),
+    processGroup: Yup.number().required('Process group is required'),
     description: Yup.string(),
     status: Yup.boolean(),
   });
@@ -43,9 +48,10 @@ export default function ProcessesQuickEditForm({
   const defaultValues = useMemo(
     () => ({
       name: currentProcesses?.name || '',
-      description: currentProcesses?.description || '',
       // duration: currentProcesses?.duration ? new Date(currentProcesses?.duration) : null,
-      status: currentProcesses?.status ? 1 : 0,
+      processGroup: currentProcesses?.processGroup || 0,
+      description: currentProcesses?.description || '',
+      status: currentProcesses?.status || 1,
     }),
     [currentProcesses]
   );
@@ -67,6 +73,7 @@ export default function ProcessesQuickEditForm({
     try {
       const inputData = {
         name: formData.name,
+        processGroup: formData.processGroup,
         description: formData.description,
         // duration: formData.duration,
         status: formData.status ? 1 : 0,
@@ -96,11 +103,11 @@ export default function ProcessesQuickEditForm({
         <DialogTitle>Quick Update</DialogTitle>
 
         <DialogContent>
-          {!currentProcesses?.status && (
+          {/* {!currentProcesses?.status && (
             <Alert variant="outlined" severity="error" sx={{ mb: 3 }}>
               Hsn is In-Active
             </Alert>
-          )}
+          )} */}
 
           <Box
             mt={2}
@@ -121,6 +128,13 @@ export default function ProcessesQuickEditForm({
             </RHFSelect>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
             <RHFTextField name="name" label="Name" />
+            <RHFSelect name="processGroup" label="Select Process Group">
+              {processGroupOptions.length > 0 ? processGroupOptions.map((group) => (
+                <MenuItem value={group.value}>{group.label}</MenuItem>
+              )) : (
+                <MenuItem value=''>No Group</MenuItem>
+              )}
+            </RHFSelect>
             <RHFTextField name="description" label="Description" />
             {/* <Controller
               name="duration"

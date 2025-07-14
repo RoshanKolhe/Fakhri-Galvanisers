@@ -180,7 +180,7 @@ export class UserController {
   @authenticate({
     strategy: 'jwt',
     options: {
-      required: [PermissionKeys.SUPER_ADMIN],
+      required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.SUPERVISOR],
     },
   })
   @get('/api/users/list')

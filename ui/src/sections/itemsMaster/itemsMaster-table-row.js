@@ -16,6 +16,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useNavigate } from 'react-router';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -29,6 +31,7 @@ export default function ItemsMasterTableRow({
   quickEdit,
   handleQuickEditRow,
 }) {
+  const navigate = useNavigate();
   const { hsnMaster, materialType, status} = row;
 
   const confirm = useBoolean();
@@ -56,7 +59,7 @@ export default function ItemsMasterTableRow({
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
               onClick={() => {
-                handleQuickEditRow(row);
+                navigate(paths.dashboard.itemsMaster.edit(row.id));
               }}
             >
               <Iconify icon="solar:pen-bold" />
@@ -73,9 +76,9 @@ export default function ItemsMasterTableRow({
             </IconButton>
           </Tooltip>
 
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+          {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
+          </IconButton> */}
         </TableCell>
       </TableRow>
 

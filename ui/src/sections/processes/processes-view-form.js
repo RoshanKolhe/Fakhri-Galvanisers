@@ -31,22 +31,30 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 export default function ProcessesViewForm({ currentProcesses }) {
   const router = useRouter();
+  const processGroupOptions = [
+    { label: 'Pre Treatment', value: 0 },
+    { label: 'Galvanizing', value: 1 }
+  ];
 
   const { enqueueSnackbar } = useSnackbar();
 
   const password = useBoolean();
 
   const NewProcessesSchema = Yup.object().shape({
-    name: Yup.string().required('Hsn Code is required'),
-    description: Yup.number().required('Description is required'),
+    name: Yup.string().required('Name is required'),
+    // duration: Yup.string().required('Duration is required'),
+    processGroup: Yup.number().required('Process group is required'),
+    description: Yup.string(),
     status: Yup.boolean(),
   });
 
   const defaultValues = useMemo(
     () => ({
       name: currentProcesses?.name || '',
+      // duration: currentProcesses?.duration ? new Date(currentProcesses?.duration) : null,
+      processGroup: currentProcesses?.processGroup || 0,
       description: currentProcesses?.description || '',
-      status: currentProcesses?.status ? 1 : 0,
+      status: currentProcesses?.status || 1,
     }),
     [currentProcesses]
   );
@@ -92,6 +100,13 @@ export default function ProcessesViewForm({ currentProcesses }) {
               }}
             >
               <RHFTextField name="name" label="Hsn Code" disabled />
+              <RHFSelect disabled name="processGroup" label="Select Process Group">
+                {processGroupOptions.length > 0 ? processGroupOptions.map((group) => (
+                  <MenuItem value={group.value}>{group.label}</MenuItem>
+                )) : (
+                  <MenuItem value=''>No Group</MenuItem>
+                )}
+              </RHFSelect>
               <RHFTextField name="description" label="Description" disabled />
             </Box>
           </Card>
