@@ -81,7 +81,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
 
   const defaultValues = useMemo(
     () => ({
-      customerName: currentChallan?.customer || user?.permissions?.includes('customer') ? user : null,
+      // eslint-disable-next-line no-nested-ternary
+      customerName: currentChallan?.customer ? currentChallan.customer : user?.permissions?.includes('customer') ? user : null,
       quotation: currentChallan?.quotation || null,
       vehicleNumber: currentChallan?.vehicleNumber || '',
       grossWeight: currentChallan?.grossWeight || 0,
