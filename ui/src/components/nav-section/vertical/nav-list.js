@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 // @mui
 import Collapse from '@mui/material/Collapse';
 // routes
@@ -12,7 +13,7 @@ import NavItem from './nav-item';
 
 export default function NavList({ data, depth, hasChild, config }) {
   const pathname = usePathname();
-
+  const navigate = useNavigate();
   const active = useActiveLink(data.path, hasChild);
 
   const externalLink = data.path.includes('http');
@@ -27,8 +28,11 @@ export default function NavList({ data, depth, hasChild, config }) {
   }, [pathname]);
 
   const handleToggle = useCallback(() => {
+    if(!open){
+      navigate(data?.children[0]?.path);
+    }
     setOpen((prev) => !prev);
-  }, []);
+  }, [data?.children, navigate, open]);
 
   const handleClose = useCallback(() => {
     setOpen(false);
