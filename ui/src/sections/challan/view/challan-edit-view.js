@@ -9,6 +9,9 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 //
 import { useGetChallan } from 'src/api/challan';
 import { formatChallanId } from 'src/utils/constants';
+import { RouterLink } from 'src/routes/components';
+import { Button } from '@mui/material';
+import Iconify from 'src/components/iconify';
 import ChallanNewEditForm from '../challan-new-edit-form';
 
 // ----------------------------------------------------------------------
@@ -39,6 +42,16 @@ export default function ChallanEditView() {
             name: formatChallanId(id),
           },
         ]}
+        action={
+          currentChallan?.status === 2 && <Button
+            component={RouterLink}
+            href={`${paths.dashboard.order.new}?challanId=${currentChallan?.id}`}
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+          >
+            Create Order
+          </Button>
+        }
         sx={{
           mb: { xs: 3, md: 5 },
         }}

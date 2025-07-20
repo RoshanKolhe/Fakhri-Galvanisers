@@ -106,7 +106,7 @@ const SortableChips = ({ value, index, props, setValue, disabled }) => {
   );
 };
 
-export default function OrderMaterialForm({ currentOrder }) {
+export default function OrderMaterialForm({ currentOrder, currentChallan }) {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const [userOptions, setUserOptions] = useState([]);
@@ -125,7 +125,7 @@ export default function OrderMaterialForm({ currentOrder }) {
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    setModalData(null); // Clear modal data on close
+    setModalData(null);
   };
 
   const randomIdGenerator = (length = 10) => {
@@ -150,7 +150,7 @@ export default function OrderMaterialForm({ currentOrder }) {
       microns: material.microns,
       customer: currentOrder?.customer ? currentOrder?.customer : values.challan?.customer,
     });
-    setModalOpen(true); // Open the modal
+    setModalOpen(true);
   };
 
   const { user } = useAuthContext();
@@ -168,19 +168,19 @@ export default function OrderMaterialForm({ currentOrder }) {
       Yup.object().shape({
         materialType: Yup.string().required('Material type is required'),
         totalQuantity: Yup.number().required('Quantity is  required'),
-        startDate: Yup.string()
-          .required('Start Date is required')
-          .test('valid-start', 'Start Date cannot be after End Date', (value, context) => {
-            const { endDate } = context.parent;
-            return !endDate || new Date(value) <= new Date(endDate);
-          }),
+        // startDate: Yup.string()
+        //   .required('Start Date is required')
+        //   .test('valid-start', 'Start Date cannot be after End Date', (value, context) => {
+        //     const { endDate } = context.parent;
+        //     return !endDate || new Date(value) <= new Date(endDate);
+        //   }),
 
-        endDate: Yup.string()
-          .required('End Date is required')
-          .test('valid-end', 'End Date cannot be before Start Date', (value, context) => {
-            const { startDate } = context.parent;
-            return !startDate || new Date(value) >= new Date(startDate);
-          }),
+        // endDate: Yup.string()
+        //   .required('End Date is required')
+        //   .test('valid-end', 'End Date cannot be before Start Date', (value, context) => {
+        //     const { startDate } = context.parent;
+        //     return !startDate || new Date(value) >= new Date(startDate);
+        //   }),
         microns: Yup.number().required('Microns is required'),
         status: Yup.number().required('Status is required'),
         noOfLots: Yup.number()
@@ -194,6 +194,7 @@ export default function OrderMaterialForm({ currentOrder }) {
       })
     ),
   });
+
 
   const defaultValues = useMemo(
     () => ({
@@ -209,8 +210,8 @@ export default function OrderMaterialForm({ currentOrder }) {
           microns: material.microns || 0,
           hsnCode: material.hsnCode || '',
           totalQuantity: material.totalQuantity || null,
-          startDate: material.startDate ? new Date(material.startDate) : '',
-          endDate: material.endDate ? new Date(material.endDate) : '',
+          // startDate: material.startDate ? new Date(material.startDate) : '',
+          // endDate: material.endDate ? new Date(material.endDate) : '',
           remark: material.remark || '',
           status: material.status !== undefined && material.status !== null ? material.status : 0,
           noOfLots: material.noOfLots || 0,
@@ -242,7 +243,13 @@ export default function OrderMaterialForm({ currentOrder }) {
     name: 'materials',
   });
   const values = watch();
-  const { processess, processessLoading, processessEmpty, refreshProcessess } = useGetProcessess();
+  const { processess } = useGetProcessess();
+
+  useEffect(() => {
+    if (currentChallan && !currentOrder) {
+      setValue('challan', currentChallan);
+    }
+  }, [currentOrder, currentChallan, setValue])
 
   const onSubmit = handleSubmit(async (formData) => {
     try {
@@ -379,7 +386,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Controller
                 name={`materials[${index}].startDate`}
                 control={control}
@@ -424,7 +431,7 @@ export default function OrderMaterialForm({ currentOrder }) {
                   />
                 )}
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} md={6}>
               <RHFSelect name={`materials[${index}].status`} label="Material Status" disabled>
                 {MATERIAL_STATUS_OPTIONS.map((status) => (
@@ -725,8 +732,8 @@ export default function OrderMaterialForm({ currentOrder }) {
                 hsnCode: material.hsnNo.hsnCode || '',
                 microns: material.microns || 0,
                 totalQuantity: material.quantity || null,
-                startDate: material.startDate ? new Date(material.startDate) : '',
-                endDate: material.endDate ? new Date(material.endDate) : '',
+                // startDate: material.startDate ? new Date(material.startDate) : '',
+                // endDate: material.endDate ? new Date(material.endDate) : '',
                 remark: material.remark || '',
                 status:
                   material.status !== undefined && material.status !== null
@@ -858,4 +865,5 @@ export default function OrderMaterialForm({ currentOrder }) {
 
 OrderMaterialForm.propTypes = {
   currentOrder: PropTypes.object,
+  currentChallan: PropTypes.object
 };
