@@ -54,7 +54,6 @@ export class ChallanController {
     content: { 'application/json': { schema: getModelSchemaRef(Challan) } },
   })
   async create(
-
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @requestBody({
       content: {
@@ -259,8 +258,9 @@ export class ChallanController {
         PermissionKeys.SUPER_ADMIN,
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
-        PermissionKeys.SUPERVISOR
-
+        PermissionKeys.SUPERVISOR,
+        PermissionKeys.WORKER,
+        PermissionKeys.DISPATCH
       ],
     },
   })

@@ -669,21 +669,14 @@ export class OrderController {
   ) {
     const userId = currentUser.id;
 
-    // Step 1: Get material IDs assigned to this user from junction table
-    const assignedMaterials = await this.materialUserRepository.find({
-      where: { userId: userId },
-    });
-
-    // Extract material IDs
-    const materialIds = assignedMaterials.map(record => record.materialId);
-
-    if (materialIds.length === 0) {
-      return []; // No materials assigned to this user
-    }
-
-    // Step 2: Fetch materials by their IDs and include related orders
+    // Step 1: Fetch materials by their userId and include related orders
     const materials = await this.materialRepository.find({
-      where: { id: { inq: materialIds } }, // Filter materials by IDs
+      where: { 
+        or: [
+          {galvanizingUserId: userId},
+          {preTreatmentUserId: userId}
+        ]
+       }, // Filter materials by IDs
       include: [{ relation: 'order' }], // Include order details
     });
 
