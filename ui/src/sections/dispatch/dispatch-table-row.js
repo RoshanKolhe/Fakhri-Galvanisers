@@ -20,8 +20,10 @@ import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { formatDispatchId } from 'src/utils/constants';
-import { Grid } from '@mui/material';
+import { Grid, Tooltip } from '@mui/material';
 import { useAuthContext } from 'src/auth/hooks';
+import { useNavigate } from 'react-router';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -33,6 +35,7 @@ export default function DispatchTableRow({
   onSelectRow,
   onDeleteRow,
 }) {
+  const navigate = useNavigate();
   const { user } = useAuthContext();
   const isAdmin = user
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
@@ -51,9 +54,9 @@ export default function DispatchTableRow({
         <Checkbox checked={selected} onClick={onSelectRow} />
       </TableCell> */}
 
-      <TableCell>{formatDispatchId(id)}</TableCell>
+      <TableCell onClick={() => onViewRow()} sx={{cursor: 'pointer', '&:hover': {textDecoration: 'underline'}}}>{formatDispatchId(id)}</TableCell>
 
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{order?.orderId || "N/A"}</TableCell>
+      <TableCell onClick={() => navigate(paths.dashboard.order.details(order?.id))} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover': {textDecoration: 'underline'} }}>{order?.orderId || "N/A"}</TableCell>
 
       <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar
@@ -86,9 +89,17 @@ export default function DispatchTableRow({
         </Label>
       </TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-          <Iconify icon="eva:more-vertical-fill" />
+        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={() => onViewRow()}>
+          <Tooltip title='view'>
+            <Iconify icon="solar:eye-bold" />
+          </Tooltip>
         </IconButton>
+
+        {isAdmin && <IconButton color={popover.open ? 'inherit' : 'default'} onClick={() => onEditRow()}>
+          <Tooltip title='Edit'>
+            <Iconify icon="solar:pen-bold" />
+          </Tooltip>
+        </IconButton>}
       </TableCell>
     </TableRow>
   );

@@ -42,7 +42,7 @@ export default function HsnMasterTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{hsnCode}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover' : {textDecoration: 'underline'} }}>{hsnCode}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{tax}</TableCell>
 
         <TableCell>
@@ -72,10 +72,10 @@ export default function HsnMasterTableRow({
               <Iconify icon="carbon:view-filled" />
             </IconButton>
           </Tooltip>
-
+{/* 
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
+          </IconButton> */}
         </TableCell>
       </TableRow>
 

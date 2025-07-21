@@ -34,7 +34,7 @@ import { useAuthContext } from 'src/auth/hooks';
 // ----------------------------------------------------------------------
 
 export default function ChallanNewEditForm({ currentChallan }) {
-  const {user} = useAuthContext();
+  const { user } = useAuthContext();
   const router = useRouter();
   const [quotationOptions, setQuotationOptions] = useState([]);
   const { hsnMasters, hsnMastersLoading, hsnMastersEmpty, refreshQuotations } = useGetHsnMasters();
@@ -95,7 +95,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
       materialImages: currentChallan?.materialImages || [],
       materials: currentChallan?.materials?.length
         ? currentChallan.materials.map((material) => ({
-          itemType: material.materialType ? {materialType: material.materialType} : null,
+          itemType: material.itemType ? material.itemType : null,
           materialType: material.materialType || '',
           quantity: material.quantity || null,
           billingUnit: material.billingUnit || '',
@@ -121,6 +121,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
     }),
     [currentChallan, user]
   );
+
+  console.log('materials', currentChallan?.materials);
 
   const methods = useForm({
     resolver: yupResolver(NewChallanSchema),
@@ -233,7 +235,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         console.log('matchedItem', matchedItem);
         if (matchedItem) {
           console.log('entered');
-          setValue(`materials[${index}].itemType`, matchedItem, {shouldValidate: true, shouldDirty: true});
+          setValue(`materials[${index}].itemType`, matchedItem, { shouldValidate: true, shouldDirty: true });
         }
       });
     }
@@ -250,36 +252,45 @@ export default function ChallanNewEditForm({ currentChallan }) {
               render={({
                 field: { onChange, value: fieldValue, ...fieldProps },
                 fieldState: { error },
-              }) => (
-                <Autocomplete
-                  {...fieldProps}
-                  options={itemsMasters}
-                  getOptionLabel={(option) => (option ? option.materialType : '')}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  onChange={(_, selectedOption) => {
-                    onChange(selectedOption);
-                    if (selectedOption) {
-                      setValue(`materials[${index}].materialType`, selectedOption.materialType || 0);
-                      setValue(`materials[${index}].hsnNo`, selectedOption.hsnMaster || 0);
-                      setValue(`materials[${index}].tax`, selectedOption.hsnMaster?.tax || 0);
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Material Type"
-                      fullWidth
-                      sx={{ flex: 2 }}
-                      error={!!error}
-                      helperText={error ? error?.message : ''}
-                    />
-                  )}
-                  value={fieldValue || null}
-                  sx={{
-                    width: '100%',
-                  }}
-                />
-              )}
+              }) => {
+                // Watch all selected itemTypes in materials (skip current index)
+                const selectedItemIds = watch('materials')
+                  ?.map((mat, i) => mat?.itemType?.id)
+                  .filter(Boolean);
+
+                console.log('materials', watch('materials'));
+                console.log('selectedItemsIds', selectedItemIds);
+
+                return (
+                  <Autocomplete
+                    {...fieldProps}
+                    options={itemsMasters}
+                    getOptionLabel={(option) => option?.materialType || ''}
+                    isOptionEqualToValue={(option, value) => option.id === value?.id}
+                    onChange={(_, selectedOption) => {
+                      onChange(selectedOption);
+                      if (selectedOption) {
+                        setValue(`materials[${index}].materialType`, selectedOption.materialType || '');
+                        setValue(`materials[${index}].hsnNo`, selectedOption.hsnMaster || {});
+                        setValue(`materials[${index}].tax`, selectedOption.hsnMaster?.tax || 0);
+                      }
+                    }}
+                    getOptionDisabled={(option) => selectedItemIds.includes(option.id)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Material Type"
+                        fullWidth
+                        sx={{ flex: 2 }}
+                        error={!!error}
+                        helperText={error?.message || ''}
+                      />
+                    )}
+                    value={fieldValue || null}
+                    sx={{ width: '100%' }}
+                  />
+                );
+              }}
             />
 
             <RHFTextField
@@ -487,13 +498,15 @@ export default function ChallanNewEditForm({ currentChallan }) {
     }
   }, [currentChallan, defaultValues, reset]);
 
+  console.log('permission', user?.permissions?.includes('customer'));
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={2}>
-              {!user?.permission?.includes('customer') && <Grid item xs={12} sm={4}>
+              {!user?.permissions?.includes('customer') && <Grid item xs={12} sm={4}>
                 <RHFAutocomplete
                   name="customerName"
                   label="Customer Name"

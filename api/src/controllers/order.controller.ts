@@ -284,10 +284,10 @@ export class OrderController {
     const currentUserPermission = currnetUser.permissions;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('admin') ||
       currentUserPermission.includes('supervisor')
     ) {
-      return this.orderRepository.find({...filter, order: ['createdAt DESC']});
+      return this.orderRepository.find({ ...filter, order: ['createdAt DESC'] });
     } else {
       return this.orderRepository.find({
         ...filter,
@@ -493,66 +493,65 @@ export class OrderController {
 
           console.log('material lots', materialLots);
           for (const lot of material.lots) {
-            if (material.status === 0) {
-              if (materialLots && materialLots.length > 0) {
-                for (const materialLot of materialLots) {
-                  if (materialLot.lotNumber === lot.lotNumber) {
-                    await this.lotsRepository.updateById(materialLot.id, {
-                      quantity: lot.quantity,
-                      filing: lot.filing,
-                      visualInspection: lot.visualInspection,
-                    });
-                    for (const lotProcess of materialLot.processes) {
-                      console.log('lotProcess', lotProcess);
-                      console.log('lot.proccesses', lot);
-                      const allProcesses = [
-                        ...(lot.galvanizingProcesses || []),
-                        ...(lot.preTreatmentProcesses || []),
-                      ];
+            const existingLot = materialLots.find(
+              (ml) => ml.lotNumber === lot.lotNumber,
+            );
 
-                      const foundLotFromMaterial = allProcesses.find(
-                        (res: any) => res.processId === lotProcess.id,
-                      );
-                      console.log('foundLotsProcesses', foundLotFromMaterial)
-                      if (foundLotFromMaterial) {
-                        await this.lotProcessesRepository.updateAll(
-                          {
-                            duration: foundLotFromMaterial.duration,
-                          },
-                          {
-                            lotsId: materialLot.id,
-                            processesId: foundLotFromMaterial.processId,
-                          },
-                          { transaction: tx },
-                        );
-                      }
-                    }
-                  }
-                }
-              } else {
-                const savedLot = await this.lotsRepository.create(
-                  {
-                    lotNumber: lot.lotNumber.toString(),
-                    materialId: materialId,
-                    quantity: lot.quantity,
-                    filing: lot.filing,
-                    visualInspection: lot.visualInspection,
-                    status: 0,
-                  },
-                  { transaction: tx },
+            if (existingLot) {
+              // Update existing lot
+              await this.lotsRepository.updateById(existingLot.id, {
+                quantity: lot.quantity,
+                filing: lot.filing,
+                visualInspection: lot.visualInspection,
+              });
+
+              for (const lotProcess of existingLot.processes) {
+                const allProcesses = [
+                  ...(lot.preTreatmentProcesses || []),
+                  ...(lot.galvanizingProcesses || []),
+                ];
+
+                const matchedProcess = allProcesses.find(
+                  (res: any) => res.processId === lotProcess.id,
                 );
 
-                for (const processData of [...lot.preTreatmentProcesses, ...lot.galvanizingProcesses]) {
-                  await this.lotProcessesRepository.create(
+                if (matchedProcess) {
+                  await this.lotProcessesRepository.updateAll(
                     {
-                      lotsId: savedLot.id,
-                      processesId: processData.processId,
-                      duration: processData.duration,
-                      status: 0,
+                      duration: matchedProcess.duration,
+                    },
+                    {
+                      lotsId: existingLot.id,
+                      processesId: matchedProcess.processId,
                     },
                     { transaction: tx },
                   );
                 }
+              }
+            } else {
+              // ✅ Add new lot if it doesn't exist
+              const savedLot = await this.lotsRepository.create(
+                {
+                  lotNumber: lot.lotNumber.toString(),
+                  materialId: materialId,
+                  quantity: lot.quantity,
+                  filing: lot.filing,
+                  visualInspection: lot.visualInspection,
+                  status: 0,
+                },
+                { transaction: tx },
+              );
+
+              for (const processData of [...lot.preTreatmentProcesses, ...lot.galvanizingProcesses]) {
+                await this.lotProcessesRepository.create(
+                  {
+                    lotsId: savedLot.id,
+                    processesId: processData.processId,
+                    duration: processData.duration,
+                    status: 0,
+                  },
+                  { transaction: tx },
+                );
               }
             }
           }
@@ -994,7 +993,7 @@ export class OrderController {
                 requirement: { type: 'string' },
                 testResult: { type: 'string' },
                 observed: { type: 'string' },
-                micronTestValues: {type: 'array', items: {type: 'number'}},
+                micronTestValues: { type: 'array', items: { type: 'number' } },
                 images: { type: 'array', items: { type: 'string' } },
                 status: { type: 'number' },
                 remark: { type: 'string' },

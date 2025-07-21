@@ -22,6 +22,7 @@ import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { useAuthContext } from 'src/auth/hooks';
+import { Tooltip } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -52,6 +53,8 @@ export default function InvoiceTableRow({
           </Avatar>
 
           <ListItemText
+          onClick={() => onViewRow()}
+          sx={{cursor: 'pointer', '&:hover' : {textDecoration: 'underline'}}}
             disableTypography
             primary={
               <Typography variant="body2" noWrap>
@@ -118,9 +121,17 @@ export default function InvoiceTableRow({
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1 }}>
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
+          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={() => onViewRow()}>
+            <Tooltip title='view'>
+              <Iconify icon="solar:eye-bold" />
+            </Tooltip>
           </IconButton>
+
+          {isAdmin && <IconButton color={popover.open ? 'inherit' : 'default'} onClick={() => onEditRow()}>
+            <Tooltip title='Edit'>
+              <Iconify icon="solar:pen-bold" />
+            </Tooltip>
+          </IconButton>}
         </TableCell>
       </TableRow>
 

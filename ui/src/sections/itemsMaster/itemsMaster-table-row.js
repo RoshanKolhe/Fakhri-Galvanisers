@@ -45,8 +45,8 @@ export default function ItemsMasterTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{materialType}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{hsnMaster?.hsnCode || 'NA'}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover': {textDecoration: 'underline'} }}>{materialType}</TableCell>
+        <TableCell onClick={() => navigate(paths.dashboard.hsnMaster.edit(hsnMaster?.id))} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover': {textDecoration: 'underline'} }}>{hsnMaster?.hsnCode || 'NA'}</TableCell>
 
         <TableCell>
           <Label variant="soft" color={(status && 'success') || (!status && 'error') || 'default'}>

@@ -56,7 +56,7 @@ export default function ProcessesTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{name}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover': {textDecoration: 'underline'} }}>{name}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}><ProcessGroupLabel value={processGroup}/></TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{description}</TableCell>
         {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{duration ? format(new Date(duration), 'mm:ss') : 'NA'}</TableCell> */}

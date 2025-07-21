@@ -56,6 +56,7 @@ export default function OrderLotProcessModal({
   const [bulkTime, setBulkTime] = useState(null);
   const [errors, setErrors] = useState({});
 
+  console.log('lots', lots);
   useEffect(() => {
     if (Number(noOfLots) >= Number(totalQuantity)) {
       setIsButtonDisabled(true);
@@ -67,8 +68,6 @@ export default function OrderLotProcessModal({
       initializeLots(noOfLots, totalQuantity, jobCardLots);
     }
   }, [noOfLots, totalQuantity, jobCardLots]);
-
-  console.log('job card lots', jobCardLots);
 
   const initializeLots = (count, totalQty, existingLots = []) => {
     try {
@@ -125,13 +124,22 @@ export default function OrderLotProcessModal({
         console.log('new lots', newLots);
         setLots(newLots);
 
-        const newTimes = [...lockedLots, ...updatedEditableLots].map((lot) =>
-          (lot.processes || []).map((process) => ({
-            duration: process.duration ? new Date(process.duration) : null,
-            status: process.status || 0,
-            timeTaken: process.timeTaken ? new Date(process.timeTaken) : null,
-          }))
-        );
+        const newTimes = [...lockedLots, ...updatedEditableLots].map((lot) => {
+          const lotProcesses = lot.processes || [];
+
+          const lotTimesInProcessOrder = processes.map((proc) => {
+            const matching = lotProcesses.find((lp) => lp.processId === proc.id);
+
+            return {
+              duration: matching?.duration ? new Date(matching.duration) : null,
+              status: matching?.status || 0,
+              timeTaken: matching?.timeTaken ? new Date(matching.timeTaken) : null,
+            };
+          });
+
+          return lotTimesInProcessOrder;
+        });
+
         setTimes(newTimes);
       } else {
         // Fresh lot generation logic
@@ -195,6 +203,8 @@ export default function OrderLotProcessModal({
     updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
     updatedTimes[lotIndex][processIndex].duration = newTime;
     setTimes(updatedTimes);
+
+    console.log(updatedTimes);
 
     // Clear error if a valid time is set
     setErrors((prevErrors) => {
@@ -312,6 +322,8 @@ export default function OrderLotProcessModal({
         status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
       })) || [],
     }));
+
+    console.log('submissionData', submissionData);
     // Check if materialId; already exists in jobCardLots
     const existingJobCardLotIndex = jobCardLots.findIndex((lot) => lot.materialId === materialId);
 
@@ -329,6 +341,8 @@ export default function OrderLotProcessModal({
     }
     onClose();
   };
+
+  console.log('processes', processes);
 
   const getFontColor = (process) => {
     if (!process?.duration || !process?.timeTaken) {
@@ -460,7 +474,7 @@ export default function OrderLotProcessModal({
 
               {/* Second Header Row: Individual Process Names */}
               <TableRow>
-                {preTreatmentProcesses.map((process, index) => (
+                {processes.map((process, index) => (
                   <TableCell
                     key={`pre-${index}`}
                     sx={{ backgroundColor: '#e3f2fd', textAlign: 'center' }}
@@ -475,7 +489,7 @@ export default function OrderLotProcessModal({
                     </Box>
                   </TableCell>
                 ))}
-                {galvanizingProcesses.map((process, index) => (
+                {/* {galvanizingProcesses.map((process, index) => (
                   <TableCell
                     key={`gal-${index}`}
                     sx={{ backgroundColor: '#fbe9e7', textAlign: 'center' }}
@@ -489,7 +503,7 @@ export default function OrderLotProcessModal({
                       {process.name}
                     </Box>
                   </TableCell>
-                ))}
+                ))} */}
               </TableRow>
 
             </TableHead>
@@ -504,7 +518,7 @@ export default function OrderLotProcessModal({
                     />
                   </TableCell>
                   <TableCell>{`Lot${lot.lotNumber}`}</TableCell>
-                  {lot?.processes?.map((process, processIndex) => (
+                  {processes.map((process, processIndex) => (
                     <TableCell key={processIndex}>
                       {times[lotIndex]?.[processIndex]?.status === 1 ? (
                         <TimePicker
