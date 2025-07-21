@@ -144,7 +144,7 @@ export class ChallanController {
     const currentUserPermission = currnetUser.permissions;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('admin') ||
       currentUserPermission.includes('supervisor')
     ) {
       return this.challanRepository.find(filter);
@@ -280,18 +280,22 @@ export class ChallanController {
     })
     challan: Challan,
   ): Promise<void> {
-    const existingChallan = await this.challanRepository.findOne({
-      where: {
-        and: [
-          { poNumber: challan.poNumber },
-          { customerId: currnetUser.id },
-          { id: { neq: id } }
-        ],
-      },
-    });
+    const existingChallan = await this.challanRepository.findById(id);
 
-    if (existingChallan) {
-      throw new HttpErrors.BadRequest('PO Number is already used in another Challan.');
+    if (challan.customerId && challan.customerId !== existingChallan.customerId) {
+      const challanDetails = await this.challanRepository.findOne({
+        where: {
+          and: [
+            { poNumber: challan.poNumber },
+            { customerId: challan.customerId }
+          ]
+        }
+      });
+
+      if (challanDetails) {
+        throw new HttpErrors.BadRequest('PO Number is already used in another Challan.');
+      }
+
     }
     await this.challanRepository.updateById(id, challan);
   }
