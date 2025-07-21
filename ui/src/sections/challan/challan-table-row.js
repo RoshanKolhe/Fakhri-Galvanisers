@@ -65,7 +65,7 @@ export default function ChallanTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatChallanId(id)}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', '&:hover':{textDecoration: 'underline'}, cursor: 'pointer' }}>{formatChallanId(id)}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{quotationId ? formatRFQId(quotationId) : 'NA'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{vehicleNumber}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{grossWeight}</TableCell>

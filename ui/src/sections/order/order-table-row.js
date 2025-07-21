@@ -22,7 +22,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
-import { Grid } from '@mui/material';
+import { Grid, Tooltip } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -120,8 +120,10 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
           />
         </IconButton>
 
-        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-          <Iconify icon="eva:more-vertical-fill" />
+        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={() => onViewRow()}>
+          <Tooltip title='view'>
+            <Iconify icon="solar:eye-bold" />
+          </Tooltip>
         </IconButton>
       </TableCell>
     </TableRow>

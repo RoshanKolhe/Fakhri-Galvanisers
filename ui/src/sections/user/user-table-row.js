@@ -47,6 +47,10 @@ export default function UserTableRow({
           <Avatar alt={firstName} src={avatar?.fileUrl} sx={{ mr: 2 }} />
 
           <ListItemText
+            onClick={() => {
+              onEditRow();
+            }}
+            sx={{cursor: 'pointer', '&:hover' : {textDecoration: 'underline'}}}
             primary={`${firstName} ${lastName || ''}`}
             secondary={email}
             primaryTypographyProps={{ typography: 'body2' }}
@@ -91,9 +95,9 @@ export default function UserTableRow({
             </IconButton>
           </Tooltip>
 
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+          {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
+          </IconButton> */}
         </TableCell>
       </TableRow>
 

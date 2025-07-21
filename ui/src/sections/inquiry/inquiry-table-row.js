@@ -110,8 +110,25 @@ export default function InquiryTableRow({
             />
           </IconButton>
         ) : null}
-        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-          <Iconify icon="eva:more-vertical-fill" />
+        {status !== 2 && (<IconButton
+          color={popover.open ? 'inherit' : 'default'}
+          onClick={() => {
+            handleQuickEditRow(row);
+          }}
+        >
+          <Tooltip title='Convert to Customer'>
+            <Iconify icon="mdi:account-convert" />
+          </Tooltip>
+        </IconButton>)}
+        <IconButton
+          color={popover.open ? 'inherit' : 'default'}
+          onClick={() => {
+            confirm.onTrue();
+          }}
+        >
+          <Tooltip title='Delete'>
+            <Iconify icon="solar:trash-bin-trash-bold" />
+          </Tooltip>
         </IconButton>
       </TableCell>
     </TableRow>

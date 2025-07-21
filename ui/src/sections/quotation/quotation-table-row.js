@@ -43,7 +43,7 @@ export default function QuotationTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatRFQId(id)}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', cursor: 'pointer', '&:hover' : {textDecoration: 'underline'} }}>{formatRFQId(id)}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{customer?.firstName}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
