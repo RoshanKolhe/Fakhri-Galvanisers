@@ -64,7 +64,7 @@ const SortableItem = ({ value, onDelete, disabled }) => {
   );
 };
 
-const SortableChips = ({ value, index, props, setValue, disabled }) => {
+const SortableChips = ({ value, index, props, setValue, disabled, processName }) => {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 20 } }),
     useSensor(KeyboardSensor, {
@@ -85,7 +85,7 @@ const SortableChips = ({ value, index, props, setValue, disabled }) => {
 
     const reordered = arrayMove(processes, oldIndex, newIndex);
 
-    setValue(`materials[${index}].processes`, reordered);
+    setValue(`materials[${index}].${processName}`, reordered);
   };
 
   return (
@@ -309,11 +309,17 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
       if (event && event?.target?.value && event.target.value.length >= 3) {
         const filter = {
           where: {
-            or: [
-              { email: { like: `%${event.target.value}%` } },
-              { firstName: { like: `%${event.target.value}%` } },
-              { lastName: { like: `%${event.target.value}%` } },
-              { phoneNumber: { like: `%${event.target.value}%` } },
+            and: [
+              {
+                or: [
+                  { email: { like: `%${event.target.value}%` } },
+                  { firstName: { like: `%${event.target.value}%` } },
+                  { lastName: { like: `%${event.target.value}%` } },
+                  { phoneNumber: { like: `%${event.target.value}%` } },
+                ],
+              },
+              { permissions: ["worker"]},
+              { isActive: true },
             ],
           },
         };
@@ -559,6 +565,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
                     props={props}
                     setValue={setValue}
                     disabled={item.status !== 0 || !isAdmin}
+                    processName='preTreatmentProcesses'
                   />
                 )}
                 disabled={item.status !== 0 || !isAdmin}
@@ -635,6 +642,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
                     props={props}
                     setValue={setValue}
                     disabled={item.status !== 0 || !isAdmin}
+                    processName='galvanizingProcesses'
                   />
                 )}
                 disabled={item.status !== 0 || !isAdmin}

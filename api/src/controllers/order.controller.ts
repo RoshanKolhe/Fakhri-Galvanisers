@@ -491,6 +491,24 @@ export class OrderController {
             include: ['processes'],
           });
 
+          // Extract the lotNumbers coming from frontend
+          const incomingLotNumbers = material.lots.map((lot: any) => lot.lotNumber);
+
+          // Find DB lots that are not present in incoming data
+          const lotsToDelete = materialLots.filter(
+            (existingLot) => !incomingLotNumbers.includes(existingLot.lotNumber),
+          );
+
+          // Delete those lots and their processes
+          for (const lotToDelete of lotsToDelete) {
+            await this.lotProcessesRepository.deleteAll(
+              { lotsId: lotToDelete.id },
+              { transaction: tx }
+            );
+
+            await this.lotsRepository.deleteById(lotToDelete.id, { transaction: tx });
+          }
+
           console.log('material lots', materialLots);
           for (const lot of material.lots) {
             const existingLot = materialLots.find(
@@ -671,12 +689,12 @@ export class OrderController {
 
     // Step 1: Fetch materials by their userId and include related orders
     const materials = await this.materialRepository.find({
-      where: { 
+      where: {
         or: [
-          {galvanizingUserId: userId},
-          {preTreatmentUserId: userId}
+          { galvanizingUserId: userId },
+          { preTreatmentUserId: userId }
         ]
-       }, // Filter materials by IDs
+      }, // Filter materials by IDs
       include: [{ relation: 'order' }], // Include order details
     });
 

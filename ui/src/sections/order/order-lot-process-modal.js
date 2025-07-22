@@ -21,11 +21,14 @@ import {
   Select,
   MenuItem,
   duration,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 import { formatTime } from 'src/utils/constants';
+import Iconify from 'src/components/iconify';
 
 export default function OrderLotProcessModal({
   open,
@@ -56,7 +59,6 @@ export default function OrderLotProcessModal({
   const [bulkTime, setBulkTime] = useState(null);
   const [errors, setErrors] = useState({});
 
-  console.log('lots', lots);
   useEffect(() => {
     if (Number(noOfLots) >= Number(totalQuantity)) {
       setIsButtonDisabled(true);
@@ -74,7 +76,6 @@ export default function OrderLotProcessModal({
       const foundMaterial = existingLots.find((res) => res.materialId === materialId);
 
       if (foundMaterial) {
-        console.log('Existing lots', existingLots);
         const lockedLots = foundMaterial.lots.filter(lot => lot.status !== 0);
         let editableLots = foundMaterial.lots.filter(lot => lot.status === 0);
 
@@ -85,7 +86,6 @@ export default function OrderLotProcessModal({
         const missingLotsCount = totalEditableNeeded - editableLots.length;
 
         // Add missing lots if count is higher
-        console.log('processes', processes);
         const additionalLots = Array.from({ length: missingLotsCount > 0 ? missingLotsCount : 0 }, (_, i) => ({
           lotNumber: `${editableLots.length + lockedLots.length + i + 1}`,
           quantity: 0,
@@ -99,8 +99,6 @@ export default function OrderLotProcessModal({
           })),
           status: 0,
         }));
-
-        console.log('additional lots', additionalLots);
 
         editableLots = [...editableLots, ...additionalLots];
 
@@ -120,8 +118,6 @@ export default function OrderLotProcessModal({
           processes: lot.processes || [],
           status: lot.status,
         }));
-
-        console.log('new lots', newLots);
         setLots(newLots);
 
         const newTimes = [...lockedLots, ...updatedEditableLots].map((lot) => {
@@ -203,8 +199,6 @@ export default function OrderLotProcessModal({
     updatedTimes[lotIndex] = [...(updatedTimes[lotIndex] || [])];
     updatedTimes[lotIndex][processIndex].duration = newTime;
     setTimes(updatedTimes);
-
-    console.log(updatedTimes);
 
     // Clear error if a valid time is set
     setErrors((prevErrors) => {
@@ -323,7 +317,6 @@ export default function OrderLotProcessModal({
       })) || [],
     }));
 
-    console.log('submissionData', submissionData);
     // Check if materialId; already exists in jobCardLots
     const existingJobCardLotIndex = jobCardLots.findIndex((lot) => lot.materialId === materialId);
 
@@ -339,10 +332,10 @@ export default function OrderLotProcessModal({
       // If materialId doesn't exist, add new entry
       setJobCardLots((prevLots) => [...prevLots, { materialId, lots: submissionData }]);
     }
+    handleNoOfLots(materialId, lots.length)
+
     onClose();
   };
-
-  console.log('processes', processes);
 
   const getFontColor = (process) => {
     if (!process?.duration || !process?.timeTaken) {
@@ -359,6 +352,28 @@ export default function OrderLotProcessModal({
       return 'yellow'; // Time taken is less than duration
     }
     return 'green'; // Time taken is equal to duration
+  };
+
+  const handleDelteLot = (lotIndex) => {
+    const newLots = lots.filter((_, index) => index !== lotIndex);
+    setLots(newLots);
+
+    // Update 'times'
+    const newTimes = times.filter((_, index) => index !== lotIndex);
+    setTimes(newTimes);
+
+    // // Update 'errors'
+    // const newErrors = errors.filter((_, index) => index !== lotIndex);
+    // setErrors(newErrors);
+
+    // // Update 'selectedRows'
+    // const newSelectedRows = selectedRows
+    //   .filter(index => index !== lotIndex)
+    //   .map(index => (index > lotIndex ? index - 1 : index)); // Adjust remaining indexes
+    // setSelectedRows(newSelectedRows);
+
+    // console.log(newLots.length);
+    // handleNoOfLots(materialId, newLots.length);
   };
 
   return (
@@ -470,6 +485,7 @@ export default function OrderLotProcessModal({
                 <TableCell rowSpan={2}>Quantity</TableCell>
                 <TableCell rowSpan={2}>Filing</TableCell>
                 <TableCell rowSpan={2}>Visual Inspection</TableCell>
+                <TableCell rowSpan={2}>Actions</TableCell>
               </TableRow>
 
               {/* Second Header Row: Individual Process Names */}
@@ -611,6 +627,13 @@ export default function OrderLotProcessModal({
                       <MenuItem value="OK">OK</MenuItem>
                       <MenuItem value="Not OK">Not OK</MenuItem>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleDelteLot(lotIndex)}>
+                      <Tooltip title="Delete lot">
+                        <Iconify color='red' icon="solar:trash-bin-trash-bold" />
+                      </Tooltip>
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}

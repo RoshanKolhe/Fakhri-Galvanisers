@@ -6,6 +6,7 @@ import { useParams } from 'src/routes/hook';
 // components
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import { useAuthContext } from 'src/auth/hooks';
 //
 import { useGetChallan } from 'src/api/challan';
 import { formatChallanId } from 'src/utils/constants';
@@ -17,6 +18,7 @@ import ChallanNewEditForm from '../challan-new-edit-form';
 // ----------------------------------------------------------------------
 
 export default function ChallanEditView() {
+  const { user } = useAuthContext();
   const settings = useSettingsContext();
 
   const params = useParams();
@@ -43,14 +45,16 @@ export default function ChallanEditView() {
           },
         ]}
         action={
-          currentChallan?.status === 2 && <Button
-            component={RouterLink}
-            href={`${paths.dashboard.order.new}?challanId=${currentChallan?.id}`}
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            Create Order
-          </Button>
+          (currentChallan?.status === 2 && !user?.permissions.includes('customer')) && (
+            <Button
+              component={RouterLink}
+              href={`${paths.dashboard.order.new}?challanId=${currentChallan?.id}`}
+              variant="contained"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+            >
+              Create Order
+            </Button>
+          )
         }
         sx={{
           mb: { xs: 3, md: 5 },
