@@ -227,7 +227,7 @@ export class CustomerController {
 
   @authenticate({
     strategy: 'jwt',
-    options: {required: [PermissionKeys.SUPER_ADMIN]},
+    options: {required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER]},
   })
   @get('/customer/{id}', {
     responses: {

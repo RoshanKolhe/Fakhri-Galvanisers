@@ -83,7 +83,7 @@ export default function OrderTableRow({ row, selected, onViewRow, onSelectRow, o
         />
       </TableCell>
 
-      <TableCell align="center"> {materials.length} </TableCell>
+      <TableCell align="center"> {materials?.length} </TableCell>
 
       <TableCell>
         <Label
