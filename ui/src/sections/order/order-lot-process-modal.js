@@ -629,7 +629,7 @@ export default function OrderLotProcessModal({
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleDelteLot(lotIndex)}>
+                    <IconButton disabled={lot.status !== 0} onClick={() => handleDelteLot(lotIndex)}>
                       <Tooltip title="Delete lot">
                         <Iconify color='red' icon="solar:trash-bin-trash-bold" />
                       </Tooltip>

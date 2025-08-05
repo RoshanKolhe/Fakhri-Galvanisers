@@ -22,6 +22,7 @@ import FormProvider, {
   RHFSelect,
   RHFTextField,
   RHFUpload,
+  RHFUploadBox,
 } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { formatRFQId } from 'src/utils/constants';
@@ -30,6 +31,7 @@ import { useGetHsnMasters } from 'src/api/hsnMaster';
 import Iconify from 'src/components/iconify';
 import { useGetItemsMasters } from 'src/api/itemsMaster';
 import { useAuthContext } from 'src/auth/hooks';
+import { MultiFilePreview } from 'src/components/upload';
 
 // ----------------------------------------------------------------------
 
@@ -467,11 +469,12 @@ export default function ChallanNewEditForm({ currentChallan }) {
   };
 
   const handleRemoveFile = useCallback(
-    (inputFile) => {
-      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
-      setValue('images', filtered);
+    (inputFile, fieldName) => {
+      const currentFiles = values[fieldName] || [];
+      const filtered = currentFiles.filter((file) => file !== inputFile);
+      setValue(fieldName, filtered);
     },
-    [setValue, values.images]
+    [setValue, values]
   );
 
   const handleRemoveAllFiles = useCallback(() => {
@@ -581,7 +584,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
             <Grid container spacing={2} mt={5}>
 
               {/* challan images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
@@ -589,7 +592,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                <RHFUploadBox
                   multiple
                   thumbnail
                   name="challanImages"
@@ -613,10 +616,11 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
+                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} onRemove={(file) => handleRemoveFile(file, 'challanImages')} onRemoveAll={handleRemoveAllFiles} />}
               </Grid>
 
               {/* PO images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
@@ -624,7 +628,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                <RHFUploadBox
                   multiple
                   thumbnail
                   name="poImages"
@@ -648,10 +652,11 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
+                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} onRemove={(file) => handleRemoveFile(file, 'poImages')} onRemoveAll={handleRemoveAllFiles} />}
               </Grid>
 
               {/* Vehicle images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
@@ -659,7 +664,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                <RHFUploadBox
                   multiple
                   thumbnail
                   name="vehicleImages"
@@ -683,10 +688,11 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
+                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} onRemove={(file) => handleRemoveFile(file, 'vehicleImages')} onRemoveAll={handleRemoveAllFiles} />}
               </Grid>
 
               {/* Material images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
@@ -694,7 +700,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                <RHFUploadBox
                   multiple
                   thumbnail
                   name="materialImages"
@@ -718,6 +724,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
+                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} onRemove={(file) => handleRemoveFile(file, 'materialImages')} onRemoveAll={handleRemoveAllFiles} />}
               </Grid>
             </Grid>
 

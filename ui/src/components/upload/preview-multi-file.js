@@ -37,12 +37,12 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx, disab
                 height: 80,
                 borderRadius: 1.25,
                 overflow: 'hidden',
-                
+
                 position: 'relative',
                 border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.16)}`,
                 ...sx,
               }}
-              
+
             >
               <FileThumbnail
                 tooltip
@@ -100,6 +100,15 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx, disab
               secondaryTypographyProps={{
                 component: 'span',
                 typography: 'caption',
+              }}
+              primaryTypographyProps={{
+                noWrap: false,
+                sx: {
+                  maxWidth: '100%', // Ensures it stays within container
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                },
               }}
             />
 

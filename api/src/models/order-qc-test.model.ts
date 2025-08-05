@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class OrderQcTest extends Entity {
@@ -40,10 +40,17 @@ export class OrderQcTest extends Entity {
 
   @property({
     type: 'array',
-    itemType: 'string',
+    itemType: 'number',
+    required: true,
+  })
+  micronTestValues: number[];
+
+  @property({
+    type: 'array',
+    itemType: 'object',
     required: false,
   })
-  images?: string[];
+  images?: object[];
 
   @property({
     type: 'number',

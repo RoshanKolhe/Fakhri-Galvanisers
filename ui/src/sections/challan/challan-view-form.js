@@ -26,6 +26,7 @@ import axiosInstance from 'src/utils/axios';
 import { formatRFQId } from 'src/utils/constants';
 import { Autocomplete, MenuItem, TextField, Typography } from '@mui/material';
 import { useGetHsnMasters } from 'src/api/hsnMaster';
+import { MultiFilePreview } from 'src/components/upload';
 
 // ----------------------------------------------------------------------
 
@@ -387,15 +388,15 @@ export default function ChallanViewForm({ currentChallan }) {
             <Grid container spacing={2} mt={5}>
 
               {/* challan images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
-                    Upload challan images
+                    Challan images
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                {/* <RHFUpload
                   disabled
                   multiple
                   thumbnail
@@ -419,19 +420,20 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
-                />
+                /> */}
+                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} />}
               </Grid>
 
               {/* PO images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
-                    Upload PO images
+                    PO images
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                {/* <RHFUpload
                   disabled
                   multiple
                   thumbnail
@@ -455,19 +457,20 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
-                />
+                /> */}
+                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} />}
               </Grid>
 
               {/* Vehicle images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
-                    Upload vehicle images
+                    Vehicle images
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                {/* <RHFUpload
                   disabled
                   multiple
                   thumbnail
@@ -491,19 +494,20 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
-                />
+                /> */}
+                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} />}
               </Grid>
 
               {/* Material images */}
-              <Grid item xs={12}>
+              <Grid item md={3} xs={12}>
 
                 <Box component='div' sx={{ my: 2 }}>
                   <Typography variant='body1'>
-                    Upload material images
+                    Material images
                   </Typography>
                 </Box>
 
-                <RHFUpload
+                {/* <RHFUpload
                   disabled
                   multiple
                   thumbnail
@@ -527,7 +531,8 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemove={handleRemoveFile}
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
-                />
+                /> */}
+                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} />}
               </Grid>
             </Grid>
           </Card>

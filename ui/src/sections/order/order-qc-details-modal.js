@@ -17,10 +17,11 @@ import PropTypes from 'prop-types';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axiosInstance from 'src/utils/axios';
-import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField, RHFUpload, RHFUploadBox } from 'src/components/hook-form';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
+import { MultiFilePreview } from 'src/components/upload';
 
 const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) => {
   const { user } = useAuthContext();
@@ -114,7 +115,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
       try {
         const response = await axiosInstance.post('/files', formData);
         const { data } = response;
-        const newFiles = data.files.map((res) => res.fileUrl);
+        const newFiles = data.files.map((res) => res);
 
         const currentImages = getValues(`qcTests[${index}].images`) || [];
 
@@ -236,7 +237,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <RHFUpload
+                    <RHFUploadBox
                       multiple
                       thumbnail
                       name={`qcTests[${index}].images`}
@@ -260,6 +261,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
                       sx={{ mb: 3 }}
                       disabled={!isAdmin}
                     />
+                    {values.qcTests[index].images?.length > 0 && <MultiFilePreview files={values.qcTests[index].images} />}
                   </Grid>
                   {isAdmin && (
                     <Grid item xs={12} md={2}>

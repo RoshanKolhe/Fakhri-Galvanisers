@@ -8,7 +8,7 @@ import { Grid, Stack, MenuItem, Button, Card, Box } from '@mui/material';
 import { useSnackbar } from 'src/components/snackbar';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField, RHFUpload, RHFUploadBox } from 'src/components/hook-form';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
@@ -17,6 +17,7 @@ import { useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
 import { formatDispatchId } from 'src/utils/constants';
 import { DatePicker } from '@mui/x-date-pickers';
+import { MultiFilePreview } from 'src/components/upload';
 
 export default function DispatchEditForm({ currentDispatch }) {
   console.log(currentDispatch);
@@ -39,9 +40,8 @@ export default function DispatchEditForm({ currentDispatch }) {
     () => ({
       id: formatDispatchId(currentDispatch?.id || 0),
       customerName: currentDispatch?.customer
-        ? `${currentDispatch?.customer?.firstName} ${
-            currentDispatch?.customer?.lastName ? currentDispatch?.customer?.lastName : ''
-          }`
+        ? `${currentDispatch?.customer?.firstName} ${currentDispatch?.customer?.lastName ? currentDispatch?.customer?.lastName : ''
+        }`
         : '',
       dispatchDate: currentDispatch?.dispatchDate ? new Date(currentDispatch?.dispatchDate) : '',
       vehicleNumber: currentDispatch?.vehicleDetails
@@ -104,7 +104,7 @@ export default function DispatchEditForm({ currentDispatch }) {
         const response = await axiosInstance.post('/files', formData);
         const { data } = response;
         console.log(data);
-        const newFiles = data.files.map((res) => res.fileUrl);
+        const newFiles = data.files.map((res) => res);
         const currentImages = getValues('documents') || [];
         setValue('documents', [...currentImages, ...newFiles], {
           shouldValidate: true,
@@ -169,7 +169,7 @@ export default function DispatchEditForm({ currentDispatch }) {
               <RHFTextField name="vehicleNumber" label="Vehicle Number" />
             </Box>
             <Grid item xs={12} mt={3}>
-              <RHFUpload
+              <RHFUploadBox
                 multiple
                 thumbnail
                 name="documents"
@@ -191,6 +191,7 @@ export default function DispatchEditForm({ currentDispatch }) {
                 sx={{ mb: 3 }}
                 disabled={currentDispatch?.status === 1}
               />
+              {values.documents?.length > 0 && <MultiFilePreview files={values.documents} onRemove={handleRemoveFile}/>}
             </Grid>
             {currentDispatch?.status === 0 ? (
               <Stack alignItems="flex-end" sx={{ mt: 3 }}>

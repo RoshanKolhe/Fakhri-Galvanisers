@@ -105,7 +105,7 @@ export class QcReportController {
               },
               images: {
                 type: 'array',
-                items: {type: 'string'}, // Image URLs or base64 strings
+                items: {type: 'object'}, // Image URLs or base64 strings
               },
             },
             required: ['qcTests'],
@@ -113,7 +113,7 @@ export class QcReportController {
         },
       },
     })
-    body: {qcTests: Omit<QcTest, 'id'>[]; images?: string[]},
+    body: {qcTests: Omit<QcTest, 'id'>[]; images?: object[]},
   ): Promise<QcTest[]> {
     const repo = new DefaultTransactionalRepository(QcReport, this.dataSource);
     const tx = await repo.beginTransaction(IsolationLevel.READ_COMMITTED);

@@ -8,13 +8,14 @@ import { Grid, Stack, MenuItem, Button, TextField, Chip, Autocomplete } from '@m
 import { useSnackbar } from 'src/components/snackbar';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import FormProvider, { RHFSelect, RHFTextField, RHFUpload } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField, RHFUpload, RHFUploadBox } from 'src/components/hook-form';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
 import axiosInstance from 'src/utils/axios';
 import { useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
+import { MultiFilePreview } from 'src/components/upload';
 
 export default function QcReportTestsEditForm({ currentQcReport }) {
   console.log(currentQcReport);
@@ -117,7 +118,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
         const response = await axiosInstance.post('/files', formData);
         const { data } = response;
         console.log(data);
-        const newFiles = data.files.map((res) => res.fileUrl);
+        const newFiles = data.files.map((res) => res);
 
         // Get the current images from the form
         const currentImages = getValues('images') || [];
@@ -251,7 +252,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
         </Grid>
 
         <Grid item xs={12}>
-          <RHFUpload
+          <RHFUploadBox
             multiple
             thumbnail
             name="images"
@@ -273,6 +274,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
             onRemoveAll={handleRemoveAllFiles}
             sx={{ mb: 3 }}
           />
+          {values.images?.length > 0 && <MultiFilePreview files={values.images} onRemove={handleRemoveFile} onRemoveAll={handleRemoveAllFiles}/>}
         </Grid>
 
         <Stack alignItems="flex-start" sx={{ mt: 3 }}>

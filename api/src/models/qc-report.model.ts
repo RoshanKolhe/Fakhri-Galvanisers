@@ -27,10 +27,10 @@ export class QcReport extends Entity {
 
   @property({
     type: 'array',
-    itemType: 'string',
+    itemType: 'object',
     required: false,
   })
-  images?: string[];
+  images?: object[];
 
   @property({
     type: 'date',

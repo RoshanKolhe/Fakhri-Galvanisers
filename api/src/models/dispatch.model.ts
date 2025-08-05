@@ -13,9 +13,9 @@ export class Dispatch extends Entity {
 
   @property({
     type: 'array',
-    itemType: 'string',
+    itemType: 'object',
   })
-  documents?: string[];
+  documents?: object[];
 
   @property({
     type: 'object',

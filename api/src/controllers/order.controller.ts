@@ -709,6 +709,7 @@ export class OrderController {
   })
   @post('/orders/getWorkerMaterialLotAndProcess')
   async getWorkerMaterialLotAndProcess(
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -735,6 +736,10 @@ export class OrderController {
         ],
       },
     );
+
+    const isGalvanizingUser = materialWithLots.galvanizingUserId === Number(currentUser.id);
+    const isPreTreatmentUser = materialWithLots.preTreatmentUserId === Number(currentUser.id);
+
     const lotProcesses: any = await this.lotProcessesRepository.find({
       where: {
         lotsId: {
@@ -742,33 +747,44 @@ export class OrderController {
         },
       },
     });
+
     if (materialWithLots.lots && materialWithLots.lots.length > 0) {
       materialWithLots.lots = materialWithLots.lots.map((lot: any) => {
-        const matchingLotProcess = lotProcesses.filter(
+        const matchingLotProcesses = lotProcesses.filter(
           (lotProcess: any) => lotProcess.lotsId === lot.id,
         );
 
-        // Modify lot processes
-        lot.processes = lot.processes.map((process: any) => {
-          const matchedProcess = matchingLotProcess.find(
-            (lp: any) => lp.processesId === process.id,
-          );
-          if (matchedProcess) {
-            process['processesDetails'] = {
-              ...matchedProcess,
-              durationInMs: matchedProcess.duration
-                ? new Date(matchedProcess.duration).getTime()
-                : null,
-              timeTakenInMs: matchedProcess.timeTaken
-                ? new Date(matchedProcess.timeTaken).getTime()
-                : null,
-            };
-          }
-          return { ...process };
-        });
+        console.log('isGalvanizingUser', isPreTreatmentUser);
+        lot.processes = lot.processes
+          .filter((process: any) => {
+            if (isGalvanizingUser) return process.processGroup === 1;
+            if (isPreTreatmentUser) return process.processGroup === 0;
+            return true;
+          })
+          .map((process: any) => {
+            const matchedProcess = matchingLotProcesses.find(
+              (lp: any) => lp.processesId === process.id,
+            );
+
+            if (matchedProcess) {
+              process['processesDetails'] = {
+                ...matchedProcess,
+                durationInMs: matchedProcess.duration
+                  ? new Date(matchedProcess.duration).getTime()
+                  : null,
+                timeTakenInMs: matchedProcess.timeTaken
+                  ? new Date(matchedProcess.timeTaken).getTime()
+                  : null,
+              };
+            }
+
+            return { ...process };
+          });
+
         return { ...lot };
       });
     }
+
     return { ...materialWithLots };
   }
 
@@ -1005,7 +1021,7 @@ export class OrderController {
                 testResult: { type: 'string' },
                 observed: { type: 'string' },
                 micronTestValues: { type: 'array', items: { type: 'number' } },
-                images: { type: 'array', items: { type: 'string' } },
+                images: { type: 'array', items: { type: 'object' } },
                 status: { type: 'number' },
                 remark: { type: 'string' },
               },
