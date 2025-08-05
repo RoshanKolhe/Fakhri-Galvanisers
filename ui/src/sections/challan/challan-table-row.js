@@ -17,6 +17,7 @@ import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { formatChallanId, formatRFQId } from 'src/utils/constants';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -31,12 +32,12 @@ function CheckStatusColor(status) {
   }
 }
 
-function CheckStatusName(status) {
+function CheckStatusName(status, isCustomer) {
   switch(status){
     case 0: return 'Challan Created';
     case 1: return 'Inward Pending';
-    case 2: return 'Order Creation Pending';
-    case 3: return 'Order Created';
+    case 2: return isCustomer ? 'Material Received' : 'Order Creation Pending';
+    case 3: return isCustomer ? 'Material Received' : 'Order Created';
 
     default: return 'NA';
   }
@@ -52,6 +53,8 @@ export default function ChallanTableRow({
   quickEdit,
   handleQuickEditRow,
 }) {
+  const {user} = useAuthContext();
+  const isCustomer = user?.permissions?.includes('customer');
   const { id, quotationId, vehicleNumber, grossWeight, netWeight, order, status } = row;
 
   const confirm = useBoolean();
@@ -74,7 +77,7 @@ export default function ChallanTableRow({
 
         <TableCell>
           <Label variant="soft" color={CheckStatusColor(status)}>
-            {CheckStatusName(status)}
+            {CheckStatusName(status, isCustomer)}
           </Label>
         </TableCell>
 
