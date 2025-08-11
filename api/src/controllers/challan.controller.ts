@@ -24,6 +24,10 @@ import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
 import { inject } from '@loopback/core';
 import { UserProfile } from '@loopback/security';
+import { EmailManagerBindings } from '../keys';
+import { EmailManager } from '../services/email.service';
+import SITE_SETTINGS from '../utils/config';
+import materialArrivedAtGateTemplate from '../templates/material-arrived.template';
 
 export class ChallanController {
   constructor(
@@ -33,6 +37,8 @@ export class ChallanController {
     public orderRepository: OrderRepository,
     @repository(NotificationRepository)
     public notificationRepository: NotificationRepository,
+    @inject(EmailManagerBindings.SEND_MAIL)
+    public emailManager: EmailManager,
   ) { }
 
   @authenticate({
@@ -340,6 +346,20 @@ export class ChallanController {
       });
 
       await this.challanRepository.updateById(challanDetails?.id, { status: 1 });
+
+      const template = materialArrivedAtGateTemplate({
+        userData: challanDetails?.customer,
+        challanId: challanDetails?.challanId,
+        content: `Material with challan ${challanDetails?.challanId} arrived`,
+        redirectLink: `https://uat.hylite.co.in/dashboard/challan/${challanDetails?.id}/view`
+      });
+
+      await this.emailManager.sendMail({
+        from: SITE_SETTINGS.fromMail,
+        to: challanDetails?.customer.email,
+        subject: template.subject,
+        html: template.html,
+      })
 
       return {
         success: true,
