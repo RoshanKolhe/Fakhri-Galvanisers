@@ -202,13 +202,13 @@ export default function CustomerNewEditForm({ currentCustomer }) {
               />
             </Box>
 
-            {currentCustomer && (
+            {/* {currentCustomer && (
               <Stack justifyContent="center" alignItems="center" sx={{ mt: 3 }}>
                 <Button variant="soft" color="error">
                   Delete Customer
                 </Button>
               </Stack>
-            )}
+            )} */}
           </Card>
         </Grid>
 

@@ -576,7 +576,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
             <Grid item xs={12} md={6}>
               <RHFAutocomplete
                 name={`materials[${index}].galvanizingUser`}
-                label="Assign Pre Treatment Workers"
+                label="Assign Galavanizing Workers"
                 onInputChange={(event) => fetchUsers(event)}
                 options={userOptions || []}
                 getOptionLabel={(option) => `${option?.firstName} ${option?.lastName}` || ''}

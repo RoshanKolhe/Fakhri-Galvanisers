@@ -757,6 +757,7 @@ export class OrderController {
         console.log('isGalvanizingUser', isPreTreatmentUser);
         lot.processes = lot.processes
           .filter((process: any) => {
+            if (isGalvanizingUser && isPreTreatmentUser) return true;
             if (isGalvanizingUser) return process.processGroup === 1;
             if (isPreTreatmentUser) return process.processGroup === 0;
             return true;
