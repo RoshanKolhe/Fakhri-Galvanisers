@@ -1,11 +1,11 @@
-import {Constructor, inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyThroughRepositoryFactory, HasManyRepositoryFactory} from '@loopback/repository';
-import {FakhriGalvanisersDataSource} from '../datasources';
-import {Lots, LotsRelations, Processes, LotProcesses, QcReport} from '../models';
-import {TimeStampRepositoryMixin} from '../mixins/timestamp-repository-mixin';
-import {LotProcessesRepository} from './lot-processes.repository';
-import {ProcessesRepository} from './processes.repository';
-import {QcReportRepository} from './qc-report.repository';
+import { Constructor, inject, Getter } from '@loopback/core';
+import { DefaultCrudRepository, repository, HasManyThroughRepositoryFactory, HasManyRepositoryFactory } from '@loopback/repository';
+import { FakhriGalvanisersDataSource } from '../datasources';
+import { Lots, LotsRelations, Processes, LotProcesses, QcReport } from '../models';
+import { TimeStampRepositoryMixin } from '../mixins/timestamp-repository-mixin';
+import { LotProcessesRepository } from './lot-processes.repository';
+import { ProcessesRepository } from './processes.repository';
+import { QcReportRepository } from './qc-report.repository';
 
 export class LotsRepository extends TimeStampRepositoryMixin<
   Lots,
@@ -16,9 +16,9 @@ export class LotsRepository extends TimeStampRepositoryMixin<
 >(DefaultCrudRepository) {
 
   public readonly processes: HasManyThroughRepositoryFactory<Processes, typeof Processes.prototype.id,
-          LotProcesses,
-          typeof Lots.prototype.id
-        >;
+    LotProcesses,
+    typeof Lots.prototype.id
+  >;
 
   public readonly qcReports: HasManyRepositoryFactory<QcReport, typeof Lots.prototype.id>;
 
@@ -31,5 +31,33 @@ export class LotsRepository extends TimeStampRepositoryMixin<
     this.registerInclusionResolver('qcReports', this.qcReports.inclusionResolver);
     this.processes = this.createHasManyThroughRepositoryFactoryFor('processes', processesRepositoryGetter, lotProcessesRepositoryGetter,);
     this.registerInclusionResolver('processes', this.processes.inclusionResolver);
+  }
+
+  async findWithSortedProcesses(filter: any = {}) {
+    const lots = await this.find({
+      ...filter,
+      include: [
+        {
+          relation: 'processes',
+          scope: {
+            include: [{ relation: 'lotProcesses' }],
+          },
+        },
+        ...(filter.include || []),
+      ],
+    });
+
+    // Sort processes by sequence
+    for (const lot of lots) {
+      if (lot.processes) {
+        lot.processes.sort((a: any, b: any) => {
+          const seqA = a.lotProcesses?.sequence ?? 0;
+          const seqB = b.lotProcesses?.sequence ?? 0;
+          return seqA - seqB; // ascending
+        });
+      }
+    }
+
+    return lots;
   }
 }

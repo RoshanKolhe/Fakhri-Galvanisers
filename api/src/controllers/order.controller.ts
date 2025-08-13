@@ -300,9 +300,97 @@ export class OrderController {
     }
   }
 
-  @authenticate({
-    strategy: 'jwt',
-  })
+  // @authenticate({
+  //   strategy: 'jwt',
+  // })
+  // @get('/orders/{id}')
+  // @response(200, {
+  //   description: 'Order model instance',
+  //   content: {
+  //     'application/json': {
+  //       schema: getModelSchemaRef(Order, { includeRelations: true }),
+  //     },
+  //   },
+  // })
+  // async findById(
+  //   @param.path.number('id') id: number,
+  //   @param.filter(Order, { exclude: 'where' })
+  //   filter?: FilterExcludingWhere<Order>,
+  // ): Promise<any> {
+  //   // Include relations like materials, users, processes, etc.
+  //   filter = {
+  //     ...filter,
+  //     include: [
+  //       {
+  //         relation: 'materials',
+  //         scope: {
+  //           include: [
+  //             { relation: 'preTreatmentUser' },
+  //             { relation: 'galvanizingUser' },
+  //             { relation: 'processes' },
+  //             {
+  //               relation: 'lots', scope: {
+  //                 include: [
+  //                   {
+  //                     relation: 'processes',
+  //                     scope: {
+  //                       order: ['sequence DESC'],
+  //                     },
+  //                   },
+  //                 ],
+  //               }
+  //             },
+  //           ],
+  //         },
+  //       },
+  //       { relation: 'orderQcTests' },
+  //       { relation: 'customer' },
+  //       { relation: 'challan' },
+  //       { relation: 'payment' },
+  //       { relation: 'dispatch' },
+  //     ],
+  //   };
+
+  //   const order: any = await this.orderRepository.findById(id, filter);
+  //   const lotProcesses: any = await this.lotProcessesRepository.find({
+  //     where: {
+  //       lotsId: {
+  //         inq: order.materials.flatMap(
+  //           (material: any) => material.lots?.map((lot: any) => lot.id) || [],
+  //         ),
+  //       },
+  //     },
+  //   });
+  //   if (lotProcesses && lotProcesses.length) {
+  //     order.materials = order.materials.map((material: any) => {
+  //       if (material.lots && material.lots.length > 0) {
+  //         material.lots = material.lots.map((lot: any) => {
+  //           const matchingLotProcess = lotProcesses.filter(
+  //             (lotProcess: any) => lotProcess.lotsId === lot.id,
+  //           );
+
+  //           // Modify lot processes
+  //           lot.processes = lot.processes.map((process: any) => {
+  //             const matchedProcess = matchingLotProcess.find(
+  //               (lp: any) => lp.processesId === process.id,
+  //             );
+  //             if (matchedProcess) {
+  //               process['processesDetails'] = matchedProcess;
+  //             }
+  //             return { ...process };
+  //           });
+  //           return { ...lot };
+  //         });
+
+  //         return { ...material };
+  //       }
+  //       return material;
+  //     });
+  //   }
+  //   return order;
+  // }
+
+  @authenticate({ strategy: 'jwt' })
   @get('/orders/{id}')
   @response(200, {
     description: 'Order model instance',
@@ -317,7 +405,6 @@ export class OrderController {
     @param.filter(Order, { exclude: 'where' })
     filter?: FilterExcludingWhere<Order>,
   ): Promise<any> {
-    // Include relations like materials, users, processes, etc.
     filter = {
       ...filter,
       include: [
@@ -328,7 +415,16 @@ export class OrderController {
               { relation: 'preTreatmentUser' },
               { relation: 'galvanizingUser' },
               { relation: 'processes' },
-              { relation: 'lots', scope: { include: ['processes'] } },
+              {
+                relation: 'lots',
+                scope: {
+                  include: [
+                    {
+                      relation: 'processes', // no order here, since we’ll sort manually
+                    },
+                  ],
+                },
+              },
             ],
           },
         },
@@ -341,6 +437,8 @@ export class OrderController {
     };
 
     const order: any = await this.orderRepository.findById(id, filter);
+
+    // Fetch all lotProcesses for the lots in this order
     const lotProcesses: any = await this.lotProcessesRepository.find({
       where: {
         lotsId: {
@@ -350,32 +448,38 @@ export class OrderController {
         },
       },
     });
-    if (lotProcesses && lotProcesses.length) {
+
+    if (lotProcesses.length) {
       order.materials = order.materials.map((material: any) => {
-        if (material.lots && material.lots.length > 0) {
+        if (material.lots?.length) {
           material.lots = material.lots.map((lot: any) => {
             const matchingLotProcess = lotProcesses.filter(
-              (lotProcess: any) => lotProcess.lotsId === lot.id,
+              (lp: any) => lp.lotsId === lot.id,
             );
 
-            // Modify lot processes
-            lot.processes = lot.processes.map((process: any) => {
-              const matchedProcess = matchingLotProcess.find(
-                (lp: any) => lp.processesId === process.id,
-              );
-              if (matchedProcess) {
-                process['processesDetails'] = matchedProcess;
-              }
-              return { ...process };
-            });
+            lot.processes = lot.processes
+              .map((process: any) => {
+                const matchedProcess = matchingLotProcess.find(
+                  (lp: any) => lp.processesId === process.id,
+                );
+                if (matchedProcess) {
+                  process['processesDetails'] = matchedProcess;
+                }
+                return { ...process };
+              })
+              .sort((a: any, b: any) => {
+                const seqA = a.processesDetails?.sequence ?? 0;
+                const seqB = b.processesDetails?.sequence ?? 0;
+                return seqA - seqB;
+              });
+
             return { ...lot };
           });
-
-          return { ...material };
         }
-        return material;
+        return { ...material };
       });
     }
+
     return order;
   }
 
@@ -452,38 +556,7 @@ export class OrderController {
             },
             { transaction: tx },
           );
-          // const existingProcesses = await this.materialRepository
-          //   .processes(materialId)
-          //   .find();
 
-          // if (existingProcesses.length > 0) {
-          //   await this.materialRepository
-          //     .processes(materialId)
-          //     .unlinkAll({ transaction: tx });
-          // }
-
-          // const existingUsers = await this.materialRepository
-          //   .users(materialId)
-          //   .find();
-
-          // if (existingUsers.length > 0) {
-          //   await this.materialRepository
-          //     .users(materialId)
-          //     .unlinkAll({ transaction: tx });
-          // }
-
-          // for (const process of material.processes) {
-          //   await this.materialRepository
-          //     .processes(materialId)
-          //     .link(process.id, { transaction: tx });
-          // }
-
-          // // Update or insert assigned workers
-          // for (const worker of material.users) {
-          //   await this.materialRepository
-          //     .users(materialId)
-          //     .link(worker.id, { transaction: tx });
-          // }
           const materialLots = await this.lotsRepository.find({
             where: {
               materialId: materialId,
@@ -523,27 +596,46 @@ export class OrderController {
                 visualInspection: lot.visualInspection,
               });
 
+              console.log('galavanizing process', lot)
               for (const lotProcess of existingLot.processes) {
                 const allProcesses = [
-                  ...(lot.preTreatmentProcesses || []),
-                  ...(lot.galvanizingProcesses || []),
+                  ...(material.preTreatmentProcesses || []),
+                  ...(material.galvanizingProcesses || []),
                 ];
 
-                const matchedProcess = allProcesses.find(
-                  (res: any) => res.processId === lotProcess.id,
+                const matchedProcessIndex = allProcesses.findIndex(
+                  (res: any) => res.id === lotProcess.id,
                 );
 
-                if (matchedProcess) {
+                console.log('matchedProcessIndex', matchedProcessIndex, existingLot.id);
+
+                if (matchedProcessIndex !== -1) {
+                  const matchedProcess = allProcesses[matchedProcessIndex];
+
+                  console.log('matched process', matchedProcess.processId);
+                  console.log('record', await this.lotProcessesRepository.find({
+                    where: {
+                      lotsId: existingLot.id,
+                      processesId: matchedProcess.id,
+                    }
+                  }))
                   await this.lotProcessesRepository.updateAll(
                     {
                       duration: matchedProcess.duration,
+                      sequence: matchedProcessIndex
                     },
                     {
                       lotsId: existingLot.id,
-                      processesId: matchedProcess.processId,
+                      processesId: matchedProcess.id,
                     },
                     { transaction: tx },
                   );
+                  console.log('updated record', await this.lotProcessesRepository.find({
+                    where: {
+                      lotsId: existingLot.id,
+                      processesId: matchedProcess.id,
+                    }
+                  }))
                 }
               }
             } else {
@@ -560,12 +652,15 @@ export class OrderController {
                 { transaction: tx },
               );
 
-              for (const processData of [...lot.preTreatmentProcesses, ...lot.galvanizingProcesses]) {
+              const combinedProcesses = [...lot.preTreatmentProcesses, ...lot.galvanizingProcesses];
+              for (let i = 0; i < combinedProcesses.length; i++) {
+                const processData = combinedProcesses[i];
                 await this.lotProcessesRepository.create(
                   {
                     lotsId: savedLot.id,
                     processesId: processData.processId,
                     duration: processData.duration,
+                    sequence: i + 1, // sequence from index
                     status: 0,
                   },
                   { transaction: tx },
@@ -1005,41 +1100,70 @@ export class OrderController {
       content: {
         'application/json': {
           schema: {
-            type: 'array',
-            items: {
-              type: 'object',
-              required: [
-                'specification',
-                'testDetails',
-                'requirement',
-                'observed',
-                'micronTestValues'
-              ],
-              properties: {
-                specification: { type: 'string' },
-                testDetails: { type: 'string' },
-                requirement: { type: 'string' },
-                testResult: { type: 'string' },
-                observed: { type: 'string' },
-                micronTestValues: { type: 'array', items: { type: 'number' } },
-                images: { type: 'array', items: { type: 'object' } },
-                status: { type: 'number' },
-                remark: { type: 'string' },
+            type: 'object',
+            properties: {
+              tcNo: {
+                type: 'string'
               },
-            },
+              tcDate: {
+                type: 'string'
+              },
+              ourChallanNo: {
+                type: 'string'
+              },
+              ourChallanDate: {
+                type: 'string'
+              },
+              qcTests: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: [
+                    'specification',
+                    'testDetails',
+                    'requirement',
+                    'observed',
+                    'micronTestValues'
+                  ],
+                  properties: {
+                    specification: { type: 'string' },
+                    testDetails: { type: 'string' },
+                    requirement: { type: 'string' },
+                    testResult: { type: 'string' },
+                    observed: { type: 'string' },
+                    micronTestValues: { type: 'string' },
+                    images: { type: 'array', items: { type: 'object' } },
+                    status: { type: 'number' },
+                    remark: { type: 'string' },
+                  },
+                },
+              }
+            }
           },
         },
       },
     })
-    tests: Array<
-      Omit<
-        OrderQcTest,
-        'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'isDeleted' | 'orderId'
-      >
-    >,
+    tests: {
+      qcTests: Array<
+        Omit<
+          OrderQcTest,
+          'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'isDeleted' | 'orderId'
+        >
+      >;
+      tcNo: string;
+      tcDate: string;
+      ourChallanNo: string;
+      ourChallanDate: string;
+    }
   ): Promise<OrderQcTest[]> {
+    await this.orderRepository.updateById(orderId, {
+      tcNo: tests.tcNo,
+      tcDate: tests.tcDate,
+      ourChallanNo: tests.ourChallanNo,
+      ourChallanDate: tests.ourChallanDate
+    });
     await this.orderQcTestRepository.deleteAll({ orderId });
-    const records = tests.map(test => ({
+    const records = tests.qcTests.map(test => ({
       ...test,
       orderId,
       isDeleted: false,

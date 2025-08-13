@@ -39,11 +39,10 @@ export class QcTest extends Entity {
   observed: string;
 
   @property({
-    type: 'array',
-    itemType: 'number',
+    type: 'string',
     required: true,
   })
-  micronTestValues: number[];
+  micronTestValues: string;
 
   @property({
     type: 'number',

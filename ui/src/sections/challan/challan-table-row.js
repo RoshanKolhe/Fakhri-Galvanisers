@@ -82,7 +82,7 @@ export default function ChallanTableRow({
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          <Tooltip title="Quick Edit" placement="top" arrow>
+          {!isCustomer && <Tooltip title="Quick Edit" placement="top" arrow>
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
               onClick={() => {
@@ -91,7 +91,7 @@ export default function ChallanTableRow({
             >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
-          </Tooltip>
+          </Tooltip>}
 
           <Tooltip title="View" placement="top" arrow>
             <IconButton

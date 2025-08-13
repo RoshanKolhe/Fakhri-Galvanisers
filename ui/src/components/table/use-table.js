@@ -11,7 +11,7 @@ export default function useTable(props) {
 
   const [rowsPerPage, setRowsPerPage] = useState(props?.defaultRowsPerPage || 5);
 
-  const [order, setOrder] = useState(props?.defaultOrder || 'asc');
+  const [order, setOrder] = useState(props?.defaultOrder || 'desc');
 
   const [selected, setSelected] = useState(props?.defaultSelected || []);
 
@@ -21,7 +21,7 @@ export default function useTable(props) {
       if (id !== '') {
         setOrder(isAsc ? 'desc' : 'asc');
         setOrderBy(id);
-      }
+      } 
     },
     [order, orderBy]
   );

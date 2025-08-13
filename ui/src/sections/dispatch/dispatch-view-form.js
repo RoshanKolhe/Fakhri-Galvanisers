@@ -11,6 +11,7 @@ import FormProvider, { RHFTextField, RHFUpload } from 'src/components/hook-form'
 import { LoadingButton } from '@mui/lab';
 import { DatePicker } from '@mui/x-date-pickers';
 import { formatDispatchId } from 'src/utils/constants';
+import { MultiFilePreview } from 'src/components/upload';
 
 export default function DispatchViewForm({ currentDispatch }) {
   const NewDispatchSchema = Yup.object().shape({
@@ -25,9 +26,8 @@ export default function DispatchViewForm({ currentDispatch }) {
     () => ({
       id: formatDispatchId(currentDispatch?.id || 0),
       customerName: currentDispatch?.customer
-        ? `${currentDispatch?.customer?.firstName} ${
-            currentDispatch?.customer?.lastName ? currentDispatch?.customer?.lastName : ''
-          }`
+        ? `${currentDispatch?.customer?.firstName} ${currentDispatch?.customer?.lastName ? currentDispatch?.customer?.lastName : ''
+        }`
         : '',
       dispatchDate: currentDispatch?.dispatchDate ? new Date(currentDispatch?.dispatchDate) : '',
       vehicleNumber: currentDispatch?.vehicleDetails
@@ -51,6 +51,8 @@ export default function DispatchViewForm({ currentDispatch }) {
     handleSubmit,
     formState: { isSubmitting, errors },
   } = methods;
+
+  const values = watch();
 
   useEffect(() => {
     if (currentDispatch) {
@@ -98,28 +100,7 @@ export default function DispatchViewForm({ currentDispatch }) {
               <RHFTextField name="vehicleNumber" label="Vehicle Number" disabled />
             </Box>
             <Grid item xs={12} mt={3}>
-              <RHFUpload
-                multiple
-                thumbnail
-                name="documents"
-                maxSize={3145728}
-                accept={{
-                  'image/*': [],
-                  'video/*': [],
-                  'application/pdf': [],
-                  'application/msword': [],
-                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [],
-                  'application/vnd.ms-excel': [],
-                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [],
-                  'application/zip': [],
-                  'application/x-rar-compressed': [],
-                  'text/plain': [],
-                }}
-                // onDrop={handleDrop}
-                // onRemove={handleRemoveFile}
-                sx={{ mb: 3 }}
-                disabled
-              />
+              {values.documents?.length > 0 && <MultiFilePreview files={values.documents} thumbnail/>}
             </Grid>
           </Card>
         </Grid>

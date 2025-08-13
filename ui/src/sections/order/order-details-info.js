@@ -91,7 +91,7 @@ export default function OrderDetailsInfo({ customer, dispatch, payment, shipping
       />
       <Stack direction="row" alignItems="center" sx={{ px: 3, py: 1, typography: 'body2' }}>
         <Box component="span" sx={{ color: 'text.secondary', flexGrow: 1 }}>
-          Performa ID
+          proforma ID
         </Box>
 
         {payment?.performaId}

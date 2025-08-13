@@ -20,6 +20,12 @@ export class LotProcesses extends Entity {
   processesId?: number;
 
   @property({
+    type: 'number',
+    required: true
+  })
+  sequence: number;
+
+  @property({
     type: 'string',
   })
   duration?: string;

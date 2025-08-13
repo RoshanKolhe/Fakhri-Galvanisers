@@ -12,6 +12,9 @@ import {
   Stack,
   Chip,
   Autocomplete,
+  Tooltip,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
 import PropTypes from 'prop-types';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
@@ -21,15 +24,22 @@ import FormProvider, { RHFSelect, RHFTextField, RHFUpload, RHFUploadBox } from '
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { LoadingButton } from '@mui/lab';
+import { DatePicker } from '@mui/x-date-pickers';
 import { MultiFilePreview } from 'src/components/upload';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import OrderQcTestTemplatePdf from './templates/order-qc-test-template';
 
-const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) => {
+const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm, order }) => {
   const { user } = useAuthContext();
   const isAdmin = user
     ? user.permissions.includes('super_admin') || user.permissions.includes('admin')
     : false;
 
   const NewQuotationSchema = Yup.object().shape({
+    tcNo: Yup.string().required('T.C number required'),
+    ourChallanNo: Yup.string().required('Our challan number is required'),
+    tcDate: Yup.string().required('T.C date is required'),
+    ourChallanDate: Yup.string().required('T.C date is required'),
     qcTests: Yup.array()
       .of(
         Yup.object().shape({
@@ -39,7 +49,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
           testResult: Yup.string().required('Test Result is required'),
           observed: Yup.string().required('Observed is required'),
           images: Yup.array().min(1, 'Images is required'),
-          micronTestValues: Yup.array().of(Yup.number()).min(5, 'Five micron test values required').max(5, 'Five micron test values required')
+          micronTestValues: Yup.string().required('Micron test values are required'),
         })
       )
       .min(1, 'At least one Qc Tests is required'),
@@ -47,6 +57,10 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
 
   const defaultValues = useMemo(
     () => ({
+      tcNo: order?.tcNo || '',
+      tcDate: order?.tcDate || '',
+      ourChallanNo: order?.ourChallanNo || '',
+      ourChallanDate: order?.ourChallanDate || '',
       qcTests: currentQcReport?.length
         ? currentQcReport.map((qcTest) => ({
           specification: qcTest.specification || '',
@@ -55,7 +69,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
           testResult: qcTest.testResult || '',
           observed: qcTest?.observed || '',
           images: qcTest?.images || [],
-          micronTestValues: qcTest?.micronTestValues || []
+          micronTestValues: qcTest?.micronTestValues || ''
         }))
         : [
           {
@@ -65,11 +79,11 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
             testResult: '',
             observed: '',
             images: [],
-            micronTestValues: []
+            micronTestValues: ''
           },
         ],
     }),
-    [currentQcReport]
+    [currentQcReport, order]
   );
 
   const methods = useForm({
@@ -152,10 +166,79 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
   }, [currentQcReport, defaultValues, reset]);
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Enter QC Details</DialogTitle>
+      <DialogTitle sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Enter QC Details
+        <PDFDownloadLink
+          document={<OrderQcTestTemplatePdf orderDetails={order} />}
+          fileName='order-qc-test'
+          style={{ textDecoration: 'none' }}
+        >
+          {({ loading }) => (
+            <Tooltip title="Download">
+              <IconButton>
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  <Iconify icon="eva:cloud-download-fill" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+        </PDFDownloadLink>
+      </DialogTitle>
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogContent dividers>
-          <Grid container spacing={3}>
+          <Grid sx={{mt: '10px'}} container spacing={3}>
+            <Grid item xs={12} md={3}>
+              <RHFTextField name='tcNo' label='T.C.No.' />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Controller
+                name="tcDate"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="T.C.Date"
+                    value={new Date(field.value)}
+                    onChange={(newValue) => {
+                      field.onChange(newValue);
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <RHFTextField name='ourChallanNo' label='Our Challan No.' />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Controller
+                name="ourChallanDate"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="Our Challan Date"
+                    value={new Date(field.value)}
+                    onChange={(newValue) => {
+                      field.onChange(newValue);
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
             <Grid item xs={12} md={12}>
               {fields.map((item, index) => (
                 <Grid container key={item.id} spacing={2} mt={1} alignItems="center">
@@ -202,39 +285,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
                     </RHFSelect>
                   </Grid>
                   <Grid item xs={12} md={4}>
-                    <Controller
-                      name={`qcTests[${index}].micronTestValues`}
-                      control={control}
-                      defaultValue={[]}
-                      render={({ field: { onChange, value }, fieldState: { error } }) => (
-                        <Autocomplete
-                          multiple
-                          freeSolo
-                          options={[]}
-                          value={value || []}
-                          onChange={(event, newValue) => {
-                            // Only allow numeric values
-                            const numericValues = newValue.filter(val => !Number.isNaN(val));
-                            onChange(numericValues);
-                          }}
-                          // eslint-disable-next-line no-shadow
-                          renderTags={(value, getTagProps) =>
-                            // eslint-disable-next-line no-shadow
-                            value.map((option, index) => (
-                              <Chip key={index} label={option} {...getTagProps({ index })} />
-                            ))
-                          }
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Micron Test Values"
-                              error={!!error}
-                              helperText={error ? error.message : ''}
-                            />
-                          )}
-                        />
-                      )}
-                    />
+                    <RHFTextField name={`qcTests[${index}].micronTestValues`} label="Test Result" />
                   </Grid>
                   <Grid item xs={12}>
                     <RHFUploadBox
@@ -261,7 +312,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm }) =
                       sx={{ mb: 3 }}
                       disabled={!isAdmin}
                     />
-                    {values.qcTests[index].images?.length > 0 && <MultiFilePreview files={values.qcTests[index].images} />}
+                    {values.qcTests[index].images?.length > 0 && <MultiFilePreview files={values.qcTests[index].images} thumbnail />}
                   </Grid>
                   {isAdmin && (
                     <Grid item xs={12} md={2}>
@@ -322,4 +373,5 @@ OrderQcDetailsModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmitForm: PropTypes.func,
+  order: PropTypes.object
 };

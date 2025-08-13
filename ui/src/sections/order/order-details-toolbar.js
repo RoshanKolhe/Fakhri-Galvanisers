@@ -53,7 +53,13 @@ export default function OrderDetailsToolbar({
   const onSubmitQcDetails = async (data) => {
     try {
       console.info('DATA', data);
-      await axiosInstance.post(`/orders/${order.id}/order-qc-tests`, data.qcTests);
+      await axiosInstance.post(`/orders/${order.id}/order-qc-tests`, {
+        tcNo: data.tcNo,
+        tcDate: data.tcDate,
+        ourChallanNo: data.ourChallanNo,
+        ourChallanDate: data.ourChallanDate,
+        qcTests: data.qcTests
+      });
       refreshOrder();
       enqueueSnackbar('Qc Tests Added Successfully');
       handleCloseOrderQcDetails();
@@ -209,6 +215,7 @@ export default function OrderDetailsToolbar({
         open={showOrderQcDetails}
         onClose={handleCloseOrderQcDetails}
         onSubmitForm={onSubmitQcDetails}
+        order={order}
       />
     </>
   );

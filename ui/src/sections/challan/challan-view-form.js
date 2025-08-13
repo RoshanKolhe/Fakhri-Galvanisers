@@ -421,7 +421,7 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 /> */}
-                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} />}
+                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} thumbnail/>}
               </Grid>
 
               {/* PO images */}
@@ -458,7 +458,7 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 /> */}
-                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} />}
+                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} thumbnail/>}
               </Grid>
 
               {/* Vehicle images */}
@@ -495,7 +495,7 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 /> */}
-                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} />}
+                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} thumbnail/>}
               </Grid>
 
               {/* Material images */}
@@ -532,7 +532,7 @@ export default function ChallanViewForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 /> */}
-                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} />}
+                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} thumbnail/>}
               </Grid>
             </Grid>
           </Card>

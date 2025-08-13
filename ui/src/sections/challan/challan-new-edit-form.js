@@ -616,7 +616,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} onRemove={(file) => handleRemoveFile(file, 'challanImages')} onRemoveAll={handleRemoveAllFiles} />}
+                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} onRemove={(file) => handleRemoveFile(file, 'challanImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
               </Grid>
 
               {/* PO images */}
@@ -652,7 +652,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} onRemove={(file) => handleRemoveFile(file, 'poImages')} onRemoveAll={handleRemoveAllFiles} />}
+                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} onRemove={(file) => handleRemoveFile(file, 'poImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
               </Grid>
 
               {/* Vehicle images */}
@@ -688,7 +688,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} onRemove={(file) => handleRemoveFile(file, 'vehicleImages')} onRemoveAll={handleRemoveAllFiles} />}
+                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} onRemove={(file) => handleRemoveFile(file, 'vehicleImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
               </Grid>
 
               {/* Material images */}
@@ -724,7 +724,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} onRemove={(file) => handleRemoveFile(file, 'materialImages')} onRemoveAll={handleRemoveAllFiles} />}
+                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} onRemove={(file) => handleRemoveFile(file, 'materialImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
               </Grid>
             </Grid>
 

@@ -3,14 +3,15 @@ import {
   model,
   property,
   belongsTo,
-  hasMany, hasOne} from '@loopback/repository';
-import {Challan} from './challan.model';
-import {Material} from './material.model';
-import {Customer} from './customer.model';
-import {QcReport} from './qc-report.model';
-import {Payment} from './payment.model';
-import {Dispatch} from './dispatch.model';
-import {OrderQcTest} from './order-qc-test.model';
+  hasMany, hasOne
+} from '@loopback/repository';
+import { Challan } from './challan.model';
+import { Material } from './material.model';
+import { Customer } from './customer.model';
+import { QcReport } from './qc-report.model';
+import { Payment } from './payment.model';
+import { Dispatch } from './dispatch.model';
+import { OrderQcTest } from './order-qc-test.model';
 
 @model()
 export class Order extends Entity {
@@ -129,6 +130,26 @@ export class Order extends Entity {
     default: false,
   })
   isDeleted: boolean;
+
+  @property({
+    type: 'string'
+  })
+  tcNo: string;
+
+  @property({
+    type: 'string'
+  })
+  ourChallanNo: string;
+
+  @property({
+    type: 'date'
+  })
+  tcDate: Date;
+
+  @property({
+    type: 'date'
+  })
+  ourChallanDate: Date;
 
   @belongsTo(() => Challan)
   challanId: number;

@@ -191,7 +191,7 @@ export default function DispatchEditForm({ currentDispatch }) {
                 sx={{ mb: 3 }}
                 disabled={currentDispatch?.status === 1}
               />
-              {values.documents?.length > 0 && <MultiFilePreview files={values.documents} onRemove={handleRemoveFile}/>}
+              {values.documents?.length > 0 && <MultiFilePreview files={values.documents} onRemove={handleRemoveFile} thumbnail/>}
             </Grid>
             {currentDispatch?.status === 0 ? (
               <Stack alignItems="flex-end" sx={{ mt: 3 }}>

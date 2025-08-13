@@ -34,7 +34,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
           requirement: Yup.string().required('Requirement is required'),
           testResult: Yup.string().required('Test Result is required'),
           observed: Yup.string().required('Observed is required'),
-          micronTestValues: Yup.array().of(Yup.number()).min(5, 'Five micron test values required').max(5, 'Five micron test values required')
+          micronTestValues: Yup.string().required('Micron test values are required'),
         })
       )
       .min(1, 'At least one Qc Tests is required'),
@@ -51,7 +51,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
           requirement: qcTest.requirement || '',
           testResult: qcTest.testResult || '',
           observed: qcTest?.observed || '',
-          micronTestValues: qcTest?.micronTestValues || []
+          micronTestValues: qcTest?.micronTestValues || ''
         }))
         : [
           {
@@ -60,7 +60,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
             requirement: '',
             testResult: '',
             observed: '',
-            micronTestValues: []
+            micronTestValues: ''
           },
         ],
     }),
@@ -181,39 +181,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
                 </RHFSelect>
               </Grid>
               <Grid item xs={12} md={4}>
-                <Controller
-                  name={`qcTests[${index}].micronTestValues`}
-                  control={control}
-                  defaultValue={[]}
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <Autocomplete
-                      multiple
-                      freeSolo
-                      options={[]} 
-                      value={value || []}
-                      onChange={(event, newValue) => {
-                        // Only allow numeric values
-                        const numericValues = newValue.filter(val => !Number.isNaN(val));
-                        onChange(numericValues);
-                      }}
-                      // eslint-disable-next-line no-shadow
-                      renderTags={(value, getTagProps) =>
-                        // eslint-disable-next-line no-shadow
-                        value.map((option, index) => (
-                          <Chip key={index} label={option} {...getTagProps({ index })} />
-                        ))
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Micron Test Values"
-                          error={!!error}
-                          helperText={error ? error.message : ''}
-                        />
-                      )}
-                    />
-                  )}
-                />
+                <RHFTextField name={`qcTests[${index}].micronTestValues`} label="Test Result" />
               </Grid>
               {isAdmin && (
                 <Grid item xs={12} md={2}>
@@ -274,7 +242,7 @@ export default function QcReportTestsEditForm({ currentQcReport }) {
             onRemoveAll={handleRemoveAllFiles}
             sx={{ mb: 3 }}
           />
-          {values.images?.length > 0 && <MultiFilePreview files={values.images} onRemove={handleRemoveFile} onRemoveAll={handleRemoveAllFiles}/>}
+          {values.images?.length > 0 && <MultiFilePreview files={values.images} onRemove={handleRemoveFile} onRemoveAll={handleRemoveAllFiles} thumbnail />}
         </Grid>
 
         <Stack alignItems="flex-start" sx={{ mt: 3 }}>
