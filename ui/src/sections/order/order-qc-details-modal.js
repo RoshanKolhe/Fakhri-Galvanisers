@@ -117,7 +117,7 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm, ord
     }
   });
 
-  const handleDrop = useCallback(
+  const handleDrop = 
     async (acceptedFiles, index) => {
       if (!acceptedFiles.length) return;
 
@@ -135,13 +135,12 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm, ord
 
         setValue(`qcTests[${index}].images`, [...currentImages, ...newFiles], {
           shouldValidate: true,
+          shouldDirty: true,
         });
       } catch (err) {
         console.error('Error uploading files:', err);
       }
-    },
-    [getValues, setValue]
-  );
+    };
 
   const handleRemoveFile = useCallback(
     (index, fileToRemove) => {
@@ -160,10 +159,12 @@ const OrderQcDetailsModal = ({ currentQcReport, open, onClose, onSubmitForm, ord
   );
 
   useEffect(() => {
-    if (currentQcReport) {
+    if (open) {
+      console.log('reset called');
       reset(defaultValues);
     }
-  }, [currentQcReport, defaultValues, reset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
