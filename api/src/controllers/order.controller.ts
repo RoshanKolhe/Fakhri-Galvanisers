@@ -146,6 +146,7 @@ export class OrderController {
         },
       );
 
+      console.log('orderData materials', orderData.materials);
       if (orderData.materials && orderData.materials.length > 0) {
         const mappedMaterials = orderData.materials.map((material: any) => ({
           microns: material.microns,
@@ -181,6 +182,7 @@ export class OrderController {
 
         if (material.status === 0 && material.lots && material.lots.length > 0) {
           for (const lotData of material.lots) {
+            console.log('lot data', lotData);
             const lot: any = lotData;
             const savedLot = await this.lotsRepository.create({
               lotNumber: lot.lotNumber.toString(),
@@ -196,7 +198,11 @@ export class OrderController {
               ...(lot.galvanizingProcesses || []),
             ];
 
-            for (const [index, process] of combinedProcesses) {
+            console.log('combined processes', combinedProcesses);
+
+            for (const [index, process] of combinedProcesses.entries()) {
+              console.log('index', index, 'process', process);
+
               await this.lotProcessesRepository.create({
                 lotsId: savedLot.id,
                 processesId: process.processId,
