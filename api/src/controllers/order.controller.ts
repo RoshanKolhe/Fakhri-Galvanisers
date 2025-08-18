@@ -196,11 +196,12 @@ export class OrderController {
               ...(lot.galvanizingProcesses || []),
             ];
 
-            for (const process of combinedProcesses) {
+            for (const [index, process] of combinedProcesses) {
               await this.lotProcessesRepository.create({
                 lotsId: savedLot.id,
                 processesId: process.processId,
                 duration: process.duration,
+                sequence: index,
                 status: 0,
               }, { transaction: tx });
             }
