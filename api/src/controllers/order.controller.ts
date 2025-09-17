@@ -606,16 +606,15 @@ export class OrderController {
               console.log('galavanizing process', lot)
               for (const lotProcess of existingLot.processes) {
                 const allProcesses = [
-                  ...(material.preTreatmentProcesses || []),
-                  ...(material.galvanizingProcesses || []),
+                  ...(material.lots[0].processes || []),
                 ];
 
                 const matchedProcessIndex = allProcesses.findIndex(
-                  (res: any) => res.id === lotProcess.id,
+                  (res: any) => res.processId === lotProcess.id,
                 );
 
                 console.log('matchedProcessIndex', matchedProcessIndex, existingLot.id);
-
+                console.log('all processes', allProcesses);
                 if (matchedProcessIndex !== -1) {
                   const matchedProcess = allProcesses[matchedProcessIndex];
 
@@ -623,7 +622,7 @@ export class OrderController {
                   console.log('record', await this.lotProcessesRepository.find({
                     where: {
                       lotsId: existingLot.id,
-                      processesId: matchedProcess.id,
+                      processesId: matchedProcess.processId,
                     }
                   }))
                   await this.lotProcessesRepository.updateAll(

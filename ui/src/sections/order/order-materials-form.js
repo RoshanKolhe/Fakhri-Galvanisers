@@ -254,7 +254,9 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
   const onSubmit = handleSubmit(async (formData) => {
     try {
       const updatedMaterials = formData.materials.map((material) => {
+        console.log('material', material);
         const jobCardMaterial = jobCardLots.find((lot) => lot.materialId === material.id);
+        console.log('jobCardMaterial', jobCardMaterial);
         if (jobCardMaterial) {
           return {
             ...material,
@@ -268,6 +270,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
 
       if (!currentOrder) {
         const newMaterialUpdatedData = updatedMaterials?.map((material) => {
+          console.log('material', material);
           const matchedLotsData = jobCardLots.find((lotCard) => lotCard.materialId === material.id);
 
           return {
@@ -292,6 +295,8 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
         const inputData = {
           materialsData: updatedMaterials,
         };
+
+        console.log('input data', inputData);
         const { data } = await axiosInstance.patch(`/orders/${currentOrder.id}`, inputData);
         enqueueSnackbar('Order Details Updated Successfully');
         router.push(paths.dashboard.order.root);
@@ -318,7 +323,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
                   { phoneNumber: { like: `%${event.target.value}%` } },
                 ],
               },
-              { permissions: ["worker"]},
+              { permissions: ["worker"] },
               { isActive: true },
             ],
           },

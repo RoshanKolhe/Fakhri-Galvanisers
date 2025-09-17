@@ -323,7 +323,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   {...fieldProps}
                   options={hsnMasters}
                   getOptionLabel={(option) => (option ? option.hsnCode : '')}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  isOptionEqualToValue={(option, value) => Number(option.id) === Number(value.id)}
                   onChange={(_, selectedOption) => {
                     onChange(selectedOption);
                     if (selectedOption) {
