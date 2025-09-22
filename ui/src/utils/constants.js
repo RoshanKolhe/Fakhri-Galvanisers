@@ -434,7 +434,7 @@ export const formatTime = (isoString) => {
 };
 
 export function useUserRoles() {
-  const permissions = sessionStorage.getItem(PERMISSION_KEY).split(',');
+  const permissions = localStorage.getItem(PERMISSION_KEY).split(',');
 
   return permissions;
 }

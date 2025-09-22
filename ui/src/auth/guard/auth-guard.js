@@ -22,7 +22,7 @@ export default function AuthGuard({ children }) {
 
   const { authenticated } = useAuthContext();
 
-  const loggedInUser = sessionStorage.getItem(PERMISSION_KEY);
+  const loggedInUser = localStorage.getItem(PERMISSION_KEY);
 
   const [checked, setChecked] = useState(false);
 
