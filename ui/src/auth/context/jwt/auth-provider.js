@@ -51,8 +51,8 @@ export function AuthProvider({ children }) {
 
   const initialize = useCallback(async () => {
     try {
-      const accessToken = sessionStorage.getItem(STORAGE_KEY);
-      const permission = sessionStorage.getItem(PERMISSION_KEY);
+      const accessToken = localStorage.getItem(STORAGE_KEY);
+      const permission = localStorage.getItem(PERMISSION_KEY);
 
       if (accessToken && isValidToken(accessToken)) {
         setSession(accessToken);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }) {
     const { accessToken, user } = response.data;
     if (user && user.permissions.includes('customer')) {
       setSession(accessToken);
-      sessionStorage.setItem(PERMISSION_KEY, user.permissions[0]);
+      localStorage.setItem(PERMISSION_KEY, user.permissions[0]);
     } else throw new Error("User Doesn't have permission");
 
     dispatch({
@@ -130,7 +130,7 @@ export function AuthProvider({ children }) {
     console.log(user);
     if (user && (user.permissions.includes('super_admin') || user.permissions.includes('admin') || user.permissions.includes('supervisor'))) {
       setSession(accessToken);
-      sessionStorage.setItem(PERMISSION_KEY, user.permissions[0]);
+      localStorage.setItem(PERMISSION_KEY, user.permissions[0]);
     } else throw new Error("User Doesn't have permission");
 
     dispatch({
@@ -154,7 +154,7 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
 
-    sessionStorage.setItem(STORAGE_KEY, accessToken);
+    localStorage.setItem(STORAGE_KEY, accessToken);
 
     dispatch({
       type: 'REGISTER',
