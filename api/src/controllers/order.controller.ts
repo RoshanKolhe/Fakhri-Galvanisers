@@ -847,6 +847,7 @@ export class OrderController {
           inq: materialWithLots.lots?.map((lot: any) => lot.id) || [],
         },
       },
+      order: ['sequence ASC']
     });
 
     if (materialWithLots.lots && materialWithLots.lots.length > 0) {
