@@ -838,35 +838,36 @@ export class OrderController {
       },
     );
 
-    const isGalvanizingUser = materialWithLots.galvanizingUserId === Number(currentUser.id);
-    const isPreTreatmentUser = materialWithLots.preTreatmentUserId === Number(currentUser.id);
+    const isGalvanizingUser =
+      materialWithLots.galvanizingUserId === Number(currentUser.id);
+    const isPreTreatmentUser =
+      materialWithLots.preTreatmentUserId === Number(currentUser.id);
 
-    const lotProcesses: any = await this.lotProcessesRepository.find({
+    const lotProcesses = await this.lotProcessesRepository.find({
       where: {
         lotsId: {
-          inq: materialWithLots.lots?.map((lot: any) => lot.id) || [],
+          inq: materialWithLots.lots?.map(lot => lot.id) ?? [],
         },
       },
-      order: ['sequence ASC']
+      order: ['sequence ASC'],
     });
 
     if (materialWithLots.lots && materialWithLots.lots.length > 0) {
-      materialWithLots.lots = materialWithLots.lots.map((lot: any) => {
+      materialWithLots.lots = materialWithLots.lots.map(lot => {
         const matchingLotProcesses = lotProcesses.filter(
-          (lotProcess: any) => lotProcess.lotsId === lot.id,
+          lp => lp.lotsId === lot.id,
         );
 
-        console.log('isGalvanizingUser', isPreTreatmentUser);
         lot.processes = lot.processes
-          .filter((process: any) => {
+          .filter((process : any) => {
             if (isGalvanizingUser && isPreTreatmentUser) return true;
             if (isGalvanizingUser) return process.processGroup === 1;
             if (isPreTreatmentUser) return process.processGroup === 0;
             return true;
           })
-          .map((process: any) => {
+          .map((process : any) => {
             const matchedProcess = matchingLotProcesses.find(
-              (lp: any) => lp.processesId === process.id,
+              lp => lp.processesId === process.id,
             );
 
             if (matchedProcess) {
@@ -882,10 +883,20 @@ export class OrderController {
             }
 
             return { ...process };
+          })
+          // ✅ sort by sequence
+          .sort((a, b) => {
+            const seqA =
+              matchingLotProcesses.find(lp => lp.processesId === a.id)?.sequence ??
+              0;
+            const seqB =
+              matchingLotProcesses.find(lp => lp.processesId === b.id)?.sequence ??
+              0;
+            return seqA - seqB;
           });
 
         return { ...lot };
-      });
+      }) as any[];
     }
 
     return { ...materialWithLots };
