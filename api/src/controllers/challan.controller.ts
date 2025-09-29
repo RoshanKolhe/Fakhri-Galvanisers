@@ -150,7 +150,8 @@ export class ChallanController {
     if (
       currentUserPermission.includes('super_admin') ||
       currentUserPermission.includes('admin') ||
-      currentUserPermission.includes('supervisor')
+      currentUserPermission.includes('supervisor') || 
+      currentUserPermission.includes('dispatch')
     ) {
       return this.challanRepository.find(filter);
     } else {

@@ -605,7 +605,7 @@ export default function OrderLotProcessModal({
                       value={lot?.filing || ''}
                       onChange={(e) => handleFilingChange(lotIndex, e.target.value)}
                       displayEmpty
-                      disabled={lot.status !== 0}
+                      // disabled={lot.status !== 0}
                     >
                       <MenuItem value="" disabled>
                         Select

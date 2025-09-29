@@ -68,6 +68,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         Yup.object().shape({
           itemType: Yup.object().required('Material Type is required'),
           materialType: Yup.string().required('Material type is required'),
+          description: Yup.string(),
           quantity: Yup.number().required('Quantity is  required'),
           billingUnit: Yup.string().required('Billing Unit is required'),
           hsnNo: Yup.object().required('Hsn is required'),
@@ -99,6 +100,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         ? currentChallan.materials.map((material) => ({
           itemType: material.itemType ? material.itemType : null,
           materialType: material.materialType || '',
+          description: material.description || '',
           quantity: material.quantity || null,
           billingUnit: material.billingUnit || '',
           hsnNo: material.hsnNo || null,
@@ -110,6 +112,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
         : [{
           itemType: null,
           materialType: '',
+          description: '',
           quantity: null,
           billingUnit: '',
           hsnNo: null,
@@ -254,16 +257,16 @@ export default function ChallanNewEditForm({ currentChallan }) {
               render={({
                 field: { onChange, value: fieldValue, ...fieldProps },
                 fieldState: { error },
-              }) => {
+              }) => 
                 // Watch all selected itemTypes in materials (skip current index)
-                const selectedItemIds = watch('materials')
-                  ?.map((mat, i) => mat?.itemType?.id)
-                  .filter(Boolean);
+                // const selectedItemIds = watch('materials')
+                //   ?.map((mat, i) => mat?.itemType?.id)
+                //   .filter(Boolean);
 
-                console.log('materials', watch('materials'));
-                console.log('selectedItemsIds', selectedItemIds);
+                // console.log('materials', watch('materials'));
+                // console.log('selectedItemsIds', selectedItemIds);
 
-                return (
+                 (
                   <Autocomplete
                     {...fieldProps}
                     options={itemsMasters}
@@ -277,7 +280,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                         setValue(`materials[${index}].tax`, selectedOption.hsnMaster?.tax || 0);
                       }
                     }}
-                    getOptionDisabled={(option) => selectedItemIds.includes(option.id)}
+                    // getOptionDisabled={(option) => selectedItemIds.includes(option.id)}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -291,10 +294,13 @@ export default function ChallanNewEditForm({ currentChallan }) {
                     value={fieldValue || null}
                     sx={{ width: '100%' }}
                   />
-                );
-              }}
+                )
+              }
             />
-
+            <RHFTextField
+              name={`materials[${index}].description`}
+              label="Description"
+            />
             <RHFTextField
               type="number"
               name={`materials[${index}].quantity`}
@@ -616,7 +622,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} onRemove={(file) => handleRemoveFile(file, 'challanImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
+                {values.challanImages?.length > 0 && <MultiFilePreview files={values.challanImages} onRemove={(file) => handleRemoveFile(file, 'challanImages')} onRemoveAll={handleRemoveAllFiles} thumbnail />}
               </Grid>
 
               {/* PO images */}
@@ -652,7 +658,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} onRemove={(file) => handleRemoveFile(file, 'poImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
+                {values.poImages?.length > 0 && <MultiFilePreview files={values.poImages} onRemove={(file) => handleRemoveFile(file, 'poImages')} onRemoveAll={handleRemoveAllFiles} thumbnail />}
               </Grid>
 
               {/* Vehicle images */}
@@ -688,7 +694,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} onRemove={(file) => handleRemoveFile(file, 'vehicleImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
+                {values.vehicleImages?.length > 0 && <MultiFilePreview files={values.vehicleImages} onRemove={(file) => handleRemoveFile(file, 'vehicleImages')} onRemoveAll={handleRemoveAllFiles} thumbnail />}
               </Grid>
 
               {/* Material images */}
@@ -724,7 +730,7 @@ export default function ChallanNewEditForm({ currentChallan }) {
                   onRemoveAll={handleRemoveAllFiles}
                   sx={{ mb: 3 }}
                 />
-                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} onRemove={(file) => handleRemoveFile(file, 'materialImages')} onRemoveAll={handleRemoveAllFiles} thumbnail/>}
+                {values.materialImages?.length > 0 && <MultiFilePreview files={values.materialImages} onRemove={(file) => handleRemoveFile(file, 'materialImages')} onRemoveAll={handleRemoveAllFiles} thumbnail />}
               </Grid>
             </Grid>
 

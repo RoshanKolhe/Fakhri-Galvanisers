@@ -150,16 +150,18 @@ export default function OrderQcTestTemplatePdf({ orderDetails }) {
                     {/* Material description table */}
                     <View style={styles.table}>
                         <View style={styles.tableRow}>
-                            <Text style={{ textAlign: 'center', width: '20%', ...styles.tableCell }}>Sr.No</Text>
-                            <Text style={{ textAlign: 'center', width: '60%', ...styles.tableCell }}>Material Description</Text>
-                            <Text style={{ textAlign: 'center', width: '20%', ...styles.tableCell }}>QTY(NOS)</Text>
+                            <Text style={{ textAlign: 'center', flex: 1, ...styles.tableCell }}>Sr.No</Text>
+                            <Text style={{ textAlign: 'center', flex: 2, ...styles.tableCell }}>Material</Text>
+                            <Text style={{ textAlign: 'center', flex: 6, ...styles.tableCell }}>Description</Text>
+                            <Text style={{ textAlign: 'center', flex: 1, ...styles.tableCell }}>QTY(NOS)</Text>
                         </View>
                         {
                             orderDetails?.materials?.length > 0 && orderDetails?.materials?.map((material, index) => (
                                 <View style={styles.tableRow}>
-                                    <Text style={{ textAlign: 'center', width: '20%', ...styles.tableCell }}>{index + 1}</Text>
-                                    <Text style={{ width: '60%', ...styles.tableCell }}>{material?.materialType}</Text>
-                                    <Text style={{ textAlign: 'center', width: '20%', ...styles.tableCell }}>{material?.totalQuantity}</Text>
+                                    <Text style={{ textAlign: 'center', flex: 1, ...styles.tableCell }}>{index + 1}</Text>
+                                    <Text style={{ flex: 2, ...styles.tableCell }}>{material?.materialType}</Text>
+                                    <Text style={{ flex: 6, ...styles.tableCell }}>{material?.description}</Text>
+                                    <Text style={{ textAlign: 'center', flex: 1, ...styles.tableCell }}>{material?.totalQuantity}</Text>
                                 </View>
                             ))
                         }

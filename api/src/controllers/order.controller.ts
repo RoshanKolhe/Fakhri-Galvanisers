@@ -153,6 +153,7 @@ export class OrderController {
           hsnCode: material.hsnCode,
           totalQuantity: material.totalQuantity,
           materialType: material.materialType,
+          description: material.description ? material.description : 'NA',
           noOfLots: material.noOfLots,
           startDate: material.startDate,
           endDate: material.endDate,
@@ -859,13 +860,13 @@ export class OrderController {
         );
 
         lot.processes = lot.processes
-          .filter((process : any) => {
+          .filter((process: any) => {
             if (isGalvanizingUser && isPreTreatmentUser) return true;
             if (isGalvanizingUser) return process.processGroup === 1;
             if (isPreTreatmentUser) return process.processGroup === 0;
             return true;
           })
-          .map((process : any) => {
+          .map((process: any) => {
             const matchedProcess = matchingLotProcesses.find(
               lp => lp.processesId === process.id,
             );
@@ -964,8 +965,9 @@ export class OrderController {
         },
         { transaction: tx },
       );
-      await this.updateOrderAndMaterialStatus(orderId);
       tx.commit();
+      
+      await this.updateOrderAndMaterialStatus(orderId);
       return Promise.resolve({
         status: 1,
         msg: 'Lot process Updated Successfully',
@@ -1036,6 +1038,8 @@ export class OrderController {
           }
         }
 
+        console.log('processes', processes);
+        console.log('all process completed', allProcessesCompleted);
         // Update lot status
         const lotStatus = lotInProgress ? 1 : allProcessesCompleted ? 2 : 0;
         await this.lotsRepository.updateById(lot.id, { status: lotStatus });

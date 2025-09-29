@@ -145,6 +145,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
       noOfLots: material.noOfLots,
       totalQuantity: material.totalQuantity,
       materialName: material.materialType,
+      description: material.description,
       materialId: material.id,
       orderId: currentOrder?.orderId || 'NA',
       microns: material.microns,
@@ -167,6 +168,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
     materials: Yup.array().of(
       Yup.object().shape({
         materialType: Yup.string().required('Material type is required'),
+        description: Yup.string(),
         totalQuantity: Yup.number().required('Quantity is  required'),
         // startDate: Yup.string()
         //   .required('Start Date is required')
@@ -207,6 +209,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
         ? currentOrder.materials.map((material) => ({
           id: material.id || '',
           materialType: material.materialType || '',
+          description: material.description || '',
           microns: material.microns || 0,
           hsnCode: material.hsnCode || '',
           totalQuantity: material.totalQuantity || null,
@@ -443,7 +446,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
                 )}
               />
             </Grid> */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4}>
               <RHFSelect name={`materials[${index}].status`} label="Material Status" disabled>
                 {MATERIAL_STATUS_OPTIONS.map((status) => (
                   <MenuItem key={status.value} value={status.value}>
@@ -452,7 +455,15 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
                 ))}
               </RHFSelect>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4}>
+              <RHFTextField
+                name={`materials[${index}].description`}
+                label="Description"
+                fullWidth
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
               <Stack spacing={0} sx={{ position: 'relative' }}>
                 <RHFTextField
                   type="number"
@@ -742,6 +753,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
               return {
                 id: material.id || randomIdGenerator(),
                 materialType: material.materialType || '',
+                description: material.description || '',
                 hsnCode: material.hsnNo.hsnCode || '',
                 microns: material.microns || 0,
                 totalQuantity: material.quantity || null,

@@ -5,13 +5,13 @@ import {
   belongsTo,
   hasMany,
 } from '@loopback/repository';
-import {Order} from './order.model';
-import {User} from './user.model';
-import {MaterialUser} from './material-user.model';
-import {Processes} from './processes.model';
-import {MaterialProcess} from './material-process.model';
-import {Lots} from './lots.model';
-import {QcReport} from './qc-report.model';
+import { Order } from './order.model';
+import { User } from './user.model';
+import { MaterialUser } from './material-user.model';
+import { Processes } from './processes.model';
+import { MaterialProcess } from './material-process.model';
+import { Lots } from './lots.model';
+import { QcReport } from './qc-report.model';
 
 @model()
 export class Material extends Entity {
@@ -27,6 +27,11 @@ export class Material extends Entity {
     required: true,
   })
   materialType: string;
+
+  @property({
+    type: 'string',
+  })
+  description?: string;
 
   @property({
     type: 'string',
@@ -130,7 +135,7 @@ export class Material extends Entity {
   // @hasMany(() => User, {through: {model: () => MaterialUser}})
   // users: User[];
 
-  @hasMany(() => Processes, {through: {model: () => MaterialProcess}})
+  @hasMany(() => Processes, { through: { model: () => MaterialProcess } })
   processes: Processes[];
 
   @belongsTo(() => User)
@@ -138,7 +143,7 @@ export class Material extends Entity {
 
   @belongsTo(() => User)
   galvanizingUserId: number;
-  
+
   @hasMany(() => Lots)
   lots: Lots[];
 
