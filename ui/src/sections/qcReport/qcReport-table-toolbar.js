@@ -101,7 +101,7 @@ export default function QcReportTableToolbar({
           </IconButton> */}
         </Stack>
 
-        {canReset && (
+        {/* {canReset && (
           <Button
             color="error"
             sx={{ flexShrink: 0 }}
@@ -110,7 +110,7 @@ export default function QcReportTableToolbar({
           >
             Clear
           </Button>
-        )}
+        )} */}
       </Stack>
 
       <CustomPopover

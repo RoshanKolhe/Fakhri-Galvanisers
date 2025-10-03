@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetQuotations() {
-  const URL = endpoints.quotation.list;
+export function useGetQuotations(filterParams) {
+          const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.quotation.list}?${queryString}` : endpoints.quotation.list;
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +19,17 @@ export function useGetQuotations() {
   };
 
   return {
-    quotations: data || [],
+    quotations: data?.data || [],
+    totalcount: data?.count ||{total:0,
+    approvedTotal:0,
+    pendingApprovalTotal:0,
+    rejectedTotal:0,
+    createdTotal:0,
+  },
     quotationsLoading: isLoading,
     quotationsError: error,
     quotationsValidating: isValidating,
-    quotationsEmpty: !isLoading && !data?.length,
+    quotationsEmpty:  !isLoading && (!data?.data || data?.data?.length === 0),
     refreshQuotations, // Include the refresh function separately
   };
 }
@@ -63,11 +71,11 @@ export function useGetQuotationsWithFilter(filter) {
   };
 
   return {
-    filteredQuotations: data || [],
+    filteredQuotations: data?.data || [],
     filteredQuotationsLoading: isLoading,
     filteredQuotationsError: error,
     filteredQuotationsValidating: isValidating,
-    filteredQuotationsEmpty: !isLoading && !data?.length,
+    filteredQuotationsEmpty: !isLoading && !data?.data?.length,
     refreshFilterQuotations, // Include the refresh function separately
   };
 }

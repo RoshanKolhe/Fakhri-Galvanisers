@@ -17,6 +17,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import { Challan } from '../models';
 import { ChallanRepository, NotificationRepository, OrderRepository } from '../repositories';
@@ -60,7 +61,7 @@ export class ChallanController {
     content: { 'application/json': { schema: getModelSchemaRef(Challan) } },
   })
   async create(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -75,7 +76,7 @@ export class ChallanController {
   ): Promise<Challan> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
-        and: [{ poNumber: challan.poNumber }, { customerId: currnetUser.id }],
+        and: [{ poNumber: challan.poNumber }, { customerId: currentUser.id }],
       },
     });
     if (existingChallan && existingChallan.poNumber == challan.poNumber) {
@@ -84,14 +85,14 @@ export class ChallanController {
       );
     }
 
-    const createdChallan = await this.challanRepository.create(challan);
+    const createdChallan = await this.challanRepository.create(challan, { currentUser });
 
     if (!createdChallan || !createdChallan.id) {
       throw new HttpErrors.BadRequest('Something went wrong');
     }
 
     const formattedChallanId = `CHALLAN${createdChallan.id.toString().padStart(5, '0')}`;
-    await this.challanRepository.updateById(createdChallan.id, { challanId: formattedChallanId });
+    await this.challanRepository.updateById(createdChallan.id, { challanId: formattedChallanId }, { currentUser });
 
     return createdChallan;
   }
@@ -104,7 +105,7 @@ export class ChallanController {
         PermissionKeys.ADMIN,
         PermissionKeys.CUSTOMER,
         PermissionKeys.DISPATCH,
-        PermissionKeys.SUPERVISOR
+        PermissionKeys.SUPERVISOR,
       ],
     },
   })
@@ -114,54 +115,71 @@ export class ChallanController {
     content: {
       'application/json': {
         schema: {
-          type: 'array',
-          items: getModelSchemaRef(Challan, { includeRelations: true }),
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: getModelSchemaRef(Challan, { includeRelations: true }),
+            },
+            total: { type: 'number' },
+          },
         },
       },
     },
   })
   async find(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(Challan) filter?: Filter<Challan>,
-  ): Promise<Challan[]> {
-    filter = {
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+    @param.query.object('filter', getFilterSchemaFor(Challan))
+    filter?: Filter<Challan>,
+  ): Promise<{ data: Challan[]; count: number }> {
+    filter = filter ?? {};
+
+    const baseFilter: Filter<Challan> = {
       ...filter,
       where: {
-        ...filter?.where,
+        ...filter.where,
         isDeleted: false,
       },
       include: [
         {
           relation: 'quotation',
-          scope: {
-            include: [{ relation: 'customer' }],
-          },
+          scope: { include: [{ relation: 'customer' }] },
         },
-        {
-          relation: 'order',
-        },
-        {
-          relation: 'customer',
-        },
+        { relation: 'order' },
+        { relation: 'customer' },
       ],
       order: ['createdAt DESC'],
     };
-    const currentUserPermission = currnetUser.permissions;
+
+    const userPermissions = currentUser.permissions;
+
+    let finalFilter: Filter<Challan>;
     if (
-      currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin') ||
-      currentUserPermission.includes('supervisor')
+      userPermissions.includes(PermissionKeys.SUPER_ADMIN) ||
+      userPermissions.includes(PermissionKeys.ADMIN) ||
+      userPermissions.includes(PermissionKeys.SUPERVISOR)
     ) {
-      return this.challanRepository.find(filter);
+      finalFilter = baseFilter;
     } else {
-      return this.challanRepository.find({
-        ...filter,
+      finalFilter = {
+        ...baseFilter,
         where: {
-          customerId: currnetUser.id,
+          ...baseFilter.where,
+          customerId: currentUser.id,
         },
-      });
+      };
     }
+
+    const countFilter={
+      isDeleted :false,
+    }
+
+    const data = await this.challanRepository.find(finalFilter);
+    const total = await this.challanRepository.count(countFilter);
+
+    return { data, count: total.count };
   }
+
 
   @authenticate({
     strategy: 'jwt',
@@ -276,7 +294,7 @@ export class ChallanController {
   })
   async updateById(
     @param.path.number('id') id: number,
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -303,15 +321,26 @@ export class ChallanController {
       }
 
     }
-    await this.challanRepository.updateById(id, challan);
+    await this.challanRepository.updateById(id, challan, { currentUser });
   }
 
+  @authenticate({
+    strategy: 'jwt',
+    options: {
+      required: [
+        PermissionKeys.SUPER_ADMIN,
+      ],
+    },
+  })
   @del('/challans/{id}')
   @response(204, {
     description: 'Challan DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.challanRepository.deleteById(id);
+  async deleteById(
+    @param.path.number('id') id: number,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+  ): Promise<void> {
+    await this.challanRepository.deleteById(id, { currentUser });
   }
 
   // material arraived to notify customer

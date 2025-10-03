@@ -6,8 +6,11 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetQcReports() {
-  const URL = endpoints.qcReport.list;
+export function useGetQcReports(filterParams) {
+ const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.qcReport.list}?${queryString}` : endpoints.qcReport.list;
+
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +20,16 @@ export function useGetQcReports() {
   };
 
   return {
-    qcReports: data || [],
+    qcReports: data?.data || [],
+    totalCount: data?.count || {total:0 ,
+pendingTotal:0,
+completedTotal:0
+  },
     qcReportsLoading: isLoading,
     qcReportsError: error,
     qcReportsValidating: isValidating,
-    qcReportsEmpty: !isLoading && !data?.length,
+
+    qcReportsEmpty: !isLoading && (!data?.data || !data?.data?.length=== 0),
     refreshQcReports, // Include the refresh function separately
   };
 }
@@ -63,11 +71,11 @@ export function useGetQcReportsWithFilter(filter) {
   };
 
   return {
-    filteredQcReports: data || [],
+    filteredQcReports: data?.data || [],
     filteredQcReportsLoading: isLoading,
     filteredQcReportsError: error,
     filteredQcReportsValidating: isValidating,
-    filteredQcReportsEmpty: !isLoading && !data?.length,
+    filteredQcReportsEmpty: !isLoading && !data?.data?.length,
     refreshFilterQcReports, // Include the refresh function separately
   };
 }

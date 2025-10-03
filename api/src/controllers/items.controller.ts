@@ -17,6 +17,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import { Items, Processes } from '../models';
 import { ChallanRepository, ItemProcessRepository, ItemsRepository } from '../repositories';
@@ -180,23 +181,52 @@ export class ItemsController {
     return this.itemsRepository.count(where);
   }
 
-  @get('/items')
-  @response(200, {
-    description: 'Array of Items model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Items, { includeRelations: true }),
+ @get('/items')
+@response(200, {
+  description: 'Array of Items model instances with total count',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'array',
+            items: getModelSchemaRef(Items, { includeRelations: true }),
+          },
+          total: { type: 'number' },
         },
       },
     },
-  })
-  async find(
-    @param.filter(Items) filter?: Filter<Items>,
-  ): Promise<Items[]> {
-    return this.itemsRepository.find({ ...filter, include: [{ relation: 'hsnMaster' }] });
-  }
+  },
+})
+async find(
+  @param.query.object('filter', getFilterSchemaFor(Items))
+  filter?: Filter<Items>,
+): Promise<{ data: Items[]; count:{total:number,
+      activeTotal: number;
+      inActiveTotal: number;
+    } }> {
+  filter = filter ?? {};
+
+  const finalFilter: Filter<Items> = {
+    ...filter,
+    include: [{ relation: 'hsnMaster' }],
+  };
+
+     const countFilter={
+      isDeleted:false
+    }
+
+  const data = await this.itemsRepository.find(finalFilter);
+  const total = await this.itemsRepository.count(countFilter);
+  const activeTotal = await this.itemsRepository.count({...countFilter, status: 1 });
+    const inActiveTotal = await this.itemsRepository.count({...countFilter, status: 0 });
+
+  return { data,count:{ total: total.count,
+     activeTotal: activeTotal.count,
+        inActiveTotal: inActiveTotal.count
+  } };
+}
 
   @authenticate({
     strategy: 'jwt',

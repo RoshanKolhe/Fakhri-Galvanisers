@@ -61,7 +61,7 @@ export default function QuotationTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search with only the Id number (like. 1 ,2...etc)"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

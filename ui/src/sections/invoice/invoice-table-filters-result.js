@@ -20,7 +20,7 @@ export default function InvoiceTableFiltersResult({
   results,
   ...other
 }) {
-  const shortLabel = shortDateLabel(filters.startDate, filters.endDate);
+  // const shortLabel = shortDateLabel(filters.startDate, filters.endDate);
 
   const handleRemoveService = (inputValue) => {
     const newValue = filters.service.filter((item) => item !== inputValue);
@@ -77,7 +77,7 @@ export default function InvoiceTableFiltersResult({
 
         {filters.startDate && filters.endDate && (
           <Block label="Date:">
-            <Chip size="small" label={shortLabel} onDelete={handleRemoveDate} />
+            <Chip size="small"  onDelete={handleRemoveDate} />
           </Block>
         )}
 

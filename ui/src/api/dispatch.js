@@ -6,8 +6,12 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetDispatches() {
-  const URL = endpoints.dispatch.list;
+export function useGetDispatches(filterParams) {
+      const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.dispatch.list}?${queryString}` : endpoints.dispatch.list;
+
+
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +21,16 @@ export function useGetDispatches() {
   };
 
   return {
-    dispatches: data || [],
+    dispatches: data?.data || [],
+    totalcount: data?.count ||{total: 0,
+pendingTotal:0,
+documentsUploadedTotal:0,
+completedTotal:0,
+  },
     dispatchesLoading: isLoading,
     dispatchesError: error,
     dispatchesValidating: isValidating,
-    dispatchesEmpty: !isLoading && !data?.length,
+    dispatchesEmpty: !isLoading && (!data?.data || !data?.data?.length=== 0),
     refreshDispatches, // Include the refresh function separately
   };
 }
@@ -34,7 +43,7 @@ export function useGetDispatch(dispatchId) {
 
   const memoizedValue = useMemo(
     () => ({
-      dispatch: data,
+      dispatch: data?.data || [],
       dispatchLoading: isLoading,
       dispatchError: error,
       dispatchValidating: isValidating,
@@ -63,11 +72,11 @@ export function useGetDispatchesWithFilter(filter) {
   };
 
   return {
-    filteredDispatches: data || [],
+    filteredDispatches: data?.data || [],
     filteredDispatchesLoading: isLoading,
     filteredDispatchesError: error,
     filteredDispatchesValidating: isValidating,
-    filteredDispatchesEmpty: !isLoading && !data?.length,
+    filteredDispatchesEmpty: !isLoading && !data?.data?.length,
     refreshFilterDispatches, // Include the refresh function separately
   };
 }

@@ -36,11 +36,16 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetCustomersWithFilter } from 'src/api/customer';
+import { useGetOrdersWithFilter } from 'src/api/order';
+
+import { buildFilter } from 'src/utils/filters';
 import { useGetQcReports } from 'src/api/qcReport';
 import { QCREPORT_STATUS_OPTIONS } from 'src/utils/constants';
 import QcReportTableToolbar from '../qcReport-table-toolbar';
 import QcReportTableFiltersResult from '../qcReport-table-filters-result';
 import QcReportTableRow from '../qcReport-table-row';
+
 
 // ----------------------------------------------------------------------
 
@@ -61,6 +66,11 @@ const defaultFilters = {
   status: 'all',
   startDate: null,
   endDate: null,
+  additionalConditions:{
+    customerId: [],
+    orderId:[]
+  },
+
 };
 
 // ----------------------------------------------------------------------
@@ -82,31 +92,96 @@ export default function QcReportListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { qcReports, qcReportsLoading, qcReportsEmpty, refreshQcReports } = useGetQcReports();
+  const filter = buildFilter({
+      page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['id'],
+    searchTextValue: filters.name,
+    status: filters.status,
+    additionalWhereOrConditions: [
+      { customerId: filters.additionalConditions.customerId.length > 0 ? { inq: filters.additionalConditions.customerId } : null },
+      { orderId: filters.additionalConditions.orderId.length > 0 ? { inq: filters.additionalConditions.orderId } : null },
+    ].filter(Boolean),
+    combineName: true,
+
+  })
+
+  const { qcReports,totalCount, qcReportsLoading, qcReportsEmpty, refreshQcReports } = useGetQcReports(filter);
+
+  const customerFIlter = {
+        where: {
+          or: [
+            { firstName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+            { lastName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+            { email: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+          ],
+        },
+        limit: 20,
+        fields: { id: true }
+      };
+      const { filteredCustomers, filteredCustomersEmpty } = useGetCustomersWithFilter(encodeURIComponent(JSON.stringify(customerFIlter)));
+    
+      useEffect(() => {
+        if (filteredCustomers.length > 0 && !filteredCustomersEmpty && filters.name.length > 3) {
+          console.table(filteredCustomers);
+          const ids = filteredCustomers.map((customer) => customer.id);
+          filters.additionalConditions.customerId = ids || [];
+        } else {
+          filters.additionalConditions.customerId = [];
+        }
+      }, [filteredCustomers, filteredCustomersEmpty, filters]);
+    
+      console.log(filter);
+  
+      const orderFIlter= {
+        where: {
+            orderId: { like: `%${filters.name.trim() || ''}%`, options: 'i' },
+        },
+        limit: 20,
+        fields: { id: true }
+      };
+      const { filteredOrders, filteredOrdersEmpty } = useGetOrdersWithFilter(encodeURIComponent(JSON.stringify(orderFIlter)));
+    
+      useEffect(() => {
+        if (filteredOrders.length > 0 && !filteredOrdersEmpty && filters.name.length > 3) {
+          console.table(filteredOrders);
+          const ids = filteredOrders.map((order) => order.id);
+          filters.additionalConditions.orderId = ids || [];
+        } else {
+          filters.additionalConditions.orderId = [];
+        }
+      }, [filteredOrders, filteredOrdersEmpty, filters]);
+    
+      console.log(filter);
+
 
   const dateError =
     filters.startDate && filters.endDate
       ? filters.startDate.getTime() > filters.endDate.getTime()
       : false;
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.qcReport, table.qcReportBy),
-    filters,
-    dateError,
-  });
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.qcReport, table.qcReportBy),
+  //   filters,
+  //   dateError,
+  // });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset =
     !!filters.name || filters.status !== 'all' || (!!filters.startDate && !!filters.endDate);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!qcReports.length && canReset) || !qcReports.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -124,9 +199,9 @@ export default function QcReportListView() {
       const deleteRow = tableData.filter((row) => row.id !== id);
       setTableData(deleteRow);
 
-      table.onUpdatePageDeleteRow(dataInPage.length);
+      table.onUpdatePageDeleteRow(qcReports.length);
     },
-    [dataInPage.length, table, tableData]
+    [qcReports.length, table, tableData]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -135,10 +210,10 @@ export default function QcReportListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: qcReports.length,
+      totalRowsFiltered: qcReports.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [qcReports.length,  table, tableData]);
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
@@ -216,11 +291,11 @@ export default function QcReportListView() {
                       (tab.value === 0 && 'warning') || (tab.value === 1 && 'success') || 'default'
                     }
                   >
-                    {tab.value === 'all' && qcReports.length}
+                    {tab.value === 'all' && totalCount.total}
                     {tab.value === 0 &&
-                      qcReports.filter((qcReport) => qcReport.status === 0).length}
+                      totalCount.pendingTotal}
                     {tab.value === 1 &&
-                      qcReports.filter((qcReport) => qcReport.status === 1).length}
+                      totalCount.completedTotal}
                   </Label>
                 }
               />
@@ -240,7 +315,7 @@ export default function QcReportListView() {
               filters={filters}
               onFilters={handleFilters}
               onResetFilters={handleResetFilters}
-              results={dataFiltered.length}
+              results={qcReports.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -284,11 +359,8 @@ export default function QcReportListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {qcReports
+                    
                     .map((row) => (
                       <QcReportTableRow
                         key={row.id}
@@ -313,7 +385,7 @@ export default function QcReportListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetItemsMasters() {
-  const URL = endpoints.itemsMaster.list;
+export function useGetItemsMasters(filterParams) {
+  const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+  const URL = queryString ? `${endpoints.itemsMaster.list}?${queryString}` : endpoints.itemsMaster.list;
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +19,16 @@ export function useGetItemsMasters() {
   };
 
   return {
-    itemsMasters: data || [],
+    itemsMasters: data?.data || [],
+    totalCount: data?.count || {
+      total: 0,
+      activeTotal: 0,
+      inActiveTotal: 0,
+    },
     itemsMastersLoading: isLoading,
     itemsMastersError: error,
     itemsMastersValidating: isValidating,
-    itemsMastersEmpty: !isLoading && !data?.length,
+    itemsMastersEmpty: !isLoading && (!data?.data, !data?.data?.length === 0),
     refreshItemsMasters, // Include the refresh function separately
   };
 }
@@ -63,11 +70,11 @@ export function useGetItemsMastersWithFilter(filter) {
   };
 
   return {
-    filteredItemsMasters: data || [],
+    filteredItemsMasters: data?.data || [],
     filteredItemsMastersLoading: isLoading,
     filteredItemsMastersError: error,
     filteredItemsMastersValidating: isValidating,
-    filteredItemsMastersEmpty: !isLoading && !data?.length,
+    filteredItemsMastersEmpty: !isLoading && !data?.data?.length,
     refreshFilterItemsMasters, // Include the refresh function separately
   };
 }

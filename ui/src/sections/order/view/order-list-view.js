@@ -37,12 +37,15 @@ import {
 } from 'src/components/table';
 //
 import { useGetOrders } from 'src/api/order';
+import { useGetCustomersWithFilter } from 'src/api/customer';
 import { ORDER_STATUS_OPTIONS } from 'src/utils/constants';
 import { useAuthContext } from 'src/auth/hooks';
 import { RouterLink } from 'src/routes/components';
+import { buildFilter } from 'src/utils/filters';
 import OrderTableRow from '../order-table-row';
 import OrderTableToolbar from '../order-table-toolbar';
 import OrderTableFiltersResult from '../order-table-filters-result';
+
 
 // ----------------------------------------------------------------------
 
@@ -62,6 +65,9 @@ const defaultFilters = {
   status: 'all',
   startDate: null,
   endDate: null,
+  additionalConditions: {
+    customerId: []
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -80,31 +86,71 @@ export default function OrderListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { orders, ordersLoading, ordersEmpty, refreshOrders } = useGetOrders();
+  const filter = buildFilter({
+    page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['orderId'],
+    searchTextValue: filters.name,
+    status: filters.status,
+    additionalWhereOrConditions: [
+      { customerId: filters.additionalConditions.customerId.length > 0 ? { inq: filters.additionalConditions.customerId } : null },
+    ].filter(Boolean),
+    combineName: true,
+  });
+  const { orders, totalcount, ordersLoading, ordersEmpty, refreshOrders } = useGetOrders(filter);
+
+  const customerFIlter = {
+    where: {
+      or: [
+        { firstName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+        { lastName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+        { email: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+      ],
+    },
+    limit: 20,
+    fields: { id: true }
+  };
+  const { filteredCustomers, filteredCustomersEmpty } = useGetCustomersWithFilter(encodeURIComponent(JSON.stringify(customerFIlter)));
+
+  useEffect(() => {
+    if (filteredCustomers.length > 0 && !filteredCustomersEmpty && filters.name.length > 3) {
+      console.table(filteredCustomers);
+      const ids = filteredCustomers.map((customer) => customer.id);
+      filters.additionalConditions.customerId = ids || [];
+    } else {
+      filters.additionalConditions.customerId = [];
+    }
+  }, [filteredCustomers, filteredCustomersEmpty, filters]);
+
+  console.log(filter);
 
   const dateError =
     filters.startDate && filters.endDate
       ? filters.startDate.getTime() > filters.endDate.getTime()
       : false;
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-    dateError,
-  });
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  //   dateError,
+  // });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset =
     !!filters.name || filters.status !== 'all' || (!!filters.startDate && !!filters.endDate);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!orders.length && canReset) || !orders.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -122,9 +168,9 @@ export default function OrderListView() {
       const deleteRow = tableData.filter((row) => row.id !== id);
       setTableData(deleteRow);
 
-      table.onUpdatePageDeleteRow(dataInPage.length);
+      table.onUpdatePageDeleteRow(orders.length);
     },
-    [dataInPage.length, table, tableData]
+    [orders.length, table, tableData]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -133,10 +179,10 @@ export default function OrderListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: orders.length,
+      totalRowsFiltered: orders.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [orders.length, table, tableData]);
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
@@ -225,12 +271,12 @@ export default function OrderListView() {
                       'default'
                     }
                   >
-                    {tab.value === 'all' && orders.length}
-                    {tab.value === 0 && orders.filter((order) => order.status === 0).length}
+                    {tab.value === 'all' && totalcount.total}
+                    {tab.value === 0 && totalcount.materialReceivedTotal}
 
-                    {tab.value === 1 && orders.filter((order) => order.status === 1).length}
-                    {tab.value === 2 && orders.filter((order) => order.status === 2).length}
-                    {tab.value === 3 && orders.filter((order) => order.status === 3).length}
+                    {tab.value === 1 && totalcount.inProcessTotal}
+                    {tab.value === 2 && totalcount.materialReadyTotal}
+                    {tab.value === 3 && totalcount.readyToDispatchTotal}
                     {tab.value === 4 && orders.filter((order) => order.status === 4).length}
                     {tab.value === 5 && orders.filter((order) => order.status === 5).length}
                   </Label>
@@ -252,7 +298,7 @@ export default function OrderListView() {
               filters={filters}
               onFilters={handleFilters}
               onResetFilters={handleResetFilters}
-              results={dataFiltered.length}
+              results={orders.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -296,11 +342,7 @@ export default function OrderListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {orders
                     .map((row) => (
                       <OrderTableRow
                         key={row.id}
@@ -324,7 +366,7 @@ export default function OrderListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalcount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -364,42 +406,160 @@ export default function OrderListView() {
 
 // ----------------------------------------------------------------------
 
-function applyFilter({ inputData, comparator, filters, dateError }) {
-  const { status, name, startDate, endDate } = filters;
+// function applyFilter({ inputData, comparator, filters, dateError }) {
+//   const { status, name, startDate, endDate } = filters;
 
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
+//   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
+//   stabilizedThis.sort((a, b) => {
+//     const order = comparator(a[0], b[0]);
+//     if (order !== 0) return order;
+//     return a[1] - b[1];
+//   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+//   inputData = stabilizedThis.map((el) => el[0]);
 
-  if (name) {
-    inputData = inputData.filter(
-      (order) =>
-        order.orderId.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        order.customer.firstName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        order.customer.lastName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        order.customer.email.toLowerCase().indexOf(name.toLowerCase()) !== -1
-    );
-  }
+//   if (name) {
+//     inputData = inputData.filter(
+//       (order) =>
+//         order.orderId.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+//         order.customer.firstName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+//         order.customer.lastName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+//         order.customer.email.toLowerCase().indexOf(name.toLowerCase()) !== -1
+//     );
+//   }
 
-  if (status !== 'all') {
-    inputData = inputData.filter((order) => order.status === status);
-  }
+//   if (status !== 'all') {
+//     inputData = inputData.filter((order) => order.status === status);
+//   }
 
-  if (!dateError) {
-    if (startDate && endDate) {
-      inputData = inputData.filter(
-        (order) =>
-          fTimestamp(order.createdAt) >= fTimestamp(startDate) &&
-          fTimestamp(order.createdAt) <= fTimestamp(endDate)
-      );
-    }
-  }
+//   if (!dateError) {
+//     if (startDate && endDate) {
+//       inputData = inputData.filter(
+//         (order) =>
+//           fTimestamp(order.createdAt) >= fTimestamp(startDate) &&
+//           fTimestamp(order.createdAt) <= fTimestamp(endDate)
+//       );
+//     }
+//   }
 
-  return inputData;
-}
+//   return inputData;
+// }
+
+
+// export function formatDate(date) {
+//   return date instanceof Date ? date.toISOString().split('T')[0] : date;
+// }
+
+
+// export function buildFilter({
+//   page,
+//   rowsPerPage,
+//   order,
+//   orderBy,
+//   startDate,
+//   endDate,
+//   validSortFields = [],
+//   searchTextValue,
+//   status,
+//   roles,
+//   additionalWhereOrConditions = [],
+//   combineName = false,
+// }) {
+//   const skip = page * rowsPerPage;
+//   const limit = rowsPerPage;
+
+//   const where = { isDeleted: false };
+//   const orConditions = [];
+
+//   // Map UI roles to DB role keys
+//   const roleMapping = {
+//     'Super Admin': 'super_admin',
+//     Admin: 'admin',
+//     Worker: 'worker',
+//     'Qc Admin': 'qc_Admin',
+//     Dispatch: 'dispatch',
+//     Supervisor: 'supervisor',
+//   };
+
+//   // Status filter
+//   if (status && status !== 'all') {
+//     where.isActive = status === '1';
+//   }
+
+//   // Date filter
+//   if (startDate && endDate) {
+//     where.createdAt = { between: [formatDate(startDate), formatDate(endDate)] };
+//   } else if (startDate) {
+//     where.createdAt = { gte: formatDate(startDate) };
+//   } else if (endDate) {
+//     where.createdAt = { lte: formatDate(endDate) };
+//   }
+
+//   // Search text filter
+//   if (searchTextValue?.trim()) {
+//     const text = searchTextValue.trim();
+
+//     // Name search
+//     // if (combineName) {
+//     //   const [first, last] = text.split(' ');
+//     //   const nameConditions = [];
+//     //   if (first) nameConditions.push({ firstName: { like: `%${first}%` } });
+//     //   if (last) nameConditions.push({ lastName: { like: `%${last}%` } });
+
+//     //   if (nameConditions.length > 1) {
+//     //     orConditions.push({ and: nameConditions });
+//     //   } else if (nameConditions.length === 1) {
+//     //     orConditions.push(nameConditions[0]);
+//     //   }
+//     // }
+
+//     // Other fields
+//     validSortFields.forEach((field) => {
+//       if (['id',].includes(field)) {
+//         // Only search numeric fields if input is a valid number
+//         if (!Number.isNaN(Number(text))) {
+//           orConditions.push({ [field]: Number(text) });
+//         }
+//       } else {
+//         orConditions.push({ [field]: { like: `%${text}%` } });
+//       }
+//     });
+//   }
+
+//   // Roles filter
+//   if (roles?.length) {
+//     const dbRoles = roles.map((uiRole) => roleMapping[uiRole] || uiRole);
+//     orConditions.push(
+//       ...dbRoles.map((role) => ({ permissions: { like: `%${role}%`, options: 'i' } }))
+//     );
+//   }
+
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+//   if (additionalWhereOrConditions?.length) {
+//     additionalWhereOrConditions.forEach((cond) => {
+//       // Only push the condition if it has at least one key with a non-null value
+//       console.log('condition', cond);
+//       const validKeys = Object.keys(cond || {}).filter(
+//         (key) => cond[key] !== null && cond[key] !== undefined
+//       );
+
+//       console.log('valid keys', validKeys);
+//       if (validKeys.length > 0) {
+//         // Only include the valid keys
+//         const validCond = {};
+//         validKeys.forEach((key) => {
+//           validCond[key] = cond[key];
+//         });
+//         where.or.push(validCond);
+//       }
+//     });
+//   }
+
+//   const filter = { skip, limit, where };
+
+//   console.log('buildFilter (final):', JSON.stringify(filter, null, 2));
+//   return filter;
+// }

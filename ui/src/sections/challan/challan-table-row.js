@@ -55,7 +55,7 @@ export default function ChallanTableRow({
 }) {
   const {user} = useAuthContext();
   const isCustomer = user?.permissions?.includes('customer');
-  const { id, quotationId, vehicleNumber, grossWeight, netWeight, order, status } = row;
+  const { id, quotationId, vehicleNumber, grossWeight, netWeight, order, status,challanId } = row;
 
   const confirm = useBoolean();
 
@@ -68,7 +68,7 @@ export default function ChallanTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', '&:hover':{textDecoration: 'underline'}, cursor: 'pointer' }}>{formatChallanId(id)}</TableCell>
+        <TableCell onClick={() => onEditRow()} sx={{ whiteSpace: 'nowrap', '&:hover':{textDecoration: 'underline'}, cursor: 'pointer' }}>{challanId}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{quotationId ? formatRFQId(quotationId) : 'NA'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{vehicleNumber}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{grossWeight}</TableCell>

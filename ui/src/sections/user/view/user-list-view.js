@@ -41,10 +41,12 @@ import { useGetUsers } from 'src/api/user';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 import { _roles, USER_STATUS_OPTIONS } from 'src/utils/constants';
+import { buildFilter } from 'src/utils/filters';
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
 import UserQuickEditForm from '../user-quick-edit-form';
+
 
 // ----------------------------------------------------------------------
 
@@ -86,24 +88,39 @@ export default function UserListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { users, usersLoading, usersEmpty, refreshUsers } = useGetUsers();
-
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
+  
+    const filter = buildFilter ({ page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['firstName','lastName','employeeId','phoneNumber','permissions', 'email'],
+    searchTextValue: filters.name,
+    // status: filters.status,
+    isActive:filters.status,
+    roles: filters.role,
+  combineName: true,
   });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  const { users,totalCount, usersLoading, usersEmpty, refreshUsers } = useGetUsers(filter);
+
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
+
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!users.length && canReset) || !users.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -143,10 +160,10 @@ export default function UserListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: users.length,
+      totalRowsFiltered: users.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [users.length, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -239,10 +256,10 @@ export default function UserListView() {
                       'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
-                    {tab.value === '1' && tableData.filter((user) => user.isActive).length}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === '1' && totalCount.activeTotal}
 
-                    {tab.value === '0' && tableData.filter((user) => !user.isActive).length}
+                    {tab.value === '0' && totalCount.inActiveTotal}
                   </Label>
                 }
               />
@@ -263,7 +280,7 @@ export default function UserListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={users.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -307,11 +324,7 @@ export default function UserListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {users
                     .map((row) => (
                       <UserTableRow
                         key={row.id}
@@ -340,7 +353,7 @@ export default function UserListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -392,47 +405,145 @@ export default function UserListView() {
 
 // ----------------------------------------------------------------------
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-  const roleMapping = {
-    super_admin: 'Super Admin',
-    admin: 'Admin',
-    worker: 'Worker',
-    qc_Admin: 'Qc Admin',
-    dispatch: 'Dispatch',
-    supervisor: 'Supervisor'
-  };
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
+// function applyFilter({ inputData, comparator, filters }) {
+//   const { name, status, role } = filters;
+//   const stabilizedThis = inputData.map((el, index) => [el, index]);
+//   const roleMapping = {
+//     super_admin: 'Super Admin',
+//     admin: 'Admin',
+//     worker: 'Worker',
+//     qc_Admin: 'Qc Admin',
+//     dispatch: 'Dispatch',
+//     supervisor: 'Supervisor'
+//   };
+//   stabilizedThis.sort((a, b) => {
+//     const order = comparator(a[0], b[0]);
+//     if (order !== 0) return order;
+//     return a[1] - b[1];
+//   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+//   inputData = stabilizedThis.map((el) => el[0]);
 
-  if (name) {
-    inputData = inputData.filter((user) =>
-      Object.values(user).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
-    );
-  }
+//   if (name) {
+//     inputData = inputData.filter((user) =>
+//       Object.values(user).some((value) => String(value).toLowerCase().includes(name.toLowerCase()))
+//     );
+//   }
 
-  if (status !== 'all') {
-    inputData = inputData.filter((user) => (status === '1' ? user.isActive : !user.isActive));
-  }
+//   if (status !== 'all') {
+//     inputData = inputData.filter((user) => (status === '1' ? user.isActive : !user.isActive));
+//   }
 
-  if (role.length) {
-    inputData = inputData.filter(
-      (user) =>
-        user.permissions &&
-        user.permissions.some((userRole) => {
-          console.log(userRole);
-          const mappedRole = roleMapping[userRole];
-          console.log('Mapped Role:', mappedRole); // Check the mapped role
-          return mappedRole && role.includes(mappedRole);
-        })
-    );
-  }
+//   if (role.length) {
+//     inputData = inputData.filter(
+//       (user) =>
+//         user.permissions &&
+//         user.permissions.some((userRole) => {
+//           console.log(userRole);
+//           const mappedRole = roleMapping[userRole];
+//           console.log('Mapped Role:', mappedRole); // Check the mapped role
+//           return mappedRole && role.includes(mappedRole);
+//         })
+//     );
+//   }
 
-  return inputData;
-}
+//   return inputData;
+// }
+
+// export function formatDate(date) {
+//   return date instanceof Date ? date.toISOString().split('T')[0] : date;
+// }
+
+// export function buildFilter({
+//   page,
+//   rowsPerPage,
+//   order,
+//   orderBy,
+//   startDate,
+//   endDate,
+//   validSortFields= [],
+//   searchTextValue,
+//   status,
+//   roles,
+//   combineName = false, 
+// }) {
+//   const skip = page * rowsPerPage;
+//   const limit = rowsPerPage;
+
+//   const where = { isDeleted: false };
+//   const orConditions= [];
+
+//   // Map UI roles to DB role keys
+//   const roleMapping = {
+//     'Super Admin': 'super_admin',
+//     'Admin': 'admin',
+//     'Worker': 'worker',
+//     'Qc Admin': 'qc_Admin',
+//     'Dispatch': 'dispatch',
+//     'Supervisor': 'supervisor',
+//   };
+
+//   // Status filter
+//   if (status && status !== 'all') {
+//     where.isActive = status === '1';
+//   }
+
+//   // Date filter
+//   if (startDate && endDate) {
+//     where.createdAt = { between: [formatDate(startDate), formatDate(endDate)] };
+//   } else if (startDate) {
+//     where.createdAt = { gte: formatDate(startDate) };
+//   } else if (endDate) {
+//     where.createdAt = { lte: formatDate(endDate) };
+//   }
+
+//   // Search filter
+//   if (searchTextValue?.trim()) {
+//     const text = `%${searchTextValue.trim()}%`;
+
+//     // Case: firstName + lastName combined search
+//     if (combineName) {
+//       orConditions.push({
+//         and: [
+//           { firstName: { like: `%${searchTextValue.split(' ')[0]}%` } },
+//           { lastName: { like: `%${searchTextValue.split(' ')[1] || ''}%` } },
+//         ],
+//       });
+//     }
+
+//     // Loop through dynamic searchable fields
+//     validSortFields.forEach((field) => {
+//       orConditions.push({ [field]: { like: text } });
+//     });
+//   }
+
+//   // 🔹 Roles filter
+//   if (roles?.length) {
+//     const dbRoles = roles.map((uiRole) => roleMapping[uiRole] || uiRole);
+//     orConditions.push(...dbRoles.map((role) => ({
+//       permissions: { like: `%${role}%`, options: 'i' },
+//     })));
+//   }
+
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+
+//   // Only attach OR if needed
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+//   // Sorting
+//   const orderFilter =
+//     validSortFields.includes(orderBy) && order
+//       ? [`${orderBy} ${order === 'desc' ? 'DESC' : 'ASC'}`]
+//       : undefined;
+
+//   const filter = { skip, limit, order: orderFilter, where };
+//   console.log('buildFilter (final with role mapping):', JSON.stringify(filter, null, 2));
+//   return filter;
+// }
+
+

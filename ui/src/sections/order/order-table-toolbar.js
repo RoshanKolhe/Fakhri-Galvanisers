@@ -102,7 +102,7 @@ export default function OrderTableToolbar({
           </IconButton> */}
         </Stack>
 
-        {canReset && (
+        {/* {canReset && (
           <Button
             color="error"
             sx={{ flexShrink: 0 }}
@@ -111,7 +111,7 @@ export default function OrderTableToolbar({
           >
             Clear
           </Button>
-        )}
+        )} */}
       </Stack>
 
       <CustomPopover

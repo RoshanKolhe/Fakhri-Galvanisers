@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetUsers() {
-  const URL = endpoints.user.list;
+export function useGetUsers(filterParams) {
+        const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.user.list}?${queryString}` : endpoints.user.list;
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,14 +19,22 @@ export function useGetUsers() {
   };
 
   return {
-    users: data || [],
+    users: data?.data || [],
+     totalCount: data?.count || {
+        total: 0,
+        activeTotal: 0,
+        inActiveTotal: 0
+      },
     usersLoading: isLoading,
     usersError: error,
     usersValidating: isValidating,
-    usersEmpty: !isLoading && !data?.length,
+    usersEmpty:  !isLoading && (!data?.data || data?.data?.length === 0),
     refreshUsers, // Include the refresh function separately
   };
+  
 }
+
+
 
 export function useGetNotifications(filter) {
   let URL;
@@ -46,7 +56,7 @@ export function useGetNotifications(filter) {
     notificationsLoading: isLoading,
     notificationsError: error,
     notificationsValidating: isValidating,
-    notificationsEmpty: !isLoading && !data?.length,
+    notificationsEmpty: !isLoading && !data?.data?.length,
     refreshNotifications, // Include the refresh function separately
   };
 }
@@ -88,7 +98,7 @@ export function useGetUsersWithFilter(filter) {
   };
 
   return {
-    filteredUsers: data || [],
+    filteredUsers: data?.data || [],
     filteredUsersLoading: isLoading,
     filteredUsersError: error,
     filteredUsersValidating: isValidating,

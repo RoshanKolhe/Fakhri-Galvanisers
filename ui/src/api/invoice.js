@@ -6,8 +6,11 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetPayments() {
-  const URL = endpoints.payment.list;
+export function useGetPayments(filterParams) {
+          const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.payment.list}?${queryString}` : endpoints.payment.list;
+
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +20,18 @@ export function useGetPayments() {
   };
 
   return {
-    payments: data || [],
+    payments: data?.data || [],
+    totalCount: data?.count || {total: 0,
+      paidTotal:0,
+      pendingTotal:0,
+      overdueTotal:0,
+      pendingApprovalTotal:0,
+      requestReuploadTotal:0,
+    },
     paymentsLoading: isLoading,
     paymentsError: error,
     paymentsValidating: isValidating,
-    paymentsEmpty: !isLoading && !data?.length,
+    paymentsEmpty:!isLoading && (!data?.data || data?.data?.length === 0),
     refreshPayments, // Include the refresh function separately
   };
 }
@@ -38,7 +48,7 @@ export function useGetPayment(paymentId) {
   };
 
   return {
-    payment: data,
+    payment: data?.data,
     paymentLoading: isLoading,
     paymentError: error,
     paymentValidating: isValidating,
@@ -64,11 +74,11 @@ export function useGetPaymentsWithFilter(filter) {
   };
 
   return {
-    filteredPayments: data || [],
+    filteredPayments: data?.data || [],
     filteredPaymentsLoading: isLoading,
     filteredPaymentsError: error,
     filteredPaymentsValidating: isValidating,
-    filteredPaymentsEmpty: !isLoading && !data?.length,
+    filteredPaymentsEmpty: !isLoading && !data?.data?.length,
     refreshFilterPayments, // Include the refresh function separately
   };
 }

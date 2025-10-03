@@ -1,9 +1,9 @@
 // Uncomment these imports to begin using these cool features!
 
-import {inject} from '@loopback/core';
-import {FakhriGalvanisersDataSource} from '../datasources';
-import {EmailManagerBindings} from '../keys';
-import {EmailManager} from '../services/email.service';
+import { inject } from '@loopback/core';
+import { FakhriGalvanisersDataSource } from '../datasources';
+import { EmailManagerBindings } from '../keys';
+import { EmailManager } from '../services/email.service';
 import {
   ChallanRepository,
   CustomerCredentials,
@@ -18,8 +18,8 @@ import {
   repository,
 } from '@loopback/repository';
 import * as _ from 'lodash';
-import {BcryptHasher} from '../services/hash.password.bcrypt';
-import {JWTService} from '../services/jwt-service';
+import { BcryptHasher } from '../services/hash.password.bcrypt';
+import { JWTService } from '../services/jwt-service';
 import {
   getJsonSchemaRef,
   getModelSchemaRef,
@@ -34,14 +34,15 @@ import {
   RestBindings,
   Request,
   Response,
+  getFilterSchemaFor,
 } from '@loopback/rest';
-import {Customer} from '../models';
-import {validateCredentials} from '../services/validator';
-import {CredentialsRequestBody} from './specs/customer-controller-spec';
-import {MyCustomerService} from '../services/customer-service';
-import {authenticate, AuthenticationBindings} from '@loopback/authentication';
-import {UserProfile} from '@loopback/security';
-import {PermissionKeys} from '../authorization/permission-keys';
+import { Customer } from '../models';
+import { validateCredentials } from '../services/validator';
+import { CredentialsRequestBody } from './specs/customer-controller-spec';
+import { MyCustomerService } from '../services/customer-service';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
+import { UserProfile } from '@loopback/security';
+import { PermissionKeys } from '../authorization/permission-keys';
 import generateResetPasswordTemplate from '../templates/reset-password.template';
 import SITE_SETTINGS from '../utils/config';
 import multer from 'multer';
@@ -49,7 +50,7 @@ import * as stream from 'stream';
 import csvParser from 'csv-parser';
 
 const memoryStorage = multer.memoryStorage();
-const upload = multer({storage: memoryStorage});
+const upload = multer({ storage: memoryStorage });
 
 export class CustomerController {
   constructor(
@@ -72,7 +73,7 @@ export class CustomerController {
     public customerService: MyCustomerService,
     @inject('service.jwt.service')
     public jwtService: JWTService,
-  ) {}
+  ) { }
 
   @authenticate({
     strategy: 'jwt',
@@ -108,7 +109,7 @@ export class CustomerController {
     try {
       const customer = await this.customerRepository.findOne({
         where: {
-          or: [{email: userData.email}],
+          or: [{ email: userData.email }],
         },
       });
       if (customer) {
@@ -197,37 +198,141 @@ export class CustomerController {
   })
   @get('/customer/list')
   @response(200, {
-    description: 'Array of Users model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Customer, {
-            includeRelations: true,
-          }),
-        },
-      },
-    },
+    description: 'Array of Customer model instances',
   })
   async find(
-    @param.filter(Customer) filter?: Filter<Customer>,
-  ): Promise<Customer[]> {
-    filter = {
+    @param.query.object('filter', getFilterSchemaFor(Customer))
+    filter?: Filter<Customer>,
+  ): Promise<{
+    data: Customer[]; count: {
+      total: number;
+      activeTotal: number;
+      inActiveTotal: number;
+    }
+  }> {
+    filter = filter ?? {};
+
+    const updatedFilter: Filter<Customer> = {
       ...filter,
       where: {
-        ...filter?.where,
         isDeleted: false,
+        ...(filter.where ?? {}),
       },
-      fields: {password: false},
-      order: ['createdAt DESC'],
+      fields: { ...filter.fields ?? {}, password: false },
+      // order: filter.order ?? ['createdAt DESC'],
     };
-    console.log(filter);
-    return this.customerRepository.find(filter);
+
+    console.log('Backend filter:', JSON.stringify(updatedFilter, null, 2));
+
+    const countFilter={
+      isDeleted : false,
+    }
+
+    const data = await this.customerRepository.find(updatedFilter);
+    const total = await this.customerRepository.count(countFilter);
+    const activeTotal = await this.customerRepository.count({...countFilter, isActive: 1 });
+    const inActiveTotal = await this.customerRepository.count({...countFilter, isActive: 0 });
+
+
+    return {
+      data,
+      count: {
+        total: total.count,
+        activeTotal: activeTotal.count,
+        inActiveTotal: inActiveTotal.count
+      }
+    };
   }
+
+
+
+
+  //  @authenticate({
+  //     strategy: 'jwt',
+  //     options: {
+  //       required: [
+  //         PermissionKeys.SUPER_ADMIN,
+  //         PermissionKeys.ADMIN,
+  //         PermissionKeys.CGM,
+  //         PermissionKeys.HOD,
+  //         PermissionKeys.SUB_HOD,
+  //       ],
+  //     },
+  //   })
+  //   @get('/conductions')
+  //   @response(200, {
+  //     description: 'Array of Conduction model instances with pagination',
+  //     content: {
+  //       'application/json': {
+  //         schema: {
+  //           type: 'object',
+  //           properties: {
+  //             data: {
+  //               type: 'array',
+  //               items: getModelSchemaRef(Conduction, {includeRelations: true}),
+  //             },
+  //             total: {type: 'number'},
+  //           },
+  //         },
+  //       },
+  //     },
+  //   })
+  //   async find(
+  //     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+  //     @param.query.object('filter', getFilterSchemaFor(Conduction))
+  //     filter?: Filter<Conduction>,
+  //   ): Promise<{data: Conduction[]; total: number}> {
+  //     const user = await this.userRepository.findById(currentUser.id);
+
+  //     const isCGM = user.permissions?.includes(PermissionKeys.CGM);
+  //     const isHOD = user.permissions?.includes(PermissionKeys.HOD);
+  //     const isSubHOD = user.permissions?.includes(PermissionKeys.SUB_HOD);
+
+  //     filter = filter ?? {};
+
+  //     const updatedFilter: Filter<Conduction> = {
+  //       ...filter,
+  //       where: {
+  //         ...(filter.where ?? {}),
+  //         isDeleted: false,
+  //       },
+  //       include: [
+  //         {relation: 'trainer',
+  //           scope:{
+  //             where:{
+  //               trainer:{
+  //                 firstName:''
+  //               }
+  //             }
+  //           }
+  //         },
+  //         {relation: 'kpi'},
+  //         {relation: 'branch'},
+  //         {relation: 'department'},
+  //       ],
+  //     };
+
+  //     if ((isCGM || isHOD || isSubHOD) && user.branchId) {
+  //       updatedFilter.where = {
+  //         ...updatedFilter.where,
+  //         branchId: user.branchId,
+  //       };
+  //     }
+
+  //     const data = await this.conductionRepository.find(updatedFilter);
+  //     const total = await this.conductionRepository.count(updatedFilter.where);
+
+  //     return {data, total: total.count};
+  //   }
+
+
+
+
+
 
   @authenticate({
     strategy: 'jwt',
-    options: {required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER]},
+    options: { required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.WORKER] },
   })
   @get('/customer/{id}', {
     responses: {
@@ -383,7 +488,7 @@ export class CustomerController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Customer, {partial: true}),
+          schema: getModelSchemaRef(Customer, { partial: true }),
         },
       },
     })
@@ -402,7 +507,7 @@ export class CustomerController {
 
     if (customer.email && customer.email !== existingCustomer.email) {
       const emailExists = await this.customerRepository.findOne({
-        where: {email: customer.email, id: {neq: id}},
+        where: { email: customer.email, id: { neq: id } },
       });
 
       if (emailExists) {
@@ -486,7 +591,7 @@ export class CustomerController {
 
   @authenticate({
     strategy: 'jwt',
-    options: {required: [PermissionKeys.SUPER_ADMIN]},
+    options: { required: [PermissionKeys.SUPER_ADMIN] },
   })
   @del('/customer/{id}')
   @response(204, {
@@ -539,23 +644,23 @@ export class CustomerController {
       latestInvoices,
       latestOrderRes,
     ] = await Promise.all([
-      this.orderRepository.count({customerId: user.id}),
+      this.orderRepository.count({ customerId: user.id }),
       this.paymentRepository.execute(
         'SELECT SUM(totalAmount) as total FROM Payment WHERE status = 0 AND customerId = ?',
         [user.id],
       ),
-      this.orderRepository.count({customerId: user.id, status: 1}),
-      this.orderRepository.count({customerId: user.id, status: 3}),
-      this.orderRepository.count({customerId: user.id, status: 0}),
-      this.orderRepository.count({customerId: user.id, status: 2}),
-      this.challanRepository.count({customerId: user.id}),
+      this.orderRepository.count({ customerId: user.id, status: 1 }),
+      this.orderRepository.count({ customerId: user.id, status: 3 }),
+      this.orderRepository.count({ customerId: user.id, status: 0 }),
+      this.orderRepository.count({ customerId: user.id, status: 2 }),
+      this.challanRepository.count({ customerId: user.id }),
       this.paymentRepository.find({
-        where: {customerId: user.id},
+        where: { customerId: user.id },
         order: ['createdAt DESC'],
         limit: 2, // Fetch latest and second last invoice
       }),
       this.orderRepository.findOne({
-        where: {customerId: user.id},
+        where: { customerId: user.id },
         order: ['createdAt DESC'], // Get latest order
       }),
     ]);
@@ -599,11 +704,11 @@ export class CustomerController {
         value:
           totalOrdersCount > 0
             ? Number(
-                (
-                  (ordersMaterialReceivedCount / totalOrdersCount) *
-                  100
-                ).toFixed(2),
-              )
+              (
+                (ordersMaterialReceivedCount / totalOrdersCount) *
+                100
+              ).toFixed(2),
+            )
             : 0,
       },
       {
@@ -611,8 +716,8 @@ export class CustomerController {
         value:
           totalOrdersCount > 0
             ? Number(
-                ((ordersInProcessCount / totalOrdersCount) * 100).toFixed(2),
-              )
+              ((ordersInProcessCount / totalOrdersCount) * 100).toFixed(2),
+            )
             : 0,
       },
       {
@@ -620,10 +725,10 @@ export class CustomerController {
         value:
           totalOrdersCount > 0
             ? Number(
-                ((ordersMaterialReadyCount / totalOrdersCount) * 100).toFixed(
-                  2,
-                ),
-              )
+              ((ordersMaterialReadyCount / totalOrdersCount) * 100).toFixed(
+                2,
+              ),
+            )
             : 0,
       },
       {
@@ -631,11 +736,11 @@ export class CustomerController {
         value:
           totalOrdersCount > 0
             ? Number(
-                (
-                  (ordersReadyForDispatchCount / totalOrdersCount) *
-                  100
-                ).toFixed(2),
-              )
+              (
+                (ordersReadyForDispatchCount / totalOrdersCount) *
+                100
+              ).toFixed(2),
+            )
             : 0,
       },
     ];
@@ -660,7 +765,7 @@ export class CustomerController {
     responses: {
       '200': {
         description: 'Customer CSV Import',
-        content: {'application/json': {schema: {type: 'object'}}},
+        content: { 'application/json': { schema: { type: 'object' } } },
       },
     },
   })
@@ -677,7 +782,7 @@ export class CustomerController {
           return reject(err);
         }
         if (!request.file || !request.file.buffer) {
-          return reject({message: 'No file uploaded.'});
+          return reject({ message: 'No file uploaded.' });
         }
 
         const customers: Partial<Customer>[] = [];
@@ -715,7 +820,7 @@ export class CustomerController {
               continue;
             }
             const existingCustomer = await this.customerRepository.findOne({
-              where: {email: customerData.email},
+              where: { email: customerData.email },
             });
 
             if (existingCustomer) {

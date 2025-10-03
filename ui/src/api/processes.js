@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetProcessess() {
-  const URL = endpoints.processes.list;
+export function useGetProcessess(filterParams) {
+    const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.processes.list}?${queryString}` : endpoints.processes.list;
+ 
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +19,15 @@ export function useGetProcessess() {
   };
 
   return {
-    processess: data || [],
+    processess: data?.data || [],
+    totalCount: data?.count ||{ total:0,
+     activeTotal:0,
+        inActiveTotal:0
+  },
     processessLoading: isLoading,
     processessError: error,
     processessValidating: isValidating,
-    processessEmpty: !isLoading && !data?.length,
+    processessEmpty: !isLoading &&(!data?.data ||  !data?.data?.length === 0),
     refreshProcessess, // Include the refresh function separately
   };
 }
@@ -63,7 +69,7 @@ export function useGetProcessessWithFilter(filter) {
   };
 
   return {
-    filteredProcessess: data || [],
+    filteredProcessess: data?.data || [],
     filteredProcessessLoading: isLoading,
     filteredProcessessError: error,
     filteredProcessessValidating: isValidating,

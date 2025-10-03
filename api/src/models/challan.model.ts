@@ -2,6 +2,7 @@ import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
 import {Quotation} from './quotation.model';
 import {Order} from './order.model';
 import {Customer} from './customer.model';
+import {User} from './user.model';
 
 @model()
 export class Challan extends Entity {
@@ -58,11 +59,11 @@ export class Challan extends Entity {
   })
   status?: number;  // 0: challan created; 1: inward pending; 2: order creation pending; 3: order created
 
- @property({
+  @property({
     type: 'number',
-    default: 0,       
+    default: 0,
   })
-  challanStatus?: number;   
+  challanStatus?: number;
 
   @property({
     type: 'array',
@@ -87,7 +88,7 @@ export class Challan extends Entity {
     itemType: 'object',
   })
   materialImages?: object[];
-  
+
   @property({
     type: 'date',
   })
@@ -147,6 +148,15 @@ export class Challan extends Entity {
 
   @belongsTo(() => Customer)
   customerId: number;
+
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
 
   constructor(data?: Partial<Challan>) {
     super(data);

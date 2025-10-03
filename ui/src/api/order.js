@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetOrders() {
-  const URL = endpoints.order.list;
+export function useGetOrders(filterParams) {
+          const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.order.list}?${queryString}` : endpoints.order.list;
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +19,17 @@ export function useGetOrders() {
   };
 
   return {
-    orders: data || [],
+    orders: data?.data || [],
+    totalcount: data?.count ||{ total: 0,
+      materialReceivedTotal:0,
+      inProcessTotal:0,
+      materialReadyTotal: 0,
+      readyToDispatchTotal:0,
+    } ,
     ordersLoading: isLoading,
     ordersError: error,
     ordersValidating: isValidating,
-    ordersEmpty: !isLoading && !data?.length,
+    ordersEmpty: !isLoading && (!data?.data || data?.data?.length === 0),
     refreshOrders, // Include the refresh function separately
   };
 }
@@ -63,11 +71,11 @@ export function useGetOrdersWithFilter(filter) {
   };
 
   return {
-    filteredOrders: data || [],
+    filteredOrders: data?.data || [],
     filteredOrdersLoading: isLoading,
     filteredOrdersError: error,
     filteredOrdersValidating: isValidating,
-    filteredOrdersEmpty: !isLoading && !data?.length,
+    filteredOrdersEmpty: !isLoading && !data?.data.length,
     refreshFilterOrders, // Include the refresh function separately
   };
 }

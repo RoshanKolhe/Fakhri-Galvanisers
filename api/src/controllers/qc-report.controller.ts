@@ -19,6 +19,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {QcReport, QcTest} from '../models';
 import {
@@ -163,58 +164,77 @@ export class QcReportController {
       },
     },
   })
-  async find(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(QcReport) filter?: Filter<QcReport>,
-  ): Promise<QcReport[]> {
-    const currentUserPermission = currnetUser.permissions;
-    if (
-      currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
-    ) {
-      return this.qcReportRepository.find({
-        ...filter,
-        include: [
-          {
-            relation: 'order',
-            scope: {
-              include: ['customer'],
-            },
-          },
-          {relation: 'material'},
-          {relation: 'lots'},
-          {relation: 'qcTests'},
-        ],
-        order: ['createdAt DESC'],
-      });
-    } else {
-      return this.qcReportRepository.find({
-        ...filter,
-        where: {
-          orderId: {
-            inq: (
-              await this.orderRepository.find({
-                where: {customerId: currnetUser.id},
-                fields: {id: true},
-              })
-            ).map(order => order.id),
-          },
+ async find(
+  @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+  @param.query.object('filter', getFilterSchemaFor(QcReport))
+  filter?: Filter<QcReport>,
+): Promise<{ data: QcReport[]; count:{total: number,
+  pendingTotal:number,
+  completedTotal:number,
+} }> {
+  filter = filter ?? {};
+
+  const baseFilter: Filter<QcReport> = {
+    ...filter,
+    where: {
+      ...filter.where,
+      isDeleted: false, 
+    },
+    include: [
+      {
+        relation: 'order',
+        scope: {
+          include: ['customer'],
         },
-        include: [
-          {
-            relation: 'order',
-            scope: {
-              include: ['customer'],
-            },
-          },
-          {relation: 'material'},
-          {relation: 'lots'},
-          {relation: 'qcTests'},
-        ],
-        order: ['createdAt DESC'],
-      });
-    }
+      },
+      { relation: 'material' },
+      { relation: 'lots' },
+      { relation: 'qcTests' },
+    ],
+    order: ['createdAt DESC'],
+  };
+
+  const currentUserPermission = currnetUser.permissions;
+  let finalFilter: Filter<QcReport>;
+
+  if (
+    currentUserPermission.includes('super_admin') ||
+    currentUserPermission.includes('admin')
+  ) {
+    finalFilter = baseFilter;
+  } else {
+ 
+    const customerOrders = await this.orderRepository.find({
+      where: { customerId: currnetUser.id },
+      fields: { id: true },
+    });
+
+    finalFilter = {
+      ...baseFilter,
+      where: {
+        ...baseFilter.where,
+        orderId: { inq: customerOrders.map(o => o.id) },
+      },
+    };
   }
+
+  console.log('final filter', finalFilter);
+
+  const countFilter = {
+    isDeleted : false,
+  }
+
+  const data = await this.qcReportRepository.find(finalFilter);
+  const total = await this.qcReportRepository.count(countFilter);
+  const pendingTotal = await this.qcReportRepository.count({...countFilter, status:0});
+  const completedTotal = await this.qcReportRepository.count({...countFilter, status:1});
+
+  return { data, count: {total: total.count ,
+pendingTotal:pendingTotal.count,
+completedTotal:completedTotal.count
+  }};
+}
+
 
   @authenticate({
     strategy: 'jwt',

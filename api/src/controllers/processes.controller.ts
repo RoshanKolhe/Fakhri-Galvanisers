@@ -16,6 +16,7 @@ import {
   del,
   requestBody,
   response,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import { Processes } from '../models';
 import { ProcessesRepository } from '../repositories';
@@ -78,14 +79,36 @@ export class ProcessesController {
       },
     },
   })
-  async find(
-    @param.filter(Processes) filter?: Filter<Processes>,
-  ): Promise<Processes[]> {
-    return this.processesRepository.find({
-      ...filter,
-      order: ['createdAt DESC'],
-    });
+ async find(
+  @param.query.object('filter', getFilterSchemaFor(Processes))
+  filter?: Filter<Processes>,
+): Promise<{data: Processes[]; count:{total:number,
+      activeTotal: number;
+      inActiveTotal: number;
+    }}> {
+  const updateFilter: Filter<Processes> = {
+    ...filter,
+    where: {
+      ...(filter?.where ?? {}),
+      isDeleted: false,
+    },
+    order: ['createdAt DESC'],
+  };
+
+  const countFilter={
+isDeleted:false,
   }
+
+   const data = await this.processesRepository.find(updateFilter);
+  const total = await this.processesRepository.count(countFilter);
+  const activeTotal = await this.processesRepository.count({...countFilter, status: 1 });
+    const inActiveTotal = await this.processesRepository.count({...countFilter, status: 0 });
+
+  return {data,count:{ total: total.count,
+     activeTotal: activeTotal.count,
+        inActiveTotal: inActiveTotal.count
+  }};
+}
 
   @authenticate({
     strategy: 'jwt',

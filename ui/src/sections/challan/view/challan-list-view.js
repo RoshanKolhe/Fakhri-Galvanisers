@@ -87,25 +87,37 @@ export default function ChallanListView() {
   const { enqueueSnackbar } = useSnackbar();
 
   const [filters, setFilters] = useState(defaultFilters);
+   const filter = buildFilter ({ page: table.page,
+      rowsPerPage: table.rowsPerPage,
+      order: table.order,
+      orderBy: table.orderBy,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      validSortFields: ['vehicleNumber','grossWeight','netWeight', 'challanId'],
+      searchTextValue: filters.name,
+      status: filters.status,
+      roles: filters.role,
+    combineName: true,
+    });
 
-  const { challans, challansLoading, challansEmpty, refreshChallans } = useGetChallans();
+  const { challans,totalcount, challansLoading, challansEmpty, refreshChallans } = useGetChallans(filter);
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!challans.length && canReset) || !challans.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -146,10 +158,10 @@ export default function ChallanListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: challans.length,
+      totalRowsFiltered: challans.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [challans.length,  table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -240,7 +252,7 @@ export default function ChallanListView() {
                       (tab.value === 1 && 'success') || (tab.value === 0 && 'error') || 'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
+                    {tab.value === 'all' && totalcount}
                     {tab.value === 1 && tableData.filter((challan) => challan.status).length}
 
                     {tab.value === 0 && tableData.filter((challan) => !challan.status).length}
@@ -264,7 +276,7 @@ export default function ChallanListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={challans.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -308,11 +320,7 @@ export default function ChallanListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {challans
                     .map((row) => (
                       <ChallanTableRow
                         key={row.id}
@@ -341,7 +349,7 @@ export default function ChallanListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalcount}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -393,48 +401,153 @@ export default function ChallanListView() {
 
 // ----------------------------------------------------------------------
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-  const roleMapping = {
-    super_admin: 'Super Admin',
-    admin: 'Admin',
-    worker: 'Worker',
-    qc_Admin: 'Qc Admin',
-    dispatch: 'Dispatch',
-  };
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
+// function applyFilter({ inputData, comparator, filters }) {
+//   const { name, status, role } = filters;
+//   const stabilizedThis = inputData.map((el, index) => [el, index]);
+//   const roleMapping = {
+//     super_admin: 'Super Admin',
+//     admin: 'Admin',
+//     worker: 'Worker',
+//     qc_Admin: 'Qc Admin',
+//     dispatch: 'Dispatch',
+//   };
+//   stabilizedThis.sort((a, b) => {
+//     const order = comparator(a[0], b[0]);
+//     if (order !== 0) return order;
+//     return a[1] - b[1];
+//   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+//   inputData = stabilizedThis.map((el) => el[0]);
 
-  if (name) {
-    inputData = inputData.filter((challan) =>
-      Object.values(challan).some((value) =>
-        String(value).toLowerCase().includes(name.toLowerCase())
-      )
-    );
-  }
+//   if (name) {
+//     inputData = inputData.filter((challan) =>
+//       Object.values(challan).some((value) =>
+//         String(value).toLowerCase().includes(name.toLowerCase())
+//       )
+//     );
+//   }
 
-  if (status !== 'all') {
-    inputData = inputData.filter((user) => (status === 1 ? user.status : !user.status));
-  }
+//   if (status !== 'all') {
+//     inputData = inputData.filter((user) => (status === 1 ? user.status : !user.status));
+//   }
 
-  if (role.length) {
-    inputData = inputData.filter(
-      (challan) =>
-        challan.permissions &&
-        challan.permissions.some((challanRole) => {
-          console.log(challanRole);
-          const mappedRole = roleMapping[challanRole];
-          console.log('Mapped Role:', mappedRole); // Check the mapped role
-          return mappedRole && role.includes(mappedRole);
-        })
-    );
-  }
+//   if (role.length) {
+//     inputData = inputData.filter(
+//       (challan) =>
+//         challan.permissions &&
+//         challan.permissions.some((challanRole) => {
+//           console.log(challanRole);
+//           const mappedRole = roleMapping[challanRole];
+//           console.log('Mapped Role:', mappedRole); // Check the mapped role
+//           return mappedRole && role.includes(mappedRole);
+//         })
+//     );
+//   }
 
-  return inputData;
+//   return inputData;
+// }
+
+export function formatDate(date) {
+  return date instanceof Date ? date.toISOString().split('T')[0] : date;
 }
+
+
+export function buildFilter({
+  page,
+  rowsPerPage,
+  order,
+  orderBy,
+  startDate,
+  endDate,
+  validSortFields = [],
+  searchTextValue,
+  status,
+  roles,
+  combineName = false,
+}) {
+  const skip = page * rowsPerPage;
+  const limit = rowsPerPage;
+
+  const where = { isDeleted: false };
+  const orConditions = [];
+
+  // Map UI roles to DB role keys
+  const roleMapping = {
+    'Super Admin': 'super_admin',
+    Admin: 'admin',
+    Worker: 'worker',
+    'Qc Admin': 'qc_Admin',
+    Dispatch: 'dispatch',
+    Supervisor: 'supervisor',
+  };
+
+  // Status filter
+  if (status && status !== 'all') {
+    where.isActive = status === '1';
+  }
+
+  // Date filter
+  if (startDate && endDate) {
+    where.createdAt = { between: [formatDate(startDate), formatDate(endDate)] };
+  } else if (startDate) {
+    where.createdAt = { gte: formatDate(startDate) };
+  } else if (endDate) {
+    where.createdAt = { lte: formatDate(endDate) };
+  }
+
+  // Search text filter
+  if (searchTextValue?.trim()) {
+    const text = searchTextValue.trim();
+
+    // Name search
+    if (combineName) {
+      const [first, last] = text.split(' ');
+      const nameConditions = [];
+      if (first) nameConditions.push({ firstName: { like: `%${first}%` } });
+      if (last) nameConditions.push({ lastName: { like: `%${last}%` } });
+
+      if (nameConditions.length > 1) {
+        orConditions.push({ and: nameConditions });
+      } else if (nameConditions.length === 1) {
+        orConditions.push(nameConditions[0]);
+      }
+    }
+
+    // Other fields
+    validSortFields.forEach((field) => {
+      if (['id'].includes(field)) {
+        // Only search numeric fields if input is a valid number
+        if (!Number.isNaN(Number(text))) {
+          orConditions.push({ [field]: Number(text) });
+        }
+      } else {
+        orConditions.push({ [field]: { like: `%${text}%` } });
+      }
+    });
+  }
+
+  // Roles filter
+  if (roles?.length) {
+    const dbRoles = roles.map((uiRole) => roleMapping[uiRole] || uiRole);
+    orConditions.push(
+      ...dbRoles.map((role) => ({ permissions: { like: `%${role}%`, options: 'i' } }))
+    );
+  }
+
+  if (orConditions.length) {
+    where.or = orConditions;
+  }
+
+  // Sorting
+  const orderFilter =
+    validSortFields.includes(orderBy) && order
+      ? [`${orderBy} ${order === 'desc' ? 'DESC' : 'ASC'}`]
+      : undefined;
+
+  const filter = { skip, limit, order: orderFilter, where };
+
+  console.log('buildFilter (final):', JSON.stringify(filter, null, 2));
+  return filter;
+}
+
+

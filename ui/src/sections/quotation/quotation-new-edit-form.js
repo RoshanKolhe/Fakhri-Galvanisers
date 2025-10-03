@@ -246,7 +246,8 @@ export default function QuotationNewEditForm({ currentQuotation }) {
         };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/customer/list?filter=${filterString}`);
-        setCustomerOptions(data);
+        setCustomerOptions(data?.data || []);
+        console.log(data?.data || []);
         console.log(data);
       } else {
         setCustomerOptions([]);

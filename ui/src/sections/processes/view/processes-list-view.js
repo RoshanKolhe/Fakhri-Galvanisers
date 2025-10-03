@@ -37,6 +37,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { buildFilter } from 'src/utils/filters';
 import { useGetProcessess } from 'src/api/processes';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
@@ -45,6 +46,7 @@ import ProcessesTableRow from '../processes-table-row';
 import ProcessesTableToolbar from '../processes-table-toolbar';
 import ProcessesTableFiltersResult from '../processes-table-filters-result';
 import ProcessesQuickEditForm from '../processes-quick-edit-form';
+
 
 // ----------------------------------------------------------------------
 
@@ -86,24 +88,37 @@ export default function ProcessesListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { processess, processessLoading, processessEmpty, refreshProcessess } = useGetProcessess();
+  const filter = buildFilter({
+      page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['name','processGroup','description'],
+    searchTextValue: filters.name,
+    status: filters.status,
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  })
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  const { processess,totalCount, processessLoading, processessEmpty, refreshProcessess } = useGetProcessess(filter);
+
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
+
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!processess.length && canReset) || !processess.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -144,10 +159,10 @@ export default function ProcessesListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: processess.length,
+      totalRowsFiltered: processess.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [processess.length, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -238,10 +253,10 @@ export default function ProcessesListView() {
                       (tab.value === 1 && 'success') || (tab.value === 0 && 'error') || 'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
-                    {tab.value === 1 && tableData.filter((processes) => processes.status).length}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === 1 && totalCount.activeTotal}
 
-                    {tab.value === 0 && tableData.filter((processes) => !processes.status).length}
+                    {tab.value === 0 && totalCount.inActiveTotal}
                   </Label>
                 }
               />
@@ -262,7 +277,7 @@ export default function ProcessesListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={processess.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -306,11 +321,7 @@ export default function ProcessesListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {processess
                     .map((row) => (
                       <ProcessesTableRow
                         key={row.id}
@@ -339,7 +350,7 @@ export default function ProcessesListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

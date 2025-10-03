@@ -40,11 +40,17 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetOrdersWithFilter } from 'src/api/order';
+import { useGetCustomersWithFilter } from 'src/api/customer';
 import { useGetPayments } from 'src/api/invoice';
+import { buildFilter } from 'src/utils/filters';
 import InvoiceAnalytic from '../invoice-analytic';
 import InvoiceTableRow from '../invoice-table-row';
 import InvoiceTableToolbar from '../invoice-table-toolbar';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
+
+
+
 
 // ----------------------------------------------------------------------
 
@@ -64,6 +70,10 @@ const defaultFilters = {
   status: 'all',
   startDate: null,
   endDate: null,
+   additionalConditions: {
+    customerId: [],
+    orderId:[]
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -83,24 +93,88 @@ export default function InvoiceListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { payments, paymentsLoading, paymentsEmpty, refreshPayments } = useGetPayments();
+  const filter =buildFilter({
+      page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['totalAmount'],
+    searchTextValue: filters.name,
+    status: filters.status,
+    additionalWhereOrConditions: [
+      { customerId: filters.additionalConditions.customerId.length > 0 ? { inq: filters.additionalConditions.customerId } : null },
+      { orderId: filters.additionalConditions.orderId.length > 0 ? { inq: filters.additionalConditions.orderId } : null },
+    ].filter(Boolean),
+    combineName: true,
+  })
+
+  const { payments,totalCount, paymentsLoading, paymentsEmpty, refreshPayments } = useGetPayments(filter);
+
+  const customerFIlter = {
+      where: {
+        or: [
+          { firstName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+          { lastName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+          { email: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+        ],
+      },
+      limit: 20,
+      fields: { id: true }
+    };
+    const { filteredCustomers, filteredCustomersEmpty } = useGetCustomersWithFilter(encodeURIComponent(JSON.stringify(customerFIlter)));
+  
+    useEffect(() => {
+      if (filteredCustomers.length > 0 && !filteredCustomersEmpty && filters.name.length > 3) {
+        console.table(filteredCustomers);
+        const ids = filteredCustomers.map((customer) => customer.id);
+        filters.additionalConditions.customerId = ids || [];
+      } else {
+        filters.additionalConditions.customerId = [];
+      }
+    }, [filteredCustomers, filteredCustomersEmpty, filters]);
+  
+    console.log(filter);
+
+    const orderFIlter= {
+      where: {
+          orderId: { like: `%${filters.name.trim() || ''}%`, options: 'i' },
+      },
+      limit: 20,
+      fields: { id: true }
+    };
+    const { filteredOrders, filteredOrdersEmpty } = useGetOrdersWithFilter(encodeURIComponent(JSON.stringify(orderFIlter)));
+  
+    useEffect(() => {
+      if (filteredOrders.length > 0 && !filteredOrdersEmpty && filters.name.length > 3) {
+        console.table(filteredOrders);
+        const ids = filteredOrders.map((order) => order.id);
+        filters.additionalConditions.orderId = ids || [];
+      } else {
+        filters.additionalConditions.orderId = [];
+      }
+    }, [filteredOrders, filteredOrdersEmpty, filters]);
+  
+    console.log(filter);
+  
 
   const dateError =
     filters.startDate && filters.endDate
       ? filters.startDate.getTime() > filters.endDate.getTime()
       : false;
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-    dateError,
-  });
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  //   dateError,
+  // });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 56 : 76;
 
@@ -110,7 +184,7 @@ export default function InvoiceListView() {
     filters.status !== 'all' ||
     (!!filters.startDate && !!filters.endDate);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!payments.length && canReset) || !payments.length;
 
   const getInvoiceLength = (status) => tableData.filter((item) => item.status === status).length;
 
@@ -163,9 +237,9 @@ export default function InvoiceListView() {
       const deleteRow = tableData.filter((row) => row.id !== id);
       setTableData(deleteRow);
 
-      table.onUpdatePageDeleteRow(dataInPage.length);
+      table.onUpdatePageDeleteRow(payments.length);
     },
-    [dataInPage.length, table, tableData]
+    [payments.length, table, tableData]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -174,10 +248,10 @@ export default function InvoiceListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: payments.length,
+      totalRowsFiltered: payments.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [payments.length,table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -325,7 +399,17 @@ export default function InvoiceListView() {
                     }
                     color={tab.color}
                   >
-                    {tab.count}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === 1 &&
+                      totalCount.paidTotal}
+                    {tab.value === 0 &&
+                      totalCount.pendingTotal}
+                      {tab.value === 2 &&
+                      totalCount.overdueTotal}
+                       {tab.value === 3 &&
+                      totalCount.pendingApprovalTotal}
+                       {tab.value === 4 &&
+                      totalCount.requestReuploadTotal}
                   </Label>
                 }
               />
@@ -346,7 +430,7 @@ export default function InvoiceListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={payments.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -410,11 +494,8 @@ export default function InvoiceListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {payments
+                   
                     .map((row) => (
                       <InvoiceTableRow
                         key={row.id}
@@ -439,7 +520,7 @@ export default function InvoiceListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

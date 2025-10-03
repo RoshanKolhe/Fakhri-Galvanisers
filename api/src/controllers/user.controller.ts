@@ -12,6 +12,7 @@ import {
   HttpErrors,
   del,
   get,
+  getFilterSchemaFor,
   getJsonSchemaRef,
   getModelSchemaRef,
   param,
@@ -199,20 +200,79 @@ export class UserController {
   })
   async find(
     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
-    @param.filter(User) filter?: Filter<User>,
-  ): Promise<User[]> {
-    filter = {
-      ...filter,
+    @param.query.object('filter',getFilterSchemaFor(User))
+    filter?: Filter<User>,
+  ): Promise<{data: User[], count: {
+      total: number;
+      activeTotal: number;
+      inActiveTotal: number;
+    }}> {
+    filter = filter ?? {};
+
+    const updatedFilter : Filter<User>={
       where: {
-        ...filter?.where,
         id: {neq: currentUser.id},
         isDeleted: false,
+        ...(filter.where ?? {}),
       },
       fields: {password: false, otp: false, otpExpireAt: false},
       include: [{relation: 'creator'}, {relation: 'updater'}],
     };
-    return this.userRepository.find(filter);
-  }
+
+    const countFilter = {
+      isDeleted: false,
+    } 
+
+     const data = await this.userRepository.find(updatedFilter);
+   const total = await this.userRepository.count(countFilter);
+  const activeTotal = await this.userRepository.count({...countFilter, isActive: true });
+    const inActiveTotal = await this.userRepository.count({...countFilter, isActive: false });
+
+   return { data, count: {
+        total: total.count,
+        activeTotal: activeTotal.count,
+        inActiveTotal: inActiveTotal.count
+      } };
+ }
+
+
+
+// @authenticate({
+//   strategy: 'jwt',
+//   options: {
+//     required: [PermissionKeys.SUPER_ADMIN, PermissionKeys.SUPERVISOR, PermissionKeys.WORKER, PermissionKeys.DISPATCH],
+//   },
+// })
+// @get('/customer/list')
+// @response(200, {
+//   description: 'Array of Customer model instances',
+// })
+// async find(
+//   @param.query.object('filter', getFilterSchemaFor(Customer))
+//   filter?: Filter<Customer>,
+// ): Promise<{ data: Customer[]; total: number }> {
+//   filter = filter ?? {};
+
+//   const updatedFilter: Filter<Customer> = {
+//     ...filter,
+//     where: {
+//       isDeleted: false,
+//       ...(filter.where ?? {}), 
+//     },
+//     fields: { password: false },
+//     order: filter.order ?? ['createdAt DESC'],
+//   };
+
+//   console.log('Backend filter:', JSON.stringify(updatedFilter, null, 2));
+
+//   const data = await this.customerRepository.find(updatedFilter);
+//   const total = await this.customerRepository.count(updatedFilter.where);
+
+//   return { data, total: total.count };
+// }
+
+
+
 
   @authenticate({
     strategy: 'jwt',

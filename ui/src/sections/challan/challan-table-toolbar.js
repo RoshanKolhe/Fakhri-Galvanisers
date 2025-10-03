@@ -61,7 +61,7 @@ export default function ChallanTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search Chalan No. & RFQ No. only with numbers (like. 0001,0002)"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

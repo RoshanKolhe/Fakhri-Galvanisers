@@ -41,10 +41,13 @@ import { useGetCustomers } from 'src/api/customer';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
 import { _roles, USER_STATUS_OPTIONS } from 'src/utils/constants';
+import { buildFilter } from 'src/utils/filters';
 import CustomerTableRow from '../customer-table-row';
 import CustomerTableToolbar from '../customer-table-toolbar';
 import CustomerTableFiltersResult from '../customer-table-filters-result';
 import CustomerQuickEditForm from '../customer-quick-edit-form';
+
+
 
 // ----------------------------------------------------------------------
 
@@ -85,24 +88,43 @@ export default function CustomerListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { customers, customersLoading, customersEmpty, refreshCustomers } = useGetCustomers();
+  const filter = buildFilter ({ page: table.page,
+  rowsPerPage: table.rowsPerPage,
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  startDate: filters.startDate,
+  endDate: filters.endDate,
+  validSortFields: ['firstName','lastName', 'phoneNumber', 'email','gstNo'],
+  searchTextValue: filters.name,
+  // status: filters.status,
+  isActive:filters.status,
+  roles: filters.role,
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+});
+
+
+
+  const { customers, totalCount, customersLoading, customersEmpty, refreshCustomers } = useGetCustomers(
+ filter
+);
+
+
+  // const dataFiltered = buildFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
+
+  // const customers = customers.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+ const notFound = !customersLoading && (!tableData || tableData.length === 0);
+
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -143,10 +165,10 @@ export default function CustomerListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: customers.length,
+      totalRowsFiltered: customers.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [customers.length, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -181,12 +203,11 @@ export default function CustomerListView() {
     setFilters(defaultFilters);
   }, []);
 
-  useEffect(() => {
-    if (customers) {
-      // const updatedCustomers = customers.filter((obj) => !obj.permissions.includes('super_admin'));
-      setTableData(customers);
-    }
-  }, [customers]);
+ useEffect(() => {
+  if (customers) {
+    setTableData(customers);
+  }
+}, [customers]);
 
   return (
     <>
@@ -239,10 +260,10 @@ export default function CustomerListView() {
                       'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
-                    {tab.value === '1' && tableData.filter((customer) => customer.isActive).length}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === '1' && totalCount.activeTotal}
 
-                    {tab.value === '0' && tableData.filter((customer) => !customer.isActive).length}
+                    {tab.value === '0' && totalCount.inActiveTotal}
                   </Label>
                 }
               />
@@ -263,7 +284,7 @@ export default function CustomerListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={customers.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -307,12 +328,7 @@ export default function CustomerListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
+                  {tableData.map((row) => (
                       <CustomerTableRow
                         key={row.id}
                         row={row}
@@ -330,7 +346,7 @@ export default function CustomerListView() {
 
                   <TableEmptyRows
                     height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                    emptyRows={emptyRows(table.page, table.rowsPerPage,totalCount.total, tableData.length)}
                   />
 
                   <TableNoData notFound={notFound} />
@@ -340,7 +356,7 @@ export default function CustomerListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -392,50 +408,146 @@ export default function CustomerListView() {
 
 // ----------------------------------------------------------------------
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-  const roleMapping = {
-    super_admin: 'Super Admin',
-    admin: 'Admin',
-    worker: 'Worker',
-    qc_Admin: 'Qc Admin',
-    dispatch: 'Dispatch',
-  };
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
+// function applyFilter({ inputData, comparator, filters }) {
+//   const { name, status, role } = filters;
+//   const stabilizedThis = inputData.map((el, index) => [el, index]);
+//   const roleMapping = {
+//     super_admin: 'Super Admin',
+//     admin: 'Admin',
+//     worker: 'Worker',
+//     qc_Admin: 'Qc Admin',
+//     dispatch: 'Dispatch',
+//   };
+//   stabilizedThis.sort((a, b) => {
+//     const order = comparator(a[0], b[0]);
+//     if (order !== 0) return order;
+//     return a[1] - b[1];
+//   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+//   inputData = stabilizedThis.map((el) => el[0]);
 
-  if (name) {
-    inputData = inputData.filter((customer) =>
-      Object.values(customer).some((value) =>
-        String(value).toLowerCase().includes(name.toLowerCase())
-      )
-    );
-  }
+//   if (name) {
+//     inputData = inputData.filter((customer) =>
+//       Object.values(customer).some((value) =>
+//         String(value).toLowerCase().includes(name.toLowerCase())
+//       )
+//     );
+//   }
 
-  if (status !== 'all') {
-    inputData = inputData.filter((customer) =>
-      status === '1' ? customer.isActive : !customer.isActive
-    );
-  }
+//   if (status !== 'all') {
+//     inputData = inputData.filter((customer) =>
+//       status === '1' ? customer.isActive : !customer.isActive
+//     );
+//   }
 
-  if (role.length) {
-    inputData = inputData.filter(
-      (customer) =>
-        customer.permissions &&
-        customer.permissions.some((customerRole) => {
-          console.log(customerRole);
-          const mappedRole = roleMapping[customerRole];
-          console.log('Mapped Role:', mappedRole); // Check the mapped role
-          return mappedRole && role.includes(mappedRole);
-        })
-    );
-  }
+//   if (role.length) {
+//     inputData = inputData.filter(
+//       (customer) =>
+//         customer.permissions &&
+//         customer.permissions.some((customerRole) => {
+//           console.log(customerRole);
+//           const mappedRole = roleMapping[customerRole];
+//           console.log('Mapped Role:', mappedRole); // Check the mapped role
+//           return mappedRole && role.includes(mappedRole);
+//         })
+//     );
+//   }
 
-  return inputData;
-}
+//   return inputData;
+// }
+
+// export function formatDate(date) {
+//   return date instanceof Date ? date.toISOString().split('T')[0] : date;
+// }
+
+// export function buildFilter({
+//   page,
+//   rowsPerPage,
+//   order,
+//   orderBy,
+//   startDate,
+//   endDate,
+//   validSortFields= [],
+//   searchTextValue,
+//   status,
+//   roles,
+//   combineName = false, 
+// }) {
+//   const skip = page * rowsPerPage;
+//   const limit = rowsPerPage;
+
+//   const where = { isDeleted: false };
+//   const orConditions= [];
+
+//   // Map UI roles to DB role keys
+//   const roleMapping = {
+//     'Super Admin': 'super_admin',
+//     'Admin': 'admin',
+//     'Worker': 'worker',
+//     'Qc Admin': 'qc_Admin',
+//     'Dispatch': 'dispatch',
+//     'Supervisor': 'supervisor',
+//   };
+
+//   // Status filter
+//   if (status && status !== 'all') {
+//     where.isActive = status === '1';
+//   }
+
+//   // Date filter
+//   if (startDate && endDate) {
+//     where.createdAt = { between: [formatDate(startDate), formatDate(endDate)] };
+//   } else if (startDate) {
+//     where.createdAt = { gte: formatDate(startDate) };
+//   } else if (endDate) {
+//     where.createdAt = { lte: formatDate(endDate) };
+//   }
+
+//   // Search filter
+//   if (searchTextValue?.trim()) {
+//     const text = `%${searchTextValue.trim()}%`;
+
+//     // Case: firstName + lastName combined search
+//     if (combineName) {
+//       orConditions.push({
+//         and: [
+//           { firstName: { like: `%${searchTextValue.split(' ')[0]}%` } },
+//           { lastName: { like: `%${searchTextValue.split(' ')[1] || ''}%` } },
+//         ],
+//       });
+//     }
+
+//     // Loop through dynamic searchable fields
+//     validSortFields.forEach((field) => {
+//       orConditions.push({ [field]: { like: text } });
+//     });
+//   }
+
+//   // 🔹 Roles filter
+//   if (roles?.length) {
+//     const dbRoles = roles.map((uiRole) => roleMapping[uiRole] || uiRole);
+//     orConditions.push(...dbRoles.map((role) => ({
+//       permissions: { like: `%${role}%`, options: 'i' },
+//     })));
+//   }
+
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+
+//   // Only attach OR if needed
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+//   // Sorting
+//   const orderFilter =
+//     validSortFields.includes(orderBy) && order
+//       ? [`${orderBy} ${order === 'desc' ? 'DESC' : 'ASC'}`]
+//       : undefined;
+
+//   const filter = { skip, limit, order: orderFilter, where };
+//   console.log('buildFilter (final with role mapping):', JSON.stringify(filter, null, 2));
+//   return filter;
+// }

@@ -36,11 +36,16 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+import { useGetCustomersWithFilter } from 'src/api/customer';
+import { useGetOrdersWithFilter } from 'src/api/order';
+
+import { buildFilter } from 'src/utils/filters';
 import { useGetDispatches } from 'src/api/dispatch';
 import { DISPATCH_STATUS_OPTIONS } from 'src/utils/constants';
 import DispatchTableToolbar from '../dispatch-table-toolbar';
 import DispatchTableFiltersResult from '../dispatch-table-filters-result';
 import DispatchTableRow from '../dispatch-table-row';
+
 
 // ----------------------------------------------------------------------
 
@@ -59,6 +64,11 @@ const defaultFilters = {
   status: 'all',
   startDate: null,
   endDate: null,
+  additionalConditions:{
+    customerId:[],
+    orderId:[]
+
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -80,31 +90,93 @@ export default function DispatchListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { dispatches, dispatchesLoading, dispatchesEmpty, refreshDispatches } = useGetDispatches();
+  const filter = buildFilter({
+     page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['id'],
+    searchTextValue: filters.name,
+    status: filters.status,
+    additionalWhereOrConditions: [
+      { customerId: filters.additionalConditions.customerId.length > 0 ? { inq: filters.additionalConditions.customerId } : null },
+      { orderId: filters.additionalConditions.orderId.length > 0 ? { inq: filters.additionalConditions.orderId } : null },
+    ].filter(Boolean),
+    combineName: true,
+  })
+
+  const { dispatches,totalcount, dispatchesLoading, dispatchesEmpty, refreshDispatches } = useGetDispatches(filter);
+    const customerFIlter = {
+        where: {
+          or: [
+            { firstName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+            { lastName: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+            { email: { like: `%${filters.name.trim() || ''}%`, options: 'i' } },
+          ],
+        },
+        limit: 20,
+        fields: { id: true }
+      };
+      const { filteredCustomers, filteredCustomersEmpty } = useGetCustomersWithFilter(encodeURIComponent(JSON.stringify(customerFIlter)));
+    
+      useEffect(() => {
+        if (filteredCustomers.length > 0 && !filteredCustomersEmpty && filters.name.length > 3) {
+          console.table(filteredCustomers);
+          const ids = filteredCustomers.map((customer) => customer.id);
+          filters.additionalConditions.customerId = ids || [];
+        } else {
+          filters.additionalConditions.customerId = [];
+        }
+      }, [filteredCustomers, filteredCustomersEmpty, filters]);
+    
+      console.log(filter);
+  
+      const orderFIlter= {
+        where: {
+            orderId: { like: `%${filters.name.trim() || ''}%`, options: 'i' },
+        },
+        limit: 20,
+        fields: { id: true }
+      };
+      const { filteredOrders, filteredOrdersEmpty } = useGetOrdersWithFilter(encodeURIComponent(JSON.stringify(orderFIlter)));
+    
+      useEffect(() => {
+        if (filteredOrders.length > 0 && !filteredOrdersEmpty && filters.name.length > 3) {
+          console.table(filteredOrders);
+          const ids = filteredOrders.map((order) => order.id);
+          filters.additionalConditions.orderId = ids || [];
+        } else {
+          filters.additionalConditions.orderId = [];
+        }
+      }, [filteredOrders, filteredOrdersEmpty, filters]);
+    
+      console.log(filter);
 
   const dateError =
     filters.startDate && filters.endDate
       ? filters.startDate.getTime() > filters.endDate.getTime()
       : false;
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.qcReport, table.qcReportBy),
-    filters,
-    dateError,
-  });
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.qcReport, table.qcReportBy),
+  //   filters,
+  //   dateError,
+  // });
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset =
     !!filters.name || filters.status !== 'all' || (!!filters.startDate && !!filters.endDate);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!dispatches.length && canReset) || !dispatches.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -122,9 +194,9 @@ export default function DispatchListView() {
       const deleteRow = tableData.filter((row) => row.id !== id);
       setTableData(deleteRow);
 
-      table.onUpdatePageDeleteRow(dataInPage.length);
+      table.onUpdatePageDeleteRow(dispatches.length);
     },
-    [dataInPage.length, table, tableData]
+    [dispatches.length, table, tableData]
   );
 
   const handleDeleteRows = useCallback(() => {
@@ -133,10 +205,10 @@ export default function DispatchListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: dispatches.length,
+      totalRowsFiltered: dispatches.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [dispatches.length, table, tableData]);
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
@@ -217,13 +289,13 @@ export default function DispatchListView() {
                       'default'
                     }
                   >
-                    {tab.value === 'all' && dispatches.length}
+                    {tab.value === 'all' && totalcount.total}
                     {tab.value === 0 &&
-                      dispatches.filter((qcReport) => qcReport.status === 0).length}
+                      totalcount.pendingTotal}
                     {tab.value === 1 &&
-                      dispatches.filter((qcReport) => qcReport.status === 1).length}
+                      totalcount.documentsUploadedTotal}
                     {tab.value === 2 &&
-                      dispatches.filter((qcReport) => qcReport.status === 2).length}
+                      totalcount.completedTotal}
                   </Label>
                 }
               />
@@ -243,7 +315,7 @@ export default function DispatchListView() {
               filters={filters}
               onFilters={handleFilters}
               onResetFilters={handleResetFilters}
-              results={dataFiltered.length}
+              results={dispatches.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -287,11 +359,8 @@ export default function DispatchListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {dispatches
+                  
                     .map((row) => (
                       <DispatchTableRow
                         key={row.id}
@@ -316,7 +385,7 @@ export default function DispatchListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalcount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

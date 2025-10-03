@@ -6,8 +6,10 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetInquiries() {
-  const URL = endpoints.inquiry.list;
+export function useGetInquiries(filterParams) {
+        const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.inquiry.list}?${queryString}` : endpoints.inquiry.list;
+
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,14 +19,22 @@ export function useGetInquiries() {
   };
 
   return {
-    inquiries: data || [],
+    inquiries: data?.data || [],
+    totalCount: data?.count || {
+        total: 0,
+         incompleteTotal: 0,
+      completeTotal:0,
+      convertedTotal:0
+    
+      },
     inquiriesLoading: isLoading,
     inquiriesError: error,
     inquiriesValidating: isValidating,
-    inquiriesEmpty: !isLoading && !data?.length,
+    inquiriesEmpty: !isLoading && (!data?.data || data?.data?.length === 0),
     refreshInquiries, // Include the refresh function separately
   };
 }
+
 
 // ----------------------------------------------------------------------
 
@@ -63,11 +73,11 @@ export function useGetInquiriesWithFilter(filter) {
   };
 
   return {
-    filteredInquiries: data || [],
+    filteredInquiries: data?.data || [],
     filteredInquiriesLoading: isLoading,
     filteredInquiriesError: error,
     filteredInquiriesValidating: isValidating,
-    filteredInquiriesEmpty: !isLoading && !data?.length,
+    filteredInquiriesEmpty: !isLoading && !data?.data?.length,
     refreshFilterInquiries, // Include the refresh function separately
   };
 }

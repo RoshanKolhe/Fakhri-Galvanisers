@@ -37,14 +37,20 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 //
+
+import { useGetHsnMastersWithFilter } from 'src/api/hsnMaster';
+import { buildFilter } from 'src/utils/filters';
 import { useGetItemsMasters } from 'src/api/itemsMaster';
 import axiosInstance from 'src/utils/axios';
+
 import { useSnackbar } from 'notistack';
 import { _roles, COMMON_STATUS_OPTIONS } from 'src/utils/constants';
+import ItemsMasterQuickEditForm from '../itemsMaster-quick-edit-form';
 import ItemsMasterTableRow from '../itemsMaster-table-row';
 import ItemsMasterTableToolbar from '../itemsMaster-table-toolbar';
 import ItemsMasterTableFiltersResult from '../itemsMaster-table-filters-result';
-import ItemsMasterQuickEditForm from '../itemsMaster-quick-edit-form';
+
+
 
 // ----------------------------------------------------------------------
 
@@ -61,6 +67,9 @@ const defaultFilters = {
   name: '',
   role: [],
   status: 'all',
+  additionalConditions:{
+    hsnMasterId:[],
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -84,24 +93,63 @@ export default function ItemsMasterListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { itemsMasters, refreshItemsMasters } = useGetItemsMasters();
+  const filter =buildFilter({
+      page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    validSortFields: ['materialType'],
+    searchTextValue: filters.name,
+    status: filters.status,
+    additionalWhereOrConditions: [
+      { hsnMasterId: filters.additionalConditions.hsnMasterId.length > 0 ? { inq: filters.additionalConditions.hsnMasterId } : null },
+    ].filter(Boolean),
+    combineName: true,
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  })
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  const { itemsMasters, totalCount, refreshItemsMasters } = useGetItemsMasters(filter);
+
+  const hsnMasterFIlter= {
+        where: {
+          hsnCode: { like: `%${filters.name.trim() || ''}%`, options: 'i' },
+        },
+        limit: 20,
+        fields: { id: true }
+      };
+      const { filteredHsnMasters, filteredHsnMastersEmpty } = useGetHsnMastersWithFilter(encodeURIComponent(JSON.stringify(hsnMasterFIlter)));
+    
+      useEffect(() => {
+        if (filteredHsnMasters.length > 0 && !filteredHsnMastersEmpty && filters.name.length > 3) {
+          console.table(filteredHsnMasters);
+          const ids = filteredHsnMasters.map((hsn) => hsn.id);
+          filters.additionalConditions.hsnMasterId = ids || [];
+        } else {
+          filters.additionalConditions.hsnMasterId = [];
+        }
+      }, [filteredHsnMasters, filteredHsnMastersEmpty, filters]);
+    
+      console.log(filter);
+    
+
+  // const dataFiltered = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
+
+  // const dataInPage = dataFiltered.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!itemsMasters.length && canReset) || !itemsMasters.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -142,10 +190,10 @@ export default function ItemsMasterListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: itemsMasters.length,
+      totalRowsFiltered: itemsMasters.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [itemsMasters.length, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -235,10 +283,10 @@ export default function ItemsMasterListView() {
                       (tab.value === 1 && 'success') || (tab.value === 0 && 'error') || 'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
-                    {tab.value === 1 && tableData.filter((hsnMaster) => hsnMaster.status).length}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === 1 && totalCount.activeTotal}
 
-                    {tab.value === 0 && tableData.filter((hsnMaster) => !hsnMaster.status).length}
+                    {tab.value === 0 && totalCount.inActiveTotal}
                   </Label>
                 }
               />
@@ -259,7 +307,7 @@ export default function ItemsMasterListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={itemsMasters.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -303,11 +351,8 @@ export default function ItemsMasterListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
+                  {itemsMasters
+                    
                     .map((row) => (
                       <ItemsMasterTableRow
                         key={row.id}
@@ -336,7 +381,7 @@ export default function ItemsMasterListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}

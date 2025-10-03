@@ -17,6 +17,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {HsnMaster} from '../models';
 import {HsnMasterRepository} from '../repositories';
@@ -98,18 +99,39 @@ export class HsnMasterController {
     },
   })
   async find(
-    @param.filter(HsnMaster) filter?: Filter<HsnMaster>,
-  ): Promise<HsnMaster[]> {
-    filter = {
-      ...filter,
+    @param.query.object('filter', getFilterSchemaFor(HsnMaster))
+      filter?: Filter<HsnMaster>,
+    ): Promise<{data: HsnMaster[], count:{total:number,
+      activeTotal: number;
+      inActiveTotal: number;
+    }}> {
+      filter = filter ?? {};
+
+      const updatedFilter : Filter<HsnMaster>={
+        ...filter,
       where: {
         ...filter?.where,
         isDeleted: false,
       },
       order: ['createdAt DESC'],
     };
-    return this.hsnMasterRepository.find(filter);
+
+    const countFilter={
+      isDeleted:false
+    }
+   const data = await this.hsnMasterRepository.find(updatedFilter);
+   const total = await this.hsnMasterRepository.count();
+   const activeTotal = await this.hsnMasterRepository.count({...countFilter, status: 1 });
+    const inActiveTotal = await this.hsnMasterRepository.count({...countFilter, status: 0 });
+
+    return {data, count:{total: total.count,
+       activeTotal: activeTotal.count,
+        inActiveTotal: inActiveTotal.count}
+    };
   }
+
+
+
 
   @authenticate({
     strategy: 'jwt',

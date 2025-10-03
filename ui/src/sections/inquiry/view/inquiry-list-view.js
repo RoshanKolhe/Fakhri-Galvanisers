@@ -41,10 +41,12 @@ import {
 import { useGetInquiries } from 'src/api/inquiry';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
+import { buildFilter } from 'src/utils/filters';
 import InquiryTableRow from '../inquiry-table-row';
 import InquiryTableToolbar from '../inquiry-table-toolbar';
 import InquiryTableFiltersResult from '../inquiry-table-filters-result';
 import InquiryToCustomerForm from '../inquiry-to-customer-form';
+
 
 // ----------------------------------------------------------------------
 
@@ -88,24 +90,37 @@ export default function InquiryListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const { inquiries, inquiriesLoading, inquiriesEmpty, refreshInquiries } = useGetInquiries();
+  const filter = buildFilter ({ page: table.page,
+     rowsPerPage: table.rowsPerPage,
+     order: table.order,
+     orderBy: table.orderBy,
+     startDate: filters.startDate,
+     endDate: filters.endDate,
+     validSortFields: ['firstName','lastName','email','company','gstIn','phoneNumber','designation','address'],
+     searchTextValue: filters.name,
+     status: filters.status,
+     roles: filters.role,
+   combineName: true,
+   });
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  const { inquiries,totalCount, inquiriesLoading, inquiriesEmpty, refreshInquiries } = useGetInquiries(filter);
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // const inquiries = applyFilter({
+  //   inputData: tableData,
+  //   comparator: getComparator(table.order, table.orderBy),
+  //   filters,
+  // });
+
+  // const dataInPage = inquiries.slice(
+  //   table.page * table.rowsPerPage,
+  //   table.page * table.rowsPerPage + table.rowsPerPage
+  // );
 
   const denseHeight = table.dense ? 52 : 72;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!inquiries.length && canReset) || !inquiries.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -145,10 +160,10 @@ export default function InquiryListView() {
 
     table.onUpdatePageDeleteRows({
       totalRows: tableData.length,
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: inquiries.length,
+      totalRowsFiltered: inquiries.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, tableData]);
+  }, [inquiries.length, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -222,11 +237,11 @@ export default function InquiryListView() {
                       (tab.value === 1 && 'success') || (tab.value === 0 && 'error') || 'default'
                     }
                   >
-                    {tab.value === 'all' && tableData.length}
-                    {tab.value === 1 && tableData.filter((inquiry) => inquiry.status === 1).length}
+                    {tab.value === 'all' && totalCount.total}
+                    {tab.value === 1 && totalCount.incompleteTotal}
 
-                    {tab.value === 0 && tableData.filter((inquiry) => inquiry.status === 0).length}
-                    {tab.value === 2 && tableData.filter((inquiry) => inquiry.status === 2).length}
+                    {tab.value === 0 && totalCount.completeTotal}
+                    {tab.value === 2 && totalCount.convertedTotal}
                   </Label>
                 }
               />
@@ -247,7 +262,7 @@ export default function InquiryListView() {
               //
               onResetFilters={handleResetFilters}
               //
-              results={dataFiltered.length}
+              results={inquiries.length}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -291,7 +306,7 @@ export default function InquiryListView() {
                 />
 
                 <TableBody>
-                  {dataFiltered
+                  {inquiries
                     .slice(
                       table.page * table.rowsPerPage,
                       table.page * table.rowsPerPage + table.rowsPerPage
@@ -323,7 +338,7 @@ export default function InquiryListView() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={totalCount.total}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -375,52 +390,145 @@ export default function InquiryListView() {
 
 // ----------------------------------------------------------------------
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-  const roleMapping = {
-    super_admin: 'Super Admin',
-    admin: 'Admin',
-    worker: 'Worker',
-    qc_Admin: 'Qc Admin',
-    dispatch: 'Dispatch',
-  };
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
+// function applyFilter({ inputData, comparator, filters }) {
+//   const { name, status, role } = filters;
+//   const stabilizedThis = inputData.map((el, index) => [el, index]);
+//   const roleMapping = {
+//     super_admin: 'Super Admin',
+//     admin: 'Admin',
+//     worker: 'Worker',
+//     qc_Admin: 'Qc Admin',
+//     dispatch: 'Dispatch',
+//   };
+//   stabilizedThis.sort((a, b) => {
+//     const order = comparator(a[0], b[0]);
+//     if (order !== 0) return order;
+//     return a[1] - b[1];
+//   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+//   inputData = stabilizedThis.map((el) => el[0]);
 
-  if (name) {
-    inputData = inputData.filter((inquiry) =>
-      Object.values(inquiry).some((value) =>
-        String(value).toLowerCase().includes(name.toLowerCase())
-      )
-    );
-  }
+//   if (name) {
+//     inputData = inputData.filter((inquiry) =>
+//       Object.values(inquiry).some((value) =>
+//         String(value).toLowerCase().includes(name.toLowerCase())
+//       )
+//     );
+//   }
 
-  if (status !== 'all') {
-    inputData = inputData.filter((inquiry) => {
-      if (status === 1) return inquiry.status === 1;
-      if (status === 2) return inquiry.status === 2;
-      return inquiry.status === 0;
-    });
-  }
+//   if (status !== 'all') {
+//     inputData = inputData.filter((inquiry) => {
+//       if (status === 1) return inquiry.status === 1;
+//       if (status === 2) return inquiry.status === 2;
+//       return inquiry.status === 0;
+//     });
+//   }
 
-  if (role.length) {
-    inputData = inputData.filter(
-      (inquiry) =>
-        inquiry.permissions &&
-        inquiry.permissions.some((inquiryRole) => {
-          console.log(inquiryRole);
-          const mappedRole = roleMapping[inquiryRole];
-          console.log('Mapped Role:', mappedRole); // Check the mapped role
-          return mappedRole && role.includes(mappedRole);
-        })
-    );
-  }
+//   if (role.length) {
+//     inputData = inputData.filter(
+//       (inquiry) =>
+//         inquiry.permissions &&
+//         inquiry.permissions.some((inquiryRole) => {
+//           console.log(inquiryRole);
+//           const mappedRole = roleMapping[inquiryRole];
+//           console.log('Mapped Role:', mappedRole); // Check the mapped role
+//           return mappedRole && role.includes(mappedRole);
+//         })
+//     );
+//   }
 
-  return inputData;
+//   return inputData;
+// }
+
+export function formatDate(date) {
+  return date instanceof Date ? date.toISOString().split('T')[0] : date;
 }
+
+// export function buildFilter({
+//   page,
+//   rowsPerPage,
+//   order,
+//   orderBy,
+//   startDate,
+//   endDate,
+//   validSortFields= [],
+//   searchTextValue,
+//   status,
+//   roles,
+//   combineName = false, 
+// }) {
+//   const skip = page * rowsPerPage;
+//   const limit = rowsPerPage;
+
+//   const where = { isDeleted: false };
+//   const orConditions= [];
+
+//   // Map UI roles to DB role keys
+//   const roleMapping = {
+//     'Super Admin': 'super_admin',
+//     'Admin': 'admin',
+//     'Worker': 'worker',
+//     'Qc Admin': 'qc_Admin',
+//     'Dispatch': 'dispatch',
+//     'Supervisor': 'supervisor',
+//   };
+
+//   // Status filter
+//   if (status && status !== 'all') {
+//     where.isActive = status === '1';
+//   }
+
+//   // Date filter
+//   if (startDate && endDate) {
+//     where.createdAt = { between: [formatDate(startDate), formatDate(endDate)] };
+//   } else if (startDate) {
+//     where.createdAt = { gte: formatDate(startDate) };
+//   } else if (endDate) {
+//     where.createdAt = { lte: formatDate(endDate) };
+//   }
+
+//   // Search filter
+//  if (searchTextValue?.trim()) {
+//   const text = `%${searchTextValue.trim()}%`;
+//   // Case: firstName + lastName combined search
+//   if (combineName) {
+//     orConditions.push({
+//       and: [
+//         { firstName: { like: `%${searchTextValue.split(' ')[0]}%` } },
+//         { lastName: { like: `%${searchTextValue.split(' ')[1] || ''}%` } },
+//       ],
+//     });
+//   }
+//   // Loop through dynamic searchable fields
+//   validSortFields.forEach((field) => {
+//     orConditions.push({ [field]: { like: text } });
+//   });
+// }
+
+//   // 🔹 Roles filter
+//   if (roles?.length) {
+//     const dbRoles = roles.map((uiRole) => roleMapping[uiRole] || uiRole);
+//     orConditions.push(...dbRoles.map((role) => ({
+//       permissions: { like: `%${role}%`, options: 'i' },
+//     })));
+//   }
+
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+//   // Only attach OR if needed
+//   if (orConditions.length) {
+//     where.or = orConditions;
+//   }
+
+//   // Sorting
+//   const orderFilter =
+//     validSortFields.includes(orderBy) && order
+//       ? [`${orderBy} ${order === 'desc' ? 'DESC' : 'ASC'}`]
+//       : undefined;
+
+//   const filter = { skip, limit, order: orderFilter, where };
+//   console.log('buildFilter (final with role mapping):', JSON.stringify(filter, null, 2));
+//   return filter;
+// }

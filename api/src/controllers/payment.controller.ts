@@ -20,6 +20,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {Payment} from '../models';
 import {
@@ -116,12 +117,23 @@ export class PaymentController {
   })
   async find(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(Payment) filter?: Filter<Payment>,
-  ): Promise<Payment[]> {
-    filter = {
-      ...filter,
+    @param.query.object('filter', getFilterSchemaFor(Payment))
+  filter?: Filter<Payment>,
+): Promise<{data:Payment[], count:{total:number,
+  paidTotal:number,
+  pendingTotal:number,
+  overdueTotal:number,
+  pendingApprovalTotal:number,
+  requestReuploadTotal:number,
+
+
+}}> {
+    filter = filter ?? {};
+
+    const baseFilter: Filter<Payment> = {
+          ...filter,
       where: {
-        ...filter?.where,
+        ...filter.where,
         isDeleted: false,
       },
       include: [
@@ -140,20 +152,44 @@ export class PaymentController {
       order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
+    let finalFilter: Filter<Payment>;
     if (
       currentUserPermission.includes('super_admin') ||
       currentUserPermission.includes('admin') || 
       currentUserPermission.includes('supervisor')
     ) {
-      return this.paymentRepository.find(filter);
+    finalFilter = baseFilter;
     } else {
-      return this.paymentRepository.find({
-        ...filter,
+      finalFilter = {
+        ...baseFilter,
         where: {
           customerId: currnetUser.id,
         },
-      });
+      };
     }
+   
+    console.log('final filter', finalFilter);
+
+    const countFilter={
+      isDeleted:false,
+    }
+    const data = await this.paymentRepository.find(finalFilter);
+    const total = await this.paymentRepository.count(countFilter);
+     const paidTotal = await this.paymentRepository.count({...countFilter,status:1});
+      const pendingTotal = await this.paymentRepository.count({...countFilter,status:0});
+       const overdueTotal = await this.paymentRepository.count({...countFilter,status:2});
+        const pendingApprovalTotal = await this.paymentRepository.count({...countFilter,status:3});
+         const requestReuploadTotal = await this.paymentRepository.count({...countFilter,status:4});
+
+
+    return { data, count:{total: total.count,
+      paidTotal:paidTotal.count,
+      pendingTotal:pendingTotal.count,
+      overdueTotal:overdueTotal.count,
+      pendingApprovalTotal:pendingApprovalTotal.count,
+      requestReuploadTotal:requestReuploadTotal.count,
+    } };
+    
   }
 
   @authenticate({

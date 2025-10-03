@@ -50,7 +50,7 @@ export default function CustomerTableRow({
               onEditRow();
             }}
             sx={{cursor: 'pointer', '&:hover' : {textDecoration: 'underline'}}}
-            primary={`${firstName} ${lastName || ''}`}
+            primary={`${firstName}  ${lastName}` }
             secondary={email}
             primaryTypographyProps={{ typography: 'body2' }}
             secondaryTypographyProps={{ component: 'span', color: 'text.disabled' }}

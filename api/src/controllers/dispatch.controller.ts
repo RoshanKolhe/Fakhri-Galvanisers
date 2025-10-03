@@ -2,6 +2,7 @@ import {
   Count,
   CountSchema,
   Filter,
+  FilterBuilder,
   FilterExcludingWhere,
   repository,
   Where,
@@ -16,6 +17,7 @@ import {
   del,
   requestBody,
   response,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {Dispatch} from '../models';
 import {DispatchRepository} from '../repositories';
@@ -79,34 +81,66 @@ export class DispatchController {
       },
     },
   })
-  async find(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(Dispatch) filter?: Filter<Dispatch>,
-  ): Promise<Dispatch[]> {
-    filter = {
-      ...filter,
+ async find(
+  @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+  @param.query.object('filter', getFilterSchemaFor(Dispatch))
+  filter?: Filter<Dispatch>,
+): Promise<{ data: Dispatch[]; count:{total: number,
+  pendingTotal:number,
+  documentsUploadedTotal:number,
+  completedTotal:number,
+} }> {
+  filter = filter ?? {};
+
+  const baseFilter: Filter<Dispatch> = {
+    ...filter,
+    where: {
+      ...filter.where,
+      isDeleted: false,
+    },
+    include: [
+      { relation: 'order' },
+      { relation: 'customer' },
+    ],
+    order: ['createdAt DESC'],
+  };
+
+  const currentUserPermission = currnetUser.permissions;
+  let finalFilter: Filter<Dispatch>;
+
+  if (
+    currentUserPermission.includes('super_admin') ||
+    currentUserPermission.includes('admin')
+  ) {
+    finalFilter = baseFilter;
+  } else {
+    finalFilter = {
+      ...baseFilter,
       where: {
-        ...filter?.where,
-        isDeleted: false,
+        ...baseFilter.where, 
+        customerId: currnetUser.id,
       },
-      include: [{relation: 'order'}, {relation: 'customer'}],
-      order: ['createdAt DESC'],
     };
-    const currentUserPermission = currnetUser.permissions;
-    if (
-      currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
-    ) {
-      return this.dispatchRepository.find(filter);
-    } else {
-      return this.dispatchRepository.find({
-        ...filter,
-        where: {
-          customerId: currnetUser.id,
-        },
-      });
-    }
   }
+
+  console.log('final filter', finalFilter);
+
+  const countFilter ={
+    isDeleted: false,
+  }
+
+  const data = await this.dispatchRepository.find(finalFilter);
+  const total = await this.dispatchRepository.count(countFilter);
+  const pendingTotal = await this.dispatchRepository.count({...countFilter, status:0});
+  const documentsUploadedTotal = await this.dispatchRepository.count({...countFilter, status:1});
+  const completedTotal = await this.dispatchRepository.count({...countFilter, status:2});
+
+  return { data, count:{total: total.count,
+pendingTotal:pendingTotal.count,
+documentsUploadedTotal:documentsUploadedTotal.count,
+completedTotal:completedTotal.count,
+  } };
+}
 
   @authenticate({
     strategy: 'jwt',

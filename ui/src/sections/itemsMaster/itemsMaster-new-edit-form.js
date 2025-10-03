@@ -16,9 +16,9 @@ import { useRouter } from 'src/routes/hook';
 // components
 
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFAutocomplete, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFAutocomplete, RHFSelect, RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
-import { Chip, TextField, Typography } from '@mui/material';
+import { Chip, MenuItem, TextField, Typography } from '@mui/material';
 import {
   DndContext,
   closestCenter,
@@ -39,6 +39,7 @@ import { useGetProcessess } from 'src/api/processes';
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetHsnMasters } from 'src/api/hsnMaster';
 import { TimePicker } from '@mui/x-date-pickers';
+import { COMMON_STATUS_OPTIONS } from 'src/utils/constants';
 
 // ----------------------------------------------------------------------
 
@@ -173,7 +174,7 @@ export default function ItemsMasterNewEditForm({ currentItemsMaster }) {
         processName: item.processName,
         processDuration: new Date(item.processDuration)
       })) : [],
-      status: currentItemsMaster?.status || 1,
+      status: currentItemsMaster?.status !== undefined ? currentItemsMaster.status : 1,
     }),
     [currentItemsMaster]
   );
@@ -283,7 +284,18 @@ export default function ItemsMasterNewEditForm({ currentItemsMaster }) {
                 sm: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="materialType" label="Material Type" />
+              <Stack direction="row" spacing={2}>
+                {currentItemsMaster && (
+                  <RHFSelect name="status" label="Status">
+                    {COMMON_STATUS_OPTIONS.map((option) => (
+                      <MenuItem key={String(option.value)} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </RHFSelect>
+                )}
+                <RHFTextField name="materialType" label="Material Type" />
+              </Stack>
 
               <RHFAutocomplete
                 name='hsnMaster'
@@ -313,6 +325,7 @@ export default function ItemsMasterNewEditForm({ currentItemsMaster }) {
                 )}
                 disabled={!isAdmin}
               />
+
 
               <RHFAutocomplete
                 multiple

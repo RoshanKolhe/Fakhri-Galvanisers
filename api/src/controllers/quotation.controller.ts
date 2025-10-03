@@ -16,6 +16,7 @@ import {
   del,
   requestBody,
   response,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {Quotation} from '../models';
 import {
@@ -114,60 +115,96 @@ export class QuotationController {
     return quotationData;
   }
 
-  @authenticate({
-    strategy: 'jwt',
-    options: {
-      required: [
-        PermissionKeys.SUPER_ADMIN,
-        PermissionKeys.ADMIN,
-        PermissionKeys.CUSTOMER,
-        PermissionKeys.SUPERVISOR
-      ],
-    },
-  })
-  @get('/quotations')
-  @response(200, {
-    description: 'Array of Quotation model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Quotation, {includeRelations: true}),
-        },
+  
+@authenticate({
+  strategy: 'jwt',
+  options: {
+    required: [
+      PermissionKeys.SUPER_ADMIN,
+      PermissionKeys.ADMIN,
+      PermissionKeys.CUSTOMER,
+      PermissionKeys.SUPERVISOR,
+    ],
+  },
+})
+@get('/quotations')
+@response(200, {
+  description: 'Array of Quotation model instances',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'array',
+        items: getModelSchemaRef(Quotation, {includeRelations: true}),
       },
     },
-  })
-  async find(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(Quotation) filter?: Filter<Quotation>,
-  ): Promise<Quotation[]> {
-    console.log('currnetUser', currnetUser.id);
-    filter = {
+  },
+})
+async find(
+  @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+  @param.query.object('filter', getFilterSchemaFor(Quotation))
+  filter?: Filter<Quotation>,
+): Promise<{data: Quotation[]; count:{total: number,
+  draftTotal:number,
+  approvedTotal:number,
+  pendingApprovalTotal:number,
+  rejectedTotal:number,
+  createdTotal:number,
+}}> {
+  filter = filter ?? {};
+
+  const baseWhere = {
+    ...filter.where,
+    isDeleted: false,
+  };
+
+  let finalFilter: Filter<Quotation>;
+
+  // Check role
+  const currentUserPermission = currentUser.permissions;
+
+  if (
+    currentUserPermission.includes(PermissionKeys.SUPER_ADMIN) ||
+    currentUserPermission.includes(PermissionKeys.ADMIN)
+  ) {
+    finalFilter = {
+      ...filter,
+      where: baseWhere,
+      include: ['customer'],
+    };
+  } else {
+    finalFilter = {
       ...filter,
       where: {
-        ...filter?.where,
-        isDeleted: false,
+        ...baseWhere,
+        customerId: currentUser.id,
       },
       include: ['customer'],
     };
-    const currentUserPermission = currnetUser.permissions;
-    if (
-      currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin')
-    ) {
-      return this.quotationRepository.find(filter);
-    } else {
-      console.log(filter);
-
-      return this.quotationRepository.find({
-        ...filter,
-        where: {
-          ...filter?.where,
-          customerId: currnetUser.id,
-        },
-      });
-    }
   }
+
+
+    const countfilter = {
+  isDeleted:false,
+}
+
+  const data = await this.quotationRepository.find(finalFilter);
+   const total = await this.quotationRepository.count(countfilter);
+  const draftTotal = await this.quotationRepository.count({...countfilter,status:0 },);
+  const approvedTotal = await this.quotationRepository.count({...countfilter,status:1});
+  const pendingApprovalTotal = await this.quotationRepository.count({...countfilter,status:2});
+  const rejectedTotal = await this.quotationRepository.count({...countfilter,status:3});
+  const createdTotal = await this.quotationRepository.count({...countfilter,status:4});
+
+  return {data, count:{total: total.count,
+    draftTotal:draftTotal.count,
+    approvedTotal:approvedTotal.count,
+    pendingApprovalTotal:pendingApprovalTotal.count,
+    rejectedTotal:rejectedTotal.count,
+    createdTotal:createdTotal.count,
+
+  }};
+}
+
 
   @authenticate({
     strategy: 'jwt',

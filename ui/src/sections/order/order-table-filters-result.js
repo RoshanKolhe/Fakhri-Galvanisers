@@ -21,7 +21,7 @@ export default function OrderTableFiltersResult({
   results,
   ...other
 }) {
-  const shortLabel = shortDateLabel(filters.startDate, filters.endDate);
+  // const shortLabel = shortDateLabel(filters.startDate, filters.endDate);
 
   const handleRemoveStatus = () => {
     onFilters('status', 'all');
@@ -61,7 +61,7 @@ export default function OrderTableFiltersResult({
 
         {filters.startDate && filters.endDate && (
           <Block label="Date:">
-            <Chip size="small" label={shortLabel} onDelete={handleRemoveDate} />
+            <Chip size="small"  onDelete={handleRemoveDate} />
           </Block>
         )}
 

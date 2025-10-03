@@ -19,6 +19,7 @@ import {
   requestBody,
   response,
   HttpErrors,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import {
   LotProcesses,
@@ -254,6 +255,7 @@ export class OrderController {
     }
   }
 
+
   @authenticate({
     strategy: 'jwt',
   })
@@ -271,40 +273,70 @@ export class OrderController {
   })
   async find(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
-    @param.filter(Order) filter?: Filter<Order>,
-  ): Promise<Order[]> {
-    filter = {
+    @param.query.object('filter', getFilterSchemaFor(Order))
+    filter?: Filter<Order>,
+  ): Promise<{ data: Order[], count:{total: number,
+    materialReceivedTotal:number,
+    inProcessTotal:number,
+    materialReadyTotal:number,
+    readyToDispatchTotal:number
+  } }> {
+    filter = filter ?? {};
+
+    const baseFilter: Filter<Order> = {
       ...filter,
       where: {
-        ...filter?.where,
+        ...filter.where,
         isDeleted: false,
       },
       include: [
+        ...(Array.isArray(filter.include) ? filter.include : []),
         { relation: 'materials' },
         { relation: 'customer' },
         { relation: 'challan' },
         { relation: 'payment' },
         { relation: 'dispatch' },
       ],
-      order: ['createdAt DESC'],
+      // order: ['createdAt DESC'],
     };
     const currentUserPermission = currnetUser.permissions;
+    let finalFilter: Filter<Order>;
     if (
       currentUserPermission.includes('super_admin') ||
       currentUserPermission.includes('admin') ||
       currentUserPermission.includes('supervisor')
     ) {
-      return this.orderRepository.find({ ...filter, order: ['createdAt DESC'] });
+      finalFilter = baseFilter;
     } else {
-      return this.orderRepository.find({
-        ...filter,
+      finalFilter = {
+        ...baseFilter,
         where: {
           ...filter?.where,
           customerId: currnetUser.id,
         },
-        order: ['createdAt DESC']
-      });
+        // order: ['createdAt DESC']
+      };
     }
+
+    const countFilter={
+      isDeleted:false,
+    }
+
+    console.log('final filter', finalFilter);
+    const data = await this.orderRepository.find(finalFilter);
+    const  total = await this.orderRepository.count(countFilter);
+    const  materialReceivedTotal = await this.orderRepository.count({...countFilter, status:0});
+    const inProcessTotal = await this.orderRepository.count({...countFilter,status:1});
+    const materialReadyTotal = await this.orderRepository.count({...countFilter,status:2});
+    const readyToDispatchTotal= await this.orderRepository.count({...countFilter,status:3});
+
+
+    return { data,count:{ total: total.count,
+      materialReceivedTotal:materialReceivedTotal.count,
+      inProcessTotal:inProcessTotal.count,
+      materialReadyTotal: materialReadyTotal.count,
+      readyToDispatchTotal:readyToDispatchTotal.count,
+    } };
   }
 
   // @authenticate({
@@ -859,13 +891,13 @@ export class OrderController {
         );
 
         lot.processes = lot.processes
-          .filter((process : any) => {
+          .filter((process: any) => {
             if (isGalvanizingUser && isPreTreatmentUser) return true;
             if (isGalvanizingUser) return process.processGroup === 1;
             if (isPreTreatmentUser) return process.processGroup === 0;
             return true;
           })
-          .map((process : any) => {
+          .map((process: any) => {
             const matchedProcess = matchingLotProcesses.find(
               lp => lp.processesId === process.id,
             );

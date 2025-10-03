@@ -437,4 +437,74 @@ export function useUserRoles() {
   const permissions = localStorage.getItem(PERMISSION_KEY).split(',');
 
   return permissions;
+  
 }
+
+
+
+// export function formatDate(date) {
+//   return date instanceof Date ? date.toISOString().split('T')[0] : date;
+// }
+
+// export function buildFilter({
+//   page,
+//   rowsPerPage,
+//   order,
+//   orderBy,
+//   startDate,
+//   endDate,
+//   validSortFields,
+//   searchTextValue,
+//   status,
+//   roles,
+// }) {
+//   const skip = page * rowsPerPage;
+//   const limit = rowsPerPage;
+
+//   const where = { isDeleted: false };
+
+//   // Status filter
+//   if (status && status !== 'all') {
+//     where.isActive = status === '1';
+//   }
+
+//   // Date filter
+//   if (startDate && endDate) {
+//     where.conductionDate = {
+//       between: [formatDate(startDate), formatDate(endDate)],
+//     };
+//   } else if (startDate) {
+//     where.conductionDate = { gte: formatDate(startDate) };
+//   } else if (endDate) {
+//     where.conductionDate = { lte: formatDate(endDate) };
+//   }
+
+//   // Search filter
+//   if (searchTextValue?.trim()) {
+//     where.or = [
+//       { name: { like: searchTextValue, options: 'i' } },
+//       { email: { like: searchTextValue, options: 'i' } },
+//       { phoneNumber: { like: searchTextValue, options: 'i' } },
+//       { phoneNumber: { like: searchTextValue, options: 'i' } },
+//     ];
+//   }
+
+//   // Role filter
+//   if (roles && roles.length) {
+//     where.permissions = { inq: roles };
+//   }
+
+//   // Sorting
+//   const orderFilter =
+//     validSortFields.includes(orderBy) && order
+//       ? [`${orderBy} ${order === 'desc' ? 'DESC' : 'ASC'}`]
+//       : undefined;
+
+//   const filter = { skip, limit, order: orderFilter, where };
+//   console.log('buildFilter:', JSON.stringify(filter, null, 2));
+//   return filter;
+// }
+
+
+
+

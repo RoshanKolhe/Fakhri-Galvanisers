@@ -46,13 +46,13 @@ export const endpoints = {
   },
   customer: {
     list: '/customer/list',
-    filterList: (filter) => `/customer/list?${filter}`,
+    filterList: (filter) => `/customer/list?filter=${filter}`,
     details: (id) => `/customer/${id}`,
     getCustomerDashboradCounts: '/customer/getDashboardCounts',
   },
   quotation: {
     list: '/quotations',
-    filterList: (filter) => `/quotations?${filter}`,
+    filterList: (filter) => `/quotations?$filter=${filter}`,
     details: (id) => `/quotations/${id}`,
   },
   notification: {
@@ -60,19 +60,19 @@ export const endpoints = {
   },
   hsnMaster: {
     list: '/hsn-masters',
-    filterList: (filter) => `/hsn-masters?${filter}`,
+    filterList: (filter) => `/hsn-masters?filter=${filter}`,
     details: (id) => `/hsn-masters/${id}`,
   },
 
   // ITEMS MASTER
   itemsMaster: {
     list: '/items',
-    filterList: (filter) => `/items?${filter}`,
+    filterList: (filter) => `/items?filter=${filter}`,
     details: (id) => `/items/${id}`,
   },
   order: {
     list: '/orders',
-    filterList: (filter) => `/orders?${filter}`,
+    filterList: (filter) => `/orders?filter=${filter}`,
     details: (id) => `/orders/${id}`,
   },
   payment: {

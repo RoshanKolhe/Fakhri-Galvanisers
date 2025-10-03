@@ -162,8 +162,9 @@ export default function ChallanNewEditForm({ currentChallan }) {
         };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/quotations?filter=${filterString}`);
-        setQuotationOptions(data);
-        console.log(data);
+           setQuotationOptions(data?.data || []);
+           console.log('quotations', data)
+        console.log(data?.data);
       } else {
         setQuotationOptions([]);
       }
@@ -458,8 +459,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
         };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/customer/list?filter=${filterString}`);
-        setCustomerOptions(data);
-        console.log(data);
+        setCustomerOptions(data?.data || []);
+        console.log(data?.data);
       } else {
         setCustomerOptions([]);
       }

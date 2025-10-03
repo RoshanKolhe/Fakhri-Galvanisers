@@ -17,3 +17,4 @@ export * from './items-hsn-master.controller';
 export * from './items-processes.controller';
 export * from './items.controller';
 export * from './material-user.controller';
+export * from './challan-user.controller';

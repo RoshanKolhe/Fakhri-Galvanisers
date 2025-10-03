@@ -1,30 +1,43 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 // utils
 import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetCustomers() {
-  const URL = endpoints.customer.list;
+
+// src/api/customer.js
+export function useGetCustomers(filterParams) {
+        const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.customer.list}?${queryString}` : endpoints.customer.list;
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
-  const refreshCustomers = () => {
-    // Use the `mutate` function to trigger a revalidation
+  const refreshCustomers = useCallback(() => {
     mutate();
-  };
+  }, [mutate]);
 
-  return {
-    customers: data || [],
-    customersLoading: isLoading,
-    customersError: error,
-    customersValidating: isValidating,
-    customersEmpty: !isLoading && !data?.length,
-    refreshCustomers, // Include the refresh function separately
-  };
+  return useMemo(
+    () => ({
+      customers: data?.data || [],
+      totalCount: data?.count || {
+        total: 0,
+        activeTotal: 0,
+        inActiveTotal: 0
+      },
+      customersLoading: isLoading,
+      customersError: error,
+      customersValidating: isValidating,
+      customersEmpty: !isLoading && (!data?.data || data?.data?.length === 0),
+      refreshCustomers,
+    }),
+    [data?.data, data?.count, error, isLoading, isValidating, refreshCustomers]
+  );
 }
+
+
+
 
 // ----------------------------------------------------------------------
 
@@ -34,7 +47,7 @@ export function useGetCustomer(customerId) {
 
   const memoizedValue = useMemo(
     () => ({
-      customer: data,
+      customer: data?.data ||[] ,
       customerLoading: isLoading,
       customerError: error,
       customerValidating: isValidating,
@@ -63,11 +76,11 @@ export function useGetCustomersWithFilter(filter) {
   };
 
   return {
-    filteredCustomers: data || [],
+    filteredCustomers: data?.data || [],
     filteredCustomersLoading: isLoading,
     filteredCustomersError: error,
     filteredCustomersValidating: isValidating,
-    filteredCustomersEmpty: !isLoading && !data?.length,
+    filteredCustomersEmpty: !isLoading && !data?.data?.length,
     refreshFilterCustomers, // Include the refresh function separately
   };
 }

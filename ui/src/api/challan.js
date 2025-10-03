@@ -6,8 +6,9 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function useGetChallans() {
-  const URL = endpoints.challan.list;
+export function useGetChallans(filterParams) {
+      const queryString = filterParams ? `filter=${encodeURIComponent(JSON.stringify(filterParams))}` : undefined;
+    const URL = queryString ? `${endpoints.challan.list}?${queryString}` : endpoints.challan.list;
 
   const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
 
@@ -17,11 +18,12 @@ export function useGetChallans() {
   };
 
   return {
-    challans: data || [],
+    challans: data?.data || [],
+    totalcount: data?.count || 0,
     challansLoading: isLoading,
     challansError: error,
     challansValidating: isValidating,
-    challansEmpty: !isLoading && !data?.length,
+    challansEmpty: !isLoading && (!data?.data || data?.data?.length === 0),
     refreshChallans, // Include the refresh function separately
   };
 }

@@ -20,25 +20,26 @@ import {
   response,
   HttpErrors,
   getJsonSchemaRef,
+  getFilterSchemaFor,
 } from '@loopback/rest';
 import * as _ from 'lodash';
-import {Customer, Inquiry} from '../models';
+import { Customer, Inquiry } from '../models';
 import {
   CustomerRepository,
   InquiryRepository,
   NotificationRepository,
 } from '../repositories';
-import {authenticate, AuthenticationBindings} from '@loopback/authentication';
-import {PermissionKeys} from '../authorization/permission-keys';
-import {inject} from '@loopback/core';
-import {UserProfile} from '@loopback/security';
-import {FakhriGalvanisersDataSource} from '../datasources';
-import {validateCredentials} from '../services/validator';
-import {BcryptHasher} from '../services/hash.password.bcrypt';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
+import { PermissionKeys } from '../authorization/permission-keys';
+import { inject, resolveUntil } from '@loopback/core';
+import { UserProfile } from '@loopback/security';
+import { FakhriGalvanisersDataSource } from '../datasources';
+import { validateCredentials } from '../services/validator';
+import { BcryptHasher } from '../services/hash.password.bcrypt';
 import generateEmailAndPasswordTemplate from '../templates/email-and-password.template';
 import SITE_SETTINGS from '../utils/config';
-import {EmailManagerBindings} from '../keys';
-import {EmailManager} from '../services/email.service';
+import { EmailManagerBindings } from '../keys';
+import { EmailManager } from '../services/email.service';
 
 export class InquiryController {
   constructor(
@@ -54,12 +55,12 @@ export class InquiryController {
     public notificationRepository: NotificationRepository,
     @inject('service.hasher')
     public hasher: BcryptHasher,
-  ) {}
+  ) { }
 
   @post('/inquiries')
   @response(200, {
     description: 'Inquiry model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Inquiry)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Inquiry) } },
   })
   async create(
     @requestBody({
@@ -84,37 +85,71 @@ export class InquiryController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Inquiry, {includeRelations: true}),
+          items: getModelSchemaRef(Inquiry, { includeRelations: true }),
         },
       },
     },
   })
   async find(
-    @param.filter(Inquiry) filter?: Filter<Inquiry>,
-  ): Promise<Inquiry[]> {
-    filter = {
-      ...filter,
+
+    @param.query.object('filter', getFilterSchemaFor(Inquiry))
+    filter?: Filter<Inquiry>,
+
+  ): Promise<{
+    data: Inquiry[], count: {
+      total: number,
+      incompleteTotal: number;
+      completeTotal: number;
+      convertedTotal: number;
+    }
+  }> {
+    filter = filter ?? {};
+
+    const updateFilter: Filter<Inquiry> = {
       where: {
         ...filter?.where,
         isDeleted: false,
       },
       order: ['createdAt DESC'],
     };
-    return this.inquiryRepository.find(filter);
+    const data = await this.inquiryRepository.find(updateFilter);
+
+    const countFilter = {
+      isDeleted: false
+    };
+
+    const total = await this.inquiryRepository.count(countFilter);
+    const incompleteTotal = await this.inquiryRepository.count({ ...countFilter, status: 0 })
+    const completeTotal = await this.inquiryRepository.count({ ...countFilter, status: 1 })
+    const convertedTotal = await this.inquiryRepository.count({ ...countFilter, status: 2 })
+
+    return {
+      data, count: {
+        total: total.count,
+        incompleteTotal: incompleteTotal.count,
+        completeTotal: completeTotal.count,
+        convertedTotal: convertedTotal.count
+      }
+    };
   }
+
+
+
+
+
 
   @get('/inquiries/{id}')
   @response(200, {
     description: 'Inquiry model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Inquiry, {includeRelations: true}),
+        schema: getModelSchemaRef(Inquiry, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Inquiry, {exclude: 'where'})
+    @param.filter(Inquiry, { exclude: 'where' })
     filter?: FilterExcludingWhere<Inquiry>,
   ): Promise<Inquiry> {
     return this.inquiryRepository.findById(id, filter);
@@ -129,7 +164,7 @@ export class InquiryController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Inquiry, {partial: true}),
+          schema: getModelSchemaRef(Inquiry, { partial: true }),
         },
       },
     })
@@ -152,7 +187,7 @@ export class InquiryController {
 
   @authenticate({
     strategy: 'jwt',
-    options: {required: [PermissionKeys.SUPER_ADMIN]},
+    options: { required: [PermissionKeys.SUPER_ADMIN] },
   })
   @del('/inquiries/{id}')
   @response(204, {
@@ -211,11 +246,11 @@ export class InquiryController {
 
     try {
       const customer = await this.customerRepository.findOne({
-        where: {or: [{email: userData.email}]},
+        where: { or: [{ email: userData.email }] },
       });
 
       const inquiry = await this.inquiryRepository.findOne({
-        where: {or: [{id: inquiryId}]},
+        where: { or: [{ id: inquiryId }] },
       });
 
       if (customer) {
@@ -242,8 +277,8 @@ export class InquiryController {
 
       await this.inquiryRepository.updateById(
         inquiryId,
-        {status: 2},
-        {transaction: tx},
+        { status: 2 },
+        { transaction: tx },
       );
 
       const loginLink = `${process.env.REACT_APP_ENDPOINT}/customer-login`;
