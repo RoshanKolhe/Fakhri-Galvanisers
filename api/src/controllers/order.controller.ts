@@ -154,6 +154,7 @@ export class OrderController {
           hsnCode: material.hsnCode,
           totalQuantity: material.totalQuantity,
           materialType: material.materialType,
+          description: material.description ? material.description : 'NA',
           noOfLots: material.noOfLots,
           startDate: material.startDate,
           endDate: material.endDate,
@@ -996,8 +997,9 @@ export class OrderController {
         },
         { transaction: tx },
       );
-      await this.updateOrderAndMaterialStatus(orderId);
       tx.commit();
+      
+      await this.updateOrderAndMaterialStatus(orderId);
       return Promise.resolve({
         status: 1,
         msg: 'Lot process Updated Successfully',
@@ -1068,6 +1070,8 @@ export class OrderController {
           }
         }
 
+        console.log('processes', processes);
+        console.log('all process completed', allProcessesCompleted);
         // Update lot status
         const lotStatus = lotInProgress ? 1 : allProcessesCompleted ? 2 : 0;
         await this.lotsRepository.updateById(lot.id, { status: lotStatus });

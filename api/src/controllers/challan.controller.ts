@@ -155,9 +155,10 @@ export class ChallanController {
 
     let finalFilter: Filter<Challan>;
     if (
-      userPermissions.includes(PermissionKeys.SUPER_ADMIN) ||
-      userPermissions.includes(PermissionKeys.ADMIN) ||
-      userPermissions.includes(PermissionKeys.SUPERVISOR)
+      userPermissions.includes('super_admin') ||
+      userPermissions.includes('admin') ||
+      userPermissions.includes('supervisor') || 
+      userPermissions.includes('dispatch')
     ) {
       finalFilter = baseFilter;
     } else {
