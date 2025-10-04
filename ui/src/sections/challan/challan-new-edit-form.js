@@ -165,6 +165,8 @@ export default function ChallanNewEditForm({ currentChallan }) {
            setQuotationOptions(data?.data || []);
            console.log('quotations', data)
         console.log(data?.data);
+        console.log('quotation response', data);
+
       } else {
         setQuotationOptions([]);
       }

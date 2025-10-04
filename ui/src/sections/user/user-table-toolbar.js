@@ -90,7 +90,7 @@ export default function UserTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search with firstName OR lastName, employeeId....."
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

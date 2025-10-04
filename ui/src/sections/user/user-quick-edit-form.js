@@ -181,6 +181,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose, refreshU
               {[
                 { value: 'admin', name: 'Admin' },
                 { value: 'worker', name: 'Worker' },
+                { value: 'supervisor', name: 'Supervisor' },
                 { value: 'qc_admin', name: 'Qc Admin' },
                 { value: 'dispatch', name: 'Dispatch' },
               ].map((option) => (

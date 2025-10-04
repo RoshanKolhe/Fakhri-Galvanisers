@@ -61,7 +61,7 @@ export default function CustomerTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search with firstName OR lastName, phone No. ,Gst No......"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

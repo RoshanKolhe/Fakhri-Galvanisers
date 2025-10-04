@@ -55,7 +55,7 @@ export default function InquiryTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search with firstName OR with lastName and with other fields"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

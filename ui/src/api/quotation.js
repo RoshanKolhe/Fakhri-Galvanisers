@@ -72,7 +72,8 @@ export function useGetQuotationsWithFilter(filter) {
 
   return {
     filteredQuotations: data?.data || [],
-    filteredQuotationsLoading: isLoading,
+     quotationCount: data?.count || {},
+        filteredQuotationsLoading: isLoading,
     filteredQuotationsError: error,
     filteredQuotationsValidating: isValidating,
     filteredQuotationsEmpty: !isLoading && !data?.data?.length,
