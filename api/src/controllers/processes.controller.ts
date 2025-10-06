@@ -20,8 +20,10 @@ import {
 } from '@loopback/rest';
 import { Processes } from '../models';
 import { ProcessesRepository } from '../repositories';
-import { authenticate } from '@loopback/authentication';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
+import { inject } from '@loopback/core';
+import { UserProfile } from '@loopback/security';
 
 export class ProcessesController {
   constructor(
@@ -52,8 +54,9 @@ export class ProcessesController {
       },
     })
     processes: Omit<Processes, 'id'>,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser:UserProfile
   ): Promise<Processes> {
-    return this.processesRepository.create(processes);
+    return this.processesRepository.create(processes, {currentUser});
   }
 
   @authenticate({
@@ -157,8 +160,9 @@ isDeleted:false,
       },
     })
     processes: Processes,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile
   ): Promise<void> {
-    await this.processesRepository.updateById(id, processes);
+    await this.processesRepository.updateById(id, processes,{currentUser});
   }
 
   @authenticate({
@@ -171,8 +175,10 @@ isDeleted:false,
   @response(204, {
     description: 'Processes DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.processesRepository.deleteById(id);
+  async deleteById(@param.path.number('id') id: number,
+@inject(AuthenticationBindings.CURRENT_USER) currentUser:UserProfile,
+): Promise<void> {
+    await this.processesRepository.deleteById(id, {currentUser});
   }
 
   // fetch processes by group...

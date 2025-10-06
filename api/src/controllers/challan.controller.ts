@@ -20,7 +20,7 @@ import {
   getFilterSchemaFor,
 } from '@loopback/rest';
 import { Challan } from '../models';
-import { ChallanRepository, NotificationRepository, OrderRepository } from '../repositories';
+import { ChallanRepository, NotificationRepository, OrderRepository, UserRepository } from '../repositories';
 import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
 import { inject } from '@loopback/core';
@@ -40,6 +40,8 @@ export class ChallanController {
     public notificationRepository: NotificationRepository,
     @inject(EmailManagerBindings.SEND_MAIL)
     public emailManager: EmailManager,
+    @repository(UserRepository)
+    public userRepository: UserRepository,
   ) { }
 
   @authenticate({
@@ -73,6 +75,7 @@ export class ChallanController {
       },
     })
     challan: Omit<Challan, 'id'>,
+      @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
   ): Promise<Challan> {
     const existingChallan = await this.challanRepository.findOne({
       where: {
@@ -85,7 +88,15 @@ export class ChallanController {
       );
     }
 
-    const createdChallan = await this.challanRepository.create(challan, { currentUser });
+     const inputData: Partial<Challan> = {
+          ...challan,
+          createdByType: currnetUser.userType,
+          createdBy: currnetUser.id,
+          updatedByType: currnetUser.userType,
+          updatedBy: currnetUser.id,
+        };
+
+    const createdChallan = await this.challanRepository.create(inputData, { currentUser });
 
     if (!createdChallan || !createdChallan.id) {
       throw new HttpErrors.BadRequest('Something went wrong');
@@ -157,7 +168,7 @@ export class ChallanController {
     if (
       userPermissions.includes('super_admin') ||
       userPermissions.includes('admin') ||
-      userPermissions.includes('supervisor') || 
+      userPermissions.includes('supervisor') ||
       userPermissions.includes('dispatch')
     ) {
       finalFilter = baseFilter;
@@ -171,8 +182,8 @@ export class ChallanController {
       };
     }
 
-    const countFilter={
-      isDeleted :false,
+    const countFilter = {
+      isDeleted: false,
     }
 
     const data = await this.challanRepository.find(finalFilter);
@@ -322,7 +333,11 @@ export class ChallanController {
       }
 
     }
-    await this.challanRepository.updateById(id, challan, { currentUser });
+    await this.challanRepository.updateById(id,{
+       ...challan,
+       updatedBy: currentUser.id,
+      updatedByType: currentUser.userType,
+       }, {currentUser});
   }
 
   @authenticate({
@@ -361,6 +376,22 @@ export class ChallanController {
       // sending notification to customer...
       if (!challanDetails?.customerId) {
         throw new HttpErrors.BadRequest('Customer details are missing')
+      }
+
+      const supervisors : any = await this.userRepository.find({ where: { permissions: { like: ['supervisor'] } } });
+
+      for (const supervisor of supervisors) {
+        await this.notificationRepository.create({
+          avatarUrl: supervisor?.avatar?.fileUrl ? supervisor.avatar?.fileUrl : null,
+          title: `Material with challan ${challanDetails?.challanId} arrived`,
+          type: 'material',
+          status: 0,
+          userId: supervisor.id,
+          // customerId: challanDetails?.customerId,
+          extraDetails: {
+            challanId: challanDetails.id,
+          },
+        });
       }
 
       await this.notificationRepository.create({

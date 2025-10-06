@@ -18,3 +18,7 @@ export * from './items-processes.controller';
 export * from './items.controller';
 export * from './material-user.controller';
 export * from './challan-user.controller';
+export * from './quotation-user.controller';
+export * from './order-user.controller';
+export * from './hsn-master-user.controller';
+export * from './processes-user.controller';

@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {User} from './user.model';
 
 @model()
 export class HsnMaster extends Entity {
@@ -77,6 +78,15 @@ export class HsnMaster extends Entity {
     default: false,
   })
   isDeleted: boolean;
+
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
 
   constructor(data?: Partial<HsnMaster>) {
     super(data);

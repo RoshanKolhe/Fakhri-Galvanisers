@@ -12,6 +12,7 @@ import { QcReport } from './qc-report.model';
 import { Payment } from './payment.model';
 import { Dispatch } from './dispatch.model';
 import { OrderQcTest } from './order-qc-test.model';
+import {User} from './user.model';
 
 @model()
 export class Order extends Entity {
@@ -171,6 +172,15 @@ export class Order extends Entity {
 
   @hasMany(() => OrderQcTest)
   orderQcTests: OrderQcTest[];
+
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
 
   constructor(data?: Partial<Order>) {
     super(data);

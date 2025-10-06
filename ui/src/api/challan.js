@@ -65,11 +65,11 @@ export function useGetChallansWithFilter(filter) {
   };
 
   return {
-    filteredChallans: data || [],
+    filteredChallans: data?.data || [],
     filteredChallansLoading: isLoading,
     filteredChallansError: error,
     filteredChallansValidating: isValidating,
-    filteredChallansEmpty: !isLoading && !data?.length,
+    filteredChallansEmpty: !isLoading && !data?.data?.length,
     refreshFilterChallans, // Include the refresh function separately
   };
 }
@@ -91,7 +91,7 @@ export function useGetOrderPendingChallans() {
     challansLoading: isLoading,
     challansError: error,
     challansValidating: isValidating,
-    challansEmpty: !isLoading && !data?.length,
+    challansEmpty: !isLoading && !data?.data?.length,
     refreshChallans, // Include the refresh function separately
   };
 }

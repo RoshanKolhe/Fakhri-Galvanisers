@@ -55,9 +55,9 @@ export class HsnMasterController {
       },
     })
     hsnMaster: Omit<HsnMaster, 'id'>,
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<HsnMaster> {
-    console.log(currnetUser);
+    console.log(currentUser);
     const hsn = await this.hsnMasterRepository.findOne({
       where: {
         or: [{hsnCode: hsnMaster.hsnCode}],
@@ -68,12 +68,12 @@ export class HsnMasterController {
     }
     const inputData: Partial<HsnMaster> = {
       ...hsnMaster,
-      createdByType: currnetUser.userType,
-      createdBy: currnetUser.id,
-      updatedByType: currnetUser.userType,
-      updatedBy: currnetUser.id,
+      createdByType: currentUser.userType,
+      createdBy: currentUser.id,
+      updatedByType: currentUser.userType,
+      updatedBy: currentUser.id,
     };
-    return this.hsnMasterRepository.create(inputData);
+    return this.hsnMasterRepository.create(inputData,{currentUser});
   }
 
   @authenticate({
@@ -176,6 +176,7 @@ export class HsnMasterController {
       },
     })
     hsnMaster: HsnMaster,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<void> {
     // Check if the HSN code is being updated
     if (hsnMaster.hsnCode) {
@@ -187,14 +188,16 @@ export class HsnMasterController {
         throw new HttpErrors.Conflict('HSN Code already exists.');
       }
     }
-    await this.hsnMasterRepository.updateById(id, hsnMaster);
+    await this.hsnMasterRepository.updateById(id, hsnMaster, {currentUser});
   }
 
   @del('/hsn-masters/{id}')
   @response(204, {
     description: 'HsnMaster DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.hsnMasterRepository.deleteById(id);
+  async deleteById(@param.path.number('id') id: number,
+ @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+): Promise<void> {
+    await this.hsnMasterRepository.deleteById(id,{currentUser});
   }
 }

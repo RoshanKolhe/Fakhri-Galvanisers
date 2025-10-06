@@ -350,6 +350,7 @@ export class PaymentController {
           },
           {transaction: tx},
         );
+
         const template = generatePaymentApprovedTemplate({
           userData: customer,
         });

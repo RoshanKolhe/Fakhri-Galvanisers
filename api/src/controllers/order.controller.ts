@@ -79,7 +79,7 @@ export class OrderController {
     content: { 'application/json': { schema: getModelSchemaRef(Order) } },
   })
   async create(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
 
     @requestBody({
       content: {
@@ -127,13 +127,14 @@ export class OrderController {
             time: new Date(),
           },
         ],
-        createdBy: currnetUser.id,
-        createdByType: currnetUser.userType,
-        updatedBy: currnetUser.id,
-        updatedByType: currnetUser.userType,
+        createdBy: currentUser.id,
+        createdByType: currentUser.userType,
+        updatedBy: currentUser.id,
+        updatedByType: currentUser.userType,
       };
       const createdOrder = await this.orderRepository.create(inputData, {
         transaction: tx,
+       currentUser 
       });
 
       const formattedOrderId = `ORD${createdOrder.id.toString().padStart(5, '0')}`;
@@ -162,10 +163,10 @@ export class OrderController {
           galvanizingUserId: material.galvanizingUserId,
           orderId: createdOrder.id,
           status: 0,
-          createdBy: currnetUser.id,
-          createdByType: currnetUser.userType,
-          updatedBy: currnetUser.id,
-          updatedByType: currnetUser.userType,
+          createdBy: currentUser.id,
+          createdByType: currentUser.userType,
+          updatedBy: currentUser.id,
+          updatedByType: currentUser.userType,
         }));
 
         await this.materialRepository.createAll(mappedMaterials, {
@@ -273,7 +274,7 @@ export class OrderController {
     },
   })
   async find(
-    @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
     @param.query.object('filter', getFilterSchemaFor(Order))
     filter?: Filter<Order>,
   ): Promise<{ data: Order[], count:{total: number,
@@ -300,7 +301,7 @@ export class OrderController {
       ],
       // order: ['createdAt DESC'],
     };
-    const currentUserPermission = currnetUser.permissions;
+    const currentUserPermission = currentUser.permissions;
     let finalFilter: Filter<Order>;
     if (
       currentUserPermission.includes('super_admin') ||
@@ -313,7 +314,7 @@ export class OrderController {
         ...baseFilter,
         where: {
           ...filter?.where,
-          customerId: currnetUser.id,
+          customerId: currentUser.id,
         },
         // order: ['createdAt DESC']
       };
@@ -575,7 +576,7 @@ export class OrderController {
           updatedBy: currentUser.id,
           updatedByType: currentUser.userType,
         },
-        { transaction: tx },
+        { transaction: tx , currentUser},
       );
 
       if (materialsData && materialsData.length > 0) {
@@ -1020,8 +1021,9 @@ export class OrderController {
   @response(204, {
     description: 'Order DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.orderRepository.deleteById(id);
+  async deleteById(@param.path.number('id') id: number,
+ @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,): Promise<void> {
+    await this.orderRepository.deleteById(id,{currentUser});
   }
 
   async updateOrderAndMaterialStatus(orderId: number): Promise<void> {

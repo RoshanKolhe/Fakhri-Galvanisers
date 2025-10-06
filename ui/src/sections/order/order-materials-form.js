@@ -333,7 +333,7 @@ export default function OrderMaterialForm({ currentOrder, currentChallan }) {
         };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/api/users/list?filter=${filterString}`);
-        setUserOptions(data);
+        setUserOptions(data?.data);
       } else {
         setUserOptions([]);
       }

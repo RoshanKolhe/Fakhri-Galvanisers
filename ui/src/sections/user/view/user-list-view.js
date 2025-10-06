@@ -40,7 +40,7 @@ import {
 import { useGetUsers } from 'src/api/user';
 import axiosInstance from 'src/utils/axios';
 import { useSnackbar } from 'notistack';
-import { _roles, USER_STATUS_OPTIONS } from 'src/utils/constants';
+import { USER_STATUS_OPTIONS } from 'src/utils/constants';
 import { buildFilter } from 'src/utils/filters';
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
@@ -51,6 +51,15 @@ import UserQuickEditForm from '../user-quick-edit-form';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
+
+export const _roles = [
+  { label: 'Super Admin', value: 'super_admin' },
+  { label: 'Admin', value:  'admin' },
+  { label: 'Worker', value:'worker' },
+  { label: 'Qc Admin', value: 'qc_admin' },
+  { label: 'Dispatch', value:'dispatch'},
+  { label: 'Supervisor', value: 'supervisor' },
+];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name' },
@@ -88,22 +97,23 @@ export default function UserListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  
-    const filter = buildFilter ({ page: table.page,
+
+  const filter = buildFilter({
+    page: table.page,
     rowsPerPage: table.rowsPerPage,
     order: table.order,
     orderBy: table.orderBy,
     startDate: filters.startDate,
     endDate: filters.endDate,
-    validSortFields: ['firstName','lastName','employeeId','phoneNumber','permissions', 'email'],
+    validSortFields: ['firstName', 'lastName', 'employeeId', 'phoneNumber', 'permissions', 'email'],
     searchTextValue: filters.name,
     // status: filters.status,
-    isActive:filters.status,
+    isActive: filters.status,
     roles: filters.role,
-  combineName: true,
+    combineName: true,
   });
 
-  const { users,totalCount, usersLoading, usersEmpty, refreshUsers } = useGetUsers(filter);
+  const { users, totalCount, usersLoading, usersEmpty, refreshUsers } = useGetUsers(filter);
 
   // const dataFiltered = applyFilter({
   //   inputData: tableData,
@@ -465,7 +475,7 @@ export default function UserListView() {
 //   searchTextValue,
 //   status,
 //   roles,
-//   combineName = false, 
+//   combineName = false,
 // }) {
 //   const skip = page * rowsPerPage;
 //   const limit = rowsPerPage;

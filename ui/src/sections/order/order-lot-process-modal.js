@@ -46,6 +46,9 @@ export default function OrderLotProcessModal({
   setJobCardLots,
   handleNoOfLots
 }) {
+console.log('materialId',materialId)
+console.log({totalQuantity})
+
   const { enqueueSnackbar } = useSnackbar();
   const processes = [...preTreatmentProcesses, ...galvanizingProcesses];
   const preCount = preTreatmentProcesses.length;
@@ -662,7 +665,7 @@ OrderLotProcessModal.propTypes = {
   totalQuantity: PropTypes.number.isRequired,
   materialName: PropTypes.string.isRequired,
   orderId: PropTypes.string.isRequired,
-  materialId: PropTypes.number.isRequired,
+  materialId: PropTypes.any.isRequired,
   microns: PropTypes.number.isRequired,
   customer: PropTypes.object.isRequired,
   jobCardLots: PropTypes.array,

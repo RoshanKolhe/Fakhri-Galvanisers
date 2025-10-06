@@ -19,10 +19,12 @@ import {
   HttpErrors,
   getFilterSchemaFor,
 } from '@loopback/rest';
-import { Items, Processes } from '../models';
+import { Items, Processes, User } from '../models';
 import { ChallanRepository, ItemProcessRepository, ItemsRepository } from '../repositories';
-import { authenticate } from '@loopback/authentication';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
+import { UserProfile } from '@loopback/security';
+import { inject } from '@loopback/core';
 
 export class ItemsController {
   constructor(
@@ -71,9 +73,10 @@ export class ItemsController {
         processDuration: string;
       }>
     },
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<Items> {
     const { processes, itemProcessDuration, ...itemFields } = itemData;
-    const item = await this.itemsRepository.create(itemFields);
+    const item = await this.itemsRepository.create(itemFields,{currentUser});
     if (processes?.length) {
       for (const processId of processes) {
         await this.itemsRepository.processes(item.id).link(processId);
@@ -249,6 +252,7 @@ async find(
     })
     items: Items,
     @param.where(Items) where?: Where<Items>,
+   
   ): Promise<Count> {
     return this.itemsRepository.updateAll(items, where);
   }
@@ -338,6 +342,7 @@ async find(
         processDuration: string;
       }>
     },
+     @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
   ): Promise<void> {
     try {
       const { processes, itemProcessDuration, ...itemFields } = items;
@@ -371,7 +376,7 @@ async find(
           });
 
           if (data) {
-            await this.itemsProcessRepository.updateById(data.id, { processDuration: itemProcess.processDuration, processName: itemProcess.processName });
+            await this.itemsProcessRepository.updateById(data.id, { processDuration: itemProcess.processDuration, processName: itemProcess.processName},{currentUser});
           }
         }
       }
@@ -411,7 +416,9 @@ async find(
   @response(204, {
     description: 'Items DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.itemsRepository.deleteById(id);
+  async deleteById(@param.path.number('id') id: number,
+@inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile,
+): Promise<void> {
+    await this.itemsRepository.deleteById(id, {currentUser});
   }
 }

@@ -47,25 +47,33 @@ export class Items extends Entity {
   })
   deletedAt?: Date;
 
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
   @property({
     type: 'boolean',
     default: false,
   })
   isDeleted: boolean;
 
-  @belongsTo(() => User, { name: 'creator' })
+  @belongsTo(() => User, {name: 'creator'})
   createdBy: number;
 
-  @belongsTo(() => User, { name: 'updater' })
+  @belongsTo(() => User, {name: 'updater'})
   updatedBy: number;
 
-  @belongsTo(() => User, { name: 'deleter' })
+  @belongsTo(() => User, {name: 'deleter'})
   deletedBy: number;
 
   @belongsTo(() => HsnMaster)
   hsnMasterId: number;
 
-  @hasMany(() => Processes, { through: { model: () => ItemProcess } })
+  @hasMany(() => Processes, {through: {model: () => ItemProcess}})
   processes: Processes[];
 
   constructor(data?: Partial<Items>) {

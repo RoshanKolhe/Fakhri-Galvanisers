@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {User} from './user.model';
 
 @model()
 export class Processes extends Entity {
@@ -63,6 +64,14 @@ export class Processes extends Entity {
   })
   createdByType: string;
 
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
   @property({
     type: 'number',
   })

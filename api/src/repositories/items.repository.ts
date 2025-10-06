@@ -29,11 +29,23 @@ export class ItemsRepository extends TimeStampRepositoryMixin<
           typeof Items.prototype.id
         >;
 
+  public readonly createdByUser: BelongsToAccessor<User, typeof Items.prototype.id>;
+
+  public readonly updatedByUser: BelongsToAccessor<User, typeof Items.prototype.id>;
+
+  public readonly deletedByUser: BelongsToAccessor<User, typeof Items.prototype.id>;
+
   constructor(
     @inject('datasources.fakhriGalvanisers')
     dataSource: FakhriGalvanisersDataSource, @repository.getter('UserRepository') protected userRepositoryGetter: Getter<UserRepository>, @repository.getter('HsnMasterRepository') protected hsnMasterRepositoryGetter: Getter<HsnMasterRepository>, @repository.getter('ItemProcessRepository') protected itemProcessRepositoryGetter: Getter<ItemProcessRepository>, @repository.getter('ProcessesRepository') protected processesRepositoryGetter: Getter<ProcessesRepository>,
   ) {
     super(Items, dataSource);
+    this.deletedByUser = this.createBelongsToAccessorFor('deletedByUser', userRepositoryGetter,);
+    this.registerInclusionResolver('deletedByUser', this.deletedByUser.inclusionResolver);
+    this.updatedByUser = this.createBelongsToAccessorFor('updatedByUser', userRepositoryGetter,);
+    this.registerInclusionResolver('updatedByUser', this.updatedByUser.inclusionResolver);
+    this.createdByUser = this.createBelongsToAccessorFor('createdByUser', userRepositoryGetter,);
+    this.registerInclusionResolver('createdByUser', this.createdByUser.inclusionResolver);
     this.processes = this.createHasManyThroughRepositoryFactoryFor('processes', processesRepositoryGetter, itemProcessRepositoryGetter,);
     this.registerInclusionResolver('processes', this.processes.inclusionResolver);
     this.hsnMaster = this.createBelongsToAccessorFor('hsnMaster', hsnMasterRepositoryGetter,);

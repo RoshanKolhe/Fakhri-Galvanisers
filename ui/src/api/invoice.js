@@ -48,7 +48,7 @@ export function useGetPayment(paymentId) {
   };
 
   return {
-    payment: data?.data,
+    payment: data,
     paymentLoading: isLoading,
     paymentError: error,
     paymentValidating: isValidating,

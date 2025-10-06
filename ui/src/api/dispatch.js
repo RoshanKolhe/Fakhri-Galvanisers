@@ -43,7 +43,7 @@ export function useGetDispatch(dispatchId) {
 
   const memoizedValue = useMemo(
     () => ({
-      dispatch: data?.data || [],
+      dispatch: data|| [],
       dispatchLoading: isLoading,
       dispatchError: error,
       dispatchValidating: isValidating,

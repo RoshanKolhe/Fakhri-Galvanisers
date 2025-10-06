@@ -1,6 +1,7 @@
 import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
 import {Customer} from './customer.model';
 import {Challan} from './challan.model';
+import {User} from './user.model';
 
 @model()
 export class Quotation extends Entity {
@@ -103,6 +104,15 @@ export class Quotation extends Entity {
 
   @hasOne(() => Challan)
   challan: Challan;
+
+  @belongsTo(() => User)
+  createdByUserId: number;
+
+  @belongsTo(() => User)
+  updatedByUserId: number;
+
+  @belongsTo(() => User)
+  deletedByUserId: number;
 
   constructor(data?: Partial<Quotation>) {
     super(data);

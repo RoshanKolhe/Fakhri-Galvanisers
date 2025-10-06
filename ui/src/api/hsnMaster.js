@@ -38,7 +38,7 @@ export function useGetHsnMaster(hsnMasterId) {
 
   const memoizedValue = useMemo(
     () => ({
-      hsnMaster: data?.data,
+      hsnMaster: data,
       hsnMasterLoading: isLoading,
       hsnMasterError: error,
       hsnMasterValidating: isValidating,

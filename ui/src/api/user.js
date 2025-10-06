@@ -98,7 +98,7 @@ export function useGetUsersWithFilter(filter) {
   };
 
   return {
-    filteredUsers: data?.data || [],
+    filteredUsers: data|| [],
     filteredUsersLoading: isLoading,
     filteredUsersError: error,
     filteredUsersValidating: isValidating,

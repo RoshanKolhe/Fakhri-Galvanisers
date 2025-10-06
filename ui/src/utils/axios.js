@@ -52,7 +52,7 @@ export const endpoints = {
   },
   quotation: {
     list: '/quotations',
-    filterList: (filter) => `/quotations?$filter=${filter}`,
+    filterList: (filter) => `/quotations?filter=${filter}`,
     details: (id) => `/quotations/${id}`,
   },
   notification: {
