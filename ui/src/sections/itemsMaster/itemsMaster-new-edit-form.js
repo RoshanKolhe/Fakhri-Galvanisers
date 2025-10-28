@@ -139,16 +139,19 @@ export default function ItemsMasterNewEditForm({ currentItemsMaster }) {
     : false;
 
   useEffect(() => {
-    if (processess && processess.length > 0) {
-      setProcessOptions(processess);
-    }
-  }, [processess]);
+  if (processess && processess.length > 0) {
+    const activeProcesses = processess.filter((p) => p.status === 1);
+    setProcessOptions(activeProcesses);
+  }
+}, [processess]);
 
-  useEffect(() => {
-    if (hsnMasters && hsnMasters.length > 0) {
-      setHsnMasterOptions(hsnMasters);
-    }
-  }, [hsnMasters]);
+
+useEffect(() => {
+  if (hsnMasters && hsnMasters.length > 0) {
+    const activeHsnMasters = hsnMasters.filter((h) => h.status === 1);
+    setHsnMasterOptions(activeHsnMasters);
+  }
+}, [hsnMasters]);
 
   const NewItemsMasterSchema = Yup.object().shape({
     materialType: Yup.string().required('Material type is required'),

@@ -86,7 +86,7 @@ export default function QcReportTableToolbar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search customer or qcReport number..."
+            placeholder="Search only with qcReport...!"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

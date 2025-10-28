@@ -456,15 +456,20 @@ export default function ChallanNewEditForm({ currentChallan }) {
     try {
       if (event && event?.target?.value && event.target.value.length >= 3) {
         const filter = {
-          where: {
-            or: [
-              { email: { like: `%${event.target.value}%` } },
-              { firstName: { like: `%${event.target.value}%` } },
-              { lastName: { like: `%${event.target.value}%` } },
-              { phoneNumber: { like: `%${event.target.value}%` } },
-            ],
-          },
-        };
+            where: {
+          and: [
+            { isActive: true }, 
+            {
+              or: [
+                { email: { like: `%${event.target.value}%` } },
+                { firstName: { like: `%${event.target.value}%` } },
+                { lastName: { like: `%${event.target.value}%` } },
+                { phoneNumber: { like: `%${event.target.value}%` } },
+              ],
+            },
+          ],
+        },
+      };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/customer/list?filter=${filterString}`);
         setCustomerOptions(data?.data || []);
