@@ -1,17 +1,17 @@
 const SITE_SETTINGS = {
   email: {
     type: 'smtp',
-    host: 'smtp.hostinger.com',
+    host: 'smtp.gmail.com',
     secure: true,
     port: 465,
     tls: {
       rejectUnauthorized: false,
     },
     auth: {
-      user: 'thanepetfest@nimblenest.co',
-      pass: 'ThanePetFest#2024',
+      user: 'taloja@hylite.co.in',
+      pass: 'cjxdpwkxegsaoisy',
     },
   },
-  fromMail: 'thanepetfest@nimblenest.co',
+  fromMail: 'taloja@hylite.co.in',
 };
 export default SITE_SETTINGS;
