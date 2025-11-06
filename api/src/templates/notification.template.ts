@@ -61,8 +61,8 @@ export default function notificationTemplate(mailOptions: any) {
         <p>Dear <strong>${mailOptions?.userData?.firstName} ${mailOptions?.userData?.lastName ? mailOptions?.userData?.lastName : ''}</strong>,</p>
         
         <p>${mailOptions?.content}</p>
-        <p>Click the button below to check the status of challan:</p>
-        <p><a class="button" href="${mailOptions?.redirectLink}" target="_blank">View Challan</a></p>
+        <p>${mailOptions.buttonInfo}</p>
+        <p><a class="button" href="${mailOptions?.redirectLink}" target="_blank">${mailOptions.buttonName}</a></p>
 
         <p>If you have any issues, feel free to contact our support team.</p>
 

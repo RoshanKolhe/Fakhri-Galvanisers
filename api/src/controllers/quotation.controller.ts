@@ -30,7 +30,6 @@ import { PermissionKeys } from '../authorization/permission-keys';
 import { inject } from '@loopback/core';
 import { UserProfile } from '@loopback/security';
 import { formatRFQId } from '../utils/constants';
-import materialArrivedAtGateTemplate from '../templates/material-arrived.template';
 import { EmailManagerBindings } from '../keys';
 import { EmailManager } from '../services/email.service';
 import SITE_SETTINGS from '../utils/config';
@@ -93,7 +92,7 @@ export class QuotationController {
       updatedByType: currentUser.userType,
       updatedBy: currentUser.id,
     };
-    const quotationData = await this.quotationRepository.create(inputData,{currentUser});
+    const quotationData = await this.quotationRepository.create(inputData, { currentUser });
 
     const customer = await this.customerRepository.findById(quotation.customerId);
 
@@ -120,24 +119,25 @@ export class QuotationController {
           rfqId: quotationData.id,
         },
       });
+
+      const template = notificationTemplate({
+        userData: customer,
+        subject: `Admin sent you the Quotation for approval`,
+        content: `Admin sent you the Quotation for approval`,
+        buttonInfo: `Click the button below to check the quotation:`,
+        buttonName: `View Quotation`,
+        redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotationData?.id}/view`
+      });
+
+      await this.emailManager.sendMail({
+        from: SITE_SETTINGS.fromMail,
+        to: customer.email,
+        subject: template.subject,
+        html: template.html,
+      })
     }
 
     await this.quotationRepository.updateById(quotationData?.id, { status: 2 });
-
-    const template = notificationTemplate({
-      userData: customer,
-      subject: `Admin sent you the Quotation for approval`,
-      content: `Admin sent you the Quotation for approval`,
-      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotationData?.id}/view`
-    });
-
-    await this.emailManager.sendMail({
-      from: SITE_SETTINGS.fromMail,
-      to: customer.email,
-      subject: template.subject,
-      html: template.html,
-    })
-
     return quotationData;
   }
 
@@ -305,19 +305,19 @@ export class QuotationController {
       user = await this.userRepository.findById(Number(currentUser.id));
     }
 
-      const quotationExist = await this.quotationRepository.findById(id);
+    const quotationExist = await this.quotationRepository.findById(id);
 
 
     await this.quotationRepository.updateById(id, {
       ...quotation,
       updatedBy: currentUser.id,
       updatedByType: currentUser.userType,
-      
-    },{currentUser});
-console.log({quotation})
+
+    }, { currentUser });
+    console.log({ quotation })
 
     const customer = await this.customerRepository.findById(quotationExist.customerId);
-    
+
 
     if (quotation.status === 2) {
       await this.notificationRepository.create({
@@ -376,8 +376,8 @@ console.log({quotation})
     description: 'Quotation DELETE success',
   })
   async deleteById(@param.path.number('id') id: number,
-@inject (AuthenticationBindings.CURRENT_USER) currentUser: UserProfile
-): Promise<void> {
-    await this.quotationRepository.deleteById(id,{currentUser});
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile
+  ): Promise<void> {
+    await this.quotationRepository.deleteById(id, { currentUser });
   }
 }
