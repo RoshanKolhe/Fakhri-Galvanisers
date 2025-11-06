@@ -182,7 +182,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('proforma invoice'),
+            title: t('payment tracking'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
@@ -356,7 +356,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('proforma invoice'),
+            title: t('payment tracking'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
@@ -510,7 +510,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('proforma invoice'),
+            title: t('payment tracking'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
@@ -632,7 +632,7 @@ export function useNavData() {
 
           // INVOICE
           {
-            title: t('proforma invoice'),
+            title: t('payment tracking'),
             path: paths.dashboard.invoice.root,
             icon: ICONS.invoice,
             children: [{ title: t('list'), path: paths.dashboard.invoice.root }],
