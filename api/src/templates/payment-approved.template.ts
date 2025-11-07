@@ -66,7 +66,7 @@ export default function generatePaymentApprovedTemplate(mailOptions: any) {
 
       <p>If you have any questions or need further assistance, feel free to reach out to our support team.</p>
 
-      <a class="btn" href="${process.env.REACT_APP_CUSTOMER_LOGIN_ENDPOINT}">Go to Your Dashboard</a>
+      <a class="btn" href="${process.env.REACT_APP_ENDPOINT}">Go to Your Dashboard</a>
     </div>
     <div class="footer">
       &copy; 2025 Hylite. All rights reserved.

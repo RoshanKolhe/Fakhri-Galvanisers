@@ -412,7 +412,7 @@ export class ChallanController {
         userData: challanDetails?.customer,
         challanId: challanDetails?.challanId,
         content: `Material with challan ${challanDetails?.challanId} arrived`,
-        redirectLink: `https://uat.hylite.co.in/dashboard/challan/${challanDetails?.id}/view`
+        redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/challan/${challanDetails?.id}/view`
       });
 
       await this.emailManager.sendMail({

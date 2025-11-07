@@ -63,7 +63,7 @@ export default function generatePaymentRejectedTemplate(mailOptions: any) {
 
       <p>Kindly ensure the uploaded document is clear and matches the payment details. Please re-upload a valid payment proof to proceed with your transaction.</p>
 
-      <a class="btn" href="${process.env.REACT_APP_CUSTOMER_LOGIN_ENDPOINT}">Go to Your Dashboard</a>
+      <a class="btn" href="${process.env.REACT_APP_ENDPOINT}">Go to Your Dashboard</a>
 
       <p>If you need help or have questions, feel free to contact our support team.</p>
     </div>
