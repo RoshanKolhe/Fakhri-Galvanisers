@@ -126,7 +126,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
       <Card>
         <InvoiceNewEditAddress />
 
-        <InvoiceNewEditStatusDate />
+        <InvoiceNewEditStatusDate invoice={currentInvoice} />
 
         <InvoiceNewEditDetails />
       </Card>

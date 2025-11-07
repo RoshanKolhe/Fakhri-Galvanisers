@@ -18,6 +18,10 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { format } from 'date-fns';
 import { formatRFQId } from 'src/utils/constants';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { CircularProgress } from '@mui/material';
+
+import QuotationPDF from './quotation-details';
 
 // ----------------------------------------------------------------------
 
@@ -69,6 +73,7 @@ export default function QuotationTableRow({
           </Label>
         </TableCell>
 
+
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Edit" placement="top" arrow>
             <IconButton
@@ -89,6 +94,24 @@ export default function QuotationTableRow({
               <Iconify icon="carbon:view-filled" />
             </IconButton>
           </Tooltip>
+           <PDFDownloadLink
+     document={<QuotationPDF quotation={row} />}
+    fileName={row?.id || `quotation-${row.id}.pdf`}
+    style={{ textDecoration: 'none' }}
+  >
+    {({ loading }) => (
+      <Tooltip title="Download">
+        <IconButton>
+          {loading ? (
+            <CircularProgress size={22} color="inherit" />
+          ) : (
+            <Iconify icon="eva:cloud-download-fill" />
+          )}
+        </IconButton>
+      </Tooltip>
+    )}
+  </PDFDownloadLink>
+                  
 
           {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />

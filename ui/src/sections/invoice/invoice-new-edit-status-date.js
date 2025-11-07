@@ -1,17 +1,34 @@
 import { useFormContext, Controller } from 'react-hook-form';
 // @mui
+import PropTypes from 'prop-types';
+import { useEffect, useState } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
 // components
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import InvoicePaymentProofModal from './invoice-payment-proof-modal';
+
+
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceNewEditStatusDate() {
+export default function InvoiceNewEditStatusDate({invoice}) {
   const { control, watch } = useFormContext();
+   const [open, setOpen] = useState(false);
+  
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false); 
+
 
   const values = watch();
+    const status = watch("status");
+    
+    useEffect(() => {
+    if (status === 1) {
+      handleOpen(true);   
+    }
+  }, [status]);
 
   return (
     <Stack
@@ -27,7 +44,7 @@ export default function InvoiceNewEditStatusDate() {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
-        disabled
+        
       >
         {[1, 0, 2, 3, 4].map((option) => (
           <MenuItem key={option} value={option}>
@@ -40,6 +57,13 @@ export default function InvoiceNewEditStatusDate() {
         ))}
       </RHFSelect>
 
+
+      <InvoicePaymentProofModal
+        open={open}
+        handleClose={handleClose}
+        invoice={invoice}
+        
+      />
       <Controller
         name="createdAt"
         control={control}
@@ -85,4 +109,8 @@ export default function InvoiceNewEditStatusDate() {
       />
     </Stack>
   );
+}
+
+InvoiceNewEditStatusDate.propTypes={
+  invoice: PropTypes.object,
 }
