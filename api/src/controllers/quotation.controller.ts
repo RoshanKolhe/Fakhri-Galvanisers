@@ -330,23 +330,23 @@ export class QuotationController {
           rfqId: id,
         },
       });
+
+      const template = notificationTemplate({
+        userData: customer,
+        subject: `Admin sent you the Quotation for approval`,
+        content: `Admin sent you the Quotation for approval`,
+        buttonInfo: `Click the button below to check the quotation:`,
+        buttonName: `View Quotation`,
+        redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${id}/view`
+      });
+
+      await this.emailManager.sendMail({
+        from: SITE_SETTINGS.fromMail,
+        to: customer.email,
+        subject: template.subject,
+        html: template.html,
+      })
     }
-
-    // await this.quotationRepository.updateById(id, { status: 2 });
-
-    const template = notificationTemplate({
-      userData: user,
-      subject: `Admin sent you the Quotation for approval`,
-      content: `Admin sent you the Quotation for approval`,
-      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotation?.id}/view`
-    });
-
-    await this.emailManager.sendMail({
-      from: SITE_SETTINGS.fromMail,
-      to: customer.email,
-      subject: template.subject,
-      html: template.html,
-    })
 
     if (quotation.status === 1) {
       await this.notificationRepository.create({
