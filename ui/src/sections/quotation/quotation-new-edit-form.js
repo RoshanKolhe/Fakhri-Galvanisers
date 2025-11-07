@@ -47,6 +47,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { current } from '@reduxjs/toolkit';
 import { formatRFQId } from 'src/utils/constants';
 import Label from 'src/components/label';
+import { useGetItemsMasters } from 'src/api/itemsMaster';
 
 // ----------------------------------------------------------------------
 
@@ -58,6 +59,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
   const { enqueueSnackbar } = useSnackbar();
   const confirm = useBoolean();
   const poDocModal = useBoolean();
+  const { itemsMasters } = useGetItemsMasters();
   const [rejectError, setRejectError] = useState(false);
   const [poDoc, setPoDoc] = useState(false);
 
@@ -80,6 +82,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     materials: Yup.array()
       .of(
         Yup.object().shape({
+          itemType: Yup.object().required('Material Type is required'),
           materialType: Yup.string().required('Material type is required'),
           quantity: Yup.number().required('Quantity is  required'),
           billingUnit: Yup.string().required('Billing Unit is required'),
@@ -126,6 +129,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
       rejectedReason: currentQuotation?.rejectedReason || '',
       materials: currentQuotation?.materials?.length
         ? currentQuotation.materials.map((material) => ({
+          itemType: material.itemType ? material.itemType : null,
           materialType: material.materialType || '',
           quantity: material.quantity || null,
           billingUnit: material.billingUnit || '',
@@ -137,6 +141,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
         }))
         : [
           {
+            itemType: null,
             materialType: '',
             quantity: null,
             billingUnit: '',
@@ -213,7 +218,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
         materials: formData.materials,
         status: isAdmin ? 2 : 4,
       };
-      console.log(inputData);
+      console.log('PATCH /quotations data =>', inputData);
       if (!currentQuotation) {
         await axiosInstance.post('/quotations', inputData);
       } else {
@@ -235,20 +240,20 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     try {
       if (event && event?.target?.value && event.target.value.length >= 3) {
         const filter = {
-           where: {
-          and: [
-            { isActive: true }, 
-            {
-              or: [
-                { email: { like: `%${event.target.value}%` } },
-                { firstName: { like: `%${event.target.value}%` } },
-                { lastName: { like: `%${event.target.value}%` } },
-                { phoneNumber: { like: `%${event.target.value}%` } },
-              ],
-            },
-          ],
-        },
-      };
+          where: {
+            and: [
+              { isActive: true },
+              {
+                or: [
+                  { email: { like: `%${event.target.value}%` } },
+                  { firstName: { like: `%${event.target.value}%` } },
+                  { lastName: { like: `%${event.target.value}%` } },
+                  { phoneNumber: { like: `%${event.target.value}%` } },
+                ],
+              },
+            ],
+          },
+        };
         const filterString = encodeURIComponent(JSON.stringify(filter));
         const { data } = await axiosInstance.get(`/customer/list?filter=${filterString}`);
         setCustomerOptions(data?.data || []);
@@ -262,7 +267,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     }
   };
 
-  
+
 
   const calculatePriceAfterTax = (index) => {
     const pricePerUnit = parseFloat(materials[index]?.pricePerUnit) || 0;
@@ -336,6 +341,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     setLoading(true);
     try {
       const inputData = {
+        customerNote: values.customerNote,
         rejectedReason: rejectReason,
         status: 3,
       };
@@ -359,6 +365,7 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     setLoading(true);
     try {
       const inputData = {
+        customerNote: values.customerNote,
         status: 1,
       };
       if (poDoc) {
@@ -379,15 +386,76 @@ export default function QuotationNewEditForm({ currentQuotation }) {
     }
   };
 
+
+  useEffect(() => {
+    if (
+      currentQuotation &&
+      currentQuotation.materials?.length > 0 &&
+      itemsMasters?.length > 0
+    ) {
+      currentQuotation.materials.forEach((material, index) => {
+        const matchedItem = itemsMasters.find(
+          (item) => item.materialType === material?.materialType
+        );
+
+        console.log('matchedItem', matchedItem);
+        if (matchedItem) {
+          console.log('entered');
+          setValue(`materials[${index}].itemType`, matchedItem, { shouldValidate: true, shouldDirty: true });
+        }
+      });
+    }
+  }, [currentQuotation, itemsMasters, setValue]);
   const renderMaterialDetailsForm = (
     <Stack spacing={3} mt={2}>
       {fields.map((item, index) => (
         <Stack key={item.id} alignItems="flex-end" spacing={1.5}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
-            <RHFTextField
-              name={`materials[${index}].materialType`}
-              label="Material Type"
-              disabled={!isAdmin && currentQuotation && currentQuotation?.status !== 4}
+            <Controller
+              name={`materials[${index}].itemType`}
+              control={control}
+              render={({
+                field: { onChange, value: fieldValue, ...fieldProps },
+                fieldState: { error },
+              }) =>
+              // Watch all selected itemTypes in materials (skip current index)
+              // const selectedItemIds = watch('materials')
+              //   ?.map((mat, i) => mat?.itemType?.id)
+              //   .filter(Boolean);
+
+              // console.log('materials', watch('materials'));
+              // console.log('selectedItemsIds', selectedItemIds);
+
+              (
+                <Autocomplete
+                  {...fieldProps}
+                  options={itemsMasters}
+                  getOptionLabel={(option) => option?.materialType || ''}
+                  isOptionEqualToValue={(option, value) => option.id === value?.id}
+                  onChange={(_, selectedOption) => {
+                    onChange(selectedOption);
+                    if (selectedOption) {
+                      setValue(`materials[${index}].materialType`, selectedOption.materialType || '');
+                      setValue(`materials[${index}].hsnNo`, selectedOption.hsnMaster || {});
+                      setValue(`materials[${index}].tax`, selectedOption.hsnMaster?.tax || 0);
+                    }
+                  }}
+                  // getOptionDisabled={(option) => selectedItemIds.includes(option.id)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Material Type"
+                      fullWidth
+                      sx={{ flex: 2 }}
+                      error={!!error}
+                      helperText={error?.message || ''}
+                    />
+                  )}
+                  value={fieldValue || null}
+                  sx={{ width: '100%' }}
+                />
+              )
+              }
             />
 
             <RHFTextField
