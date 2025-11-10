@@ -68,6 +68,7 @@
     "loopback-connector-mysql": "^7.0.17",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
+    "puppeteer": "^24.29.1",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

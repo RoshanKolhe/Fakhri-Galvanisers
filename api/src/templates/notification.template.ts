@@ -1,5 +1,5 @@
 export default function notificationTemplate(mailOptions: any) {
-  const template = `<!DOCTYPE html>
+    const template = `<!DOCTYPE html>
     <html>
     <head>
         <title>Welcome to Hylite</title>
@@ -77,9 +77,9 @@ export default function notificationTemplate(mailOptions: any) {
 
 </body>
     </html>`;
-  const NotificationTemplate = {
-    subject: `${mailOptions.subject}`,
-    html: template,
-  };
-  return NotificationTemplate;
+    const NotificationTemplate = {
+        subject: `${mailOptions.subject}`,
+        html: template,
+    };
+    return NotificationTemplate;
 }

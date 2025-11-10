@@ -27,7 +27,7 @@ import {
 } from '../repositories';
 import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
-import { inject } from '@loopback/core';
+import { inject, service } from '@loopback/core';
 import { UserProfile } from '@loopback/security';
 import { formatRFQId } from '../utils/constants';
 import materialArrivedAtGateTemplate from '../templates/material-arrived.template';
@@ -35,6 +35,8 @@ import { EmailManagerBindings } from '../keys';
 import { EmailManager } from '../services/email.service';
 import SITE_SETTINGS from '../utils/config';
 import notificationTemplate from '../templates/notification.template';
+import { PdfService } from '../services/pdf-service';
+import PdfTemplate from '../templates/pdf-template';
 
 export class QuotationController {
   constructor(
@@ -48,6 +50,9 @@ export class QuotationController {
     public customerRepository: CustomerRepository,
     @inject(EmailManagerBindings.SEND_MAIL)
     public emailManager: EmailManager,
+    @service(PdfService)
+    public pdfService: PdfService
+
   ) { }
 
   @authenticate({
@@ -93,7 +98,7 @@ export class QuotationController {
       updatedByType: currentUser.userType,
       updatedBy: currentUser.id,
     };
-    const quotationData = await this.quotationRepository.create(inputData,{currentUser});
+    const quotationData = await this.quotationRepository.create(inputData, { currentUser });
 
     const customer = await this.customerRepository.findById(quotation.customerId);
 
@@ -124,6 +129,20 @@ export class QuotationController {
 
     await this.quotationRepository.updateById(quotationData?.id, { status: 2 });
 
+    const savedQuotation = await this.quotationRepository.findById(quotationData.id,
+      {
+        include:[
+          {relation:'customer'}
+        ]
+      }
+    );
+
+    const quotationTemplate = PdfTemplate(
+      savedQuotation
+    )
+
+    const pdfService = await this.pdfService.generatePdfFromTemplate(quotationTemplate.html);
+
     const template = notificationTemplate({
       userData: customer,
       subject: `Admin sent you the Quotation for approval`,
@@ -136,6 +155,9 @@ export class QuotationController {
       to: customer.email,
       subject: template.subject,
       html: template.html,
+      attachments: [
+        { filename: 'quotation.pdf', path: pdfService }
+      ],
     })
 
     return quotationData;
@@ -305,19 +327,19 @@ export class QuotationController {
       user = await this.userRepository.findById(Number(currentUser.id));
     }
 
-      const quotationExist = await this.quotationRepository.findById(id);
+    const quotationExist = await this.quotationRepository.findById(id);
 
 
     await this.quotationRepository.updateById(id, {
       ...quotation,
       updatedBy: currentUser.id,
       updatedByType: currentUser.userType,
-      
-    },{currentUser});
-console.log({quotation})
+
+    }, { currentUser });
+    console.log({ quotation })
 
     const customer = await this.customerRepository.findById(quotationExist.customerId);
-    
+
 
     if (quotation.status === 2) {
       await this.notificationRepository.create({
@@ -332,13 +354,26 @@ console.log({quotation})
       });
     }
 
-    // await this.quotationRepository.updateById(id, { status: 2 });
+    const savedQuotation = await this.quotationRepository.findById(id,
+      {
+        include:[
+          {relation:'customer'}
+        ]
+      }
+    );
+
+    const quotationTemplate = PdfTemplate(
+      savedQuotation
+    )
+
+
+    const pdfService = await this.pdfService.generatePdfFromTemplate(quotationTemplate.html);
 
     const template = notificationTemplate({
       userData: user,
       subject: `Admin sent you the Quotation for approval`,
       content: `Admin sent you the Quotation for approval`,
-      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotation?.id}/view`
+      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotation?.id}/view`,
     });
 
     await this.emailManager.sendMail({
@@ -346,6 +381,9 @@ console.log({quotation})
       to: customer.email,
       subject: template.subject,
       html: template.html,
+      attachments: [
+        { filename: 'quotation.pdf', path: pdfService }
+      ],
     })
 
     if (quotation.status === 1) {
@@ -376,8 +414,8 @@ console.log({quotation})
     description: 'Quotation DELETE success',
   })
   async deleteById(@param.path.number('id') id: number,
-@inject (AuthenticationBindings.CURRENT_USER) currentUser: UserProfile
-): Promise<void> {
-    await this.quotationRepository.deleteById(id,{currentUser});
+    @inject(AuthenticationBindings.CURRENT_USER) currentUser: UserProfile
+  ): Promise<void> {
+    await this.quotationRepository.deleteById(id, { currentUser });
   }
 }

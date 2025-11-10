@@ -111,7 +111,7 @@ export default function QuotationPDF({ quotation }) {
                         <Text style={styles.cell1}>Sr No</Text>
                         <Text style={styles.cell2}>Material Type</Text>
                         <Text style={styles.cell3}>Quantity</Text>
-                        <Text style={styles.cell4}>Cost per kg</Text>
+                        <Text style={styles.cell4}>Cost [kg/nos]</Text>
                     </View>
 
                     {quotation?.materials?.map((item, i) => (
