@@ -378,21 +378,21 @@ export class ChallanController {
         throw new HttpErrors.BadRequest('Customer details are missing')
       }
 
-      const supervisors : any = await this.userRepository.find({ where: { permissions: { like: ['supervisor'] } } });
+      // const supervisors : any = await this.userRepository.find({ where: { permissions: { inq: ['supervisor'] } } });
 
-      for (const supervisor of supervisors) {
-        await this.notificationRepository.create({
-          avatarUrl: supervisor?.avatar?.fileUrl ? supervisor.avatar?.fileUrl : null,
-          title: `Material with challan ${challanDetails?.challanId} arrived`,
-          type: 'material',
-          status: 0,
-          userId: supervisor.id,
-          // customerId: challanDetails?.customerId,
-          extraDetails: {
-            challanId: challanDetails.id,
-          },
-        });
-      }
+      // for (const supervisor of supervisors) {
+      //   await this.notificationRepository.create({
+      //     avatarUrl: supervisor?.avatar?.fileUrl ? supervisor.avatar?.fileUrl : null,
+      //     title: `Material with challan ${challanDetails?.challanId} arrived`,
+      //     type: 'material',
+      //     status: 0,
+      //     userId: supervisor.id,
+      //     // customerId: challanDetails?.customerId,
+      //     extraDetails: {
+      //       challanId: challanDetails.id,
+      //     },
+      //   });
+      // }
 
       await this.notificationRepository.create({
         avatarUrl: challanDetails?.customer?.avatar?.fileUrl ? challanDetails?.customer?.avatar?.fileUrl : null,
