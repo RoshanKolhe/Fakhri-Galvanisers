@@ -146,8 +146,8 @@ export class QuotationController {
 
     const savedQuotation = await this.quotationRepository.findById(quotationData.id,
       {
-        include:[
-          {relation:'customer'}
+        include: [
+          { relation: 'customer' }
         ]
       }
     );
@@ -162,7 +162,9 @@ export class QuotationController {
       userData: customer,
       subject: `Admin sent you the Quotation for approval`,
       content: `Admin sent you the Quotation for approval`,
-      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotationData?.id}/view`
+      redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotationData?.id}/view`,
+      buttonInfo: `Click the button below to check the quotation:`,
+      buttonName: `View Quotation`,
     });
 
     await this.emailManager.sendMail({
@@ -387,8 +389,8 @@ export class QuotationController {
 
     const savedQuotation = await this.quotationRepository.findById(id,
       {
-        include:[
-          {relation:'customer'}
+        include: [
+          { relation: 'customer' }
         ]
       }
     );
@@ -404,7 +406,9 @@ export class QuotationController {
       userData: user,
       subject: `Admin sent you the Quotation for approval`,
       content: `Admin sent you the Quotation for approval`,
-      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotation?.id}/view`,
+      redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotation?.id}/view`,
+      buttonInfo: 'Click the button below to check the quotation:',
+      buttonName: 'View Quotation'
     });
 
     await this.emailManager.sendMail({
