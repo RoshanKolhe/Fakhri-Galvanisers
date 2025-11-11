@@ -27,13 +27,15 @@ import {
 } from '../repositories';
 import { authenticate, AuthenticationBindings } from '@loopback/authentication';
 import { PermissionKeys } from '../authorization/permission-keys';
-import { inject } from '@loopback/core';
+import { inject, service } from '@loopback/core';
 import { UserProfile } from '@loopback/security';
 import { formatRFQId } from '../utils/constants';
 import { EmailManagerBindings } from '../keys';
 import { EmailManager } from '../services/email.service';
 import SITE_SETTINGS from '../utils/config';
 import notificationTemplate from '../templates/notification.template';
+import { PdfService } from '../services/pdf-service';
+import PdfTemplate from '../templates/pdf-template';
 
 export class QuotationController {
   constructor(
@@ -47,6 +49,9 @@ export class QuotationController {
     public customerRepository: CustomerRepository,
     @inject(EmailManagerBindings.SEND_MAIL)
     public emailManager: EmailManager,
+    @service(PdfService)
+    public pdfService: PdfService
+
   ) { }
 
   @authenticate({
@@ -138,6 +143,38 @@ export class QuotationController {
     }
 
     await this.quotationRepository.updateById(quotationData?.id, { status: 2 });
+
+    const savedQuotation = await this.quotationRepository.findById(quotationData.id,
+      {
+        include:[
+          {relation:'customer'}
+        ]
+      }
+    );
+
+    const quotationTemplate = PdfTemplate(
+      savedQuotation
+    )
+
+    const pdfService = await this.pdfService.generatePdfFromTemplate(quotationTemplate.html);
+
+    const template = notificationTemplate({
+      userData: customer,
+      subject: `Admin sent you the Quotation for approval`,
+      content: `Admin sent you the Quotation for approval`,
+      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotationData?.id}/view`
+    });
+
+    await this.emailManager.sendMail({
+      from: SITE_SETTINGS.fromMail,
+      to: customer.email,
+      subject: template.subject,
+      html: template.html,
+      attachments: [
+        { filename: 'quotation.pdf', path: pdfService }
+      ],
+    })
+
     return quotationData;
   }
 
@@ -347,6 +384,38 @@ export class QuotationController {
         html: template.html,
       })
     }
+
+    const savedQuotation = await this.quotationRepository.findById(id,
+      {
+        include:[
+          {relation:'customer'}
+        ]
+      }
+    );
+
+    const quotationTemplate = PdfTemplate(
+      savedQuotation
+    )
+
+
+    const pdfService = await this.pdfService.generatePdfFromTemplate(quotationTemplate.html);
+
+    const template = notificationTemplate({
+      userData: user,
+      subject: `Admin sent you the Quotation for approval`,
+      content: `Admin sent you the Quotation for approval`,
+      redirectLink: `https://uat.hylite.co.in/dashboard/quotation/${quotation?.id}/view`,
+    });
+
+    await this.emailManager.sendMail({
+      from: SITE_SETTINGS.fromMail,
+      to: customer.email,
+      subject: template.subject,
+      html: template.html,
+      attachments: [
+        { filename: 'quotation.pdf', path: pdfService }
+      ],
+    })
 
     if (quotation.status === 1) {
       await this.notificationRepository.create({

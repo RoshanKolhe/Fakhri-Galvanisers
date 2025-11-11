@@ -1,34 +1,48 @@
 import { useFormContext, Controller } from 'react-hook-form';
-// @mui
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
-// components
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import InvoicePaymentProofModal from './invoice-payment-proof-modal';
 
-
-
 // ----------------------------------------------------------------------
 
-export default function InvoiceNewEditStatusDate({invoice}) {
+export default function InvoiceNewEditStatusDate({ invoice, onModalClose }) {
   const { control, watch } = useFormContext();
-   const [open, setOpen] = useState(false);
-  
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false); 
+  const [open, setOpen] = useState(false);
 
-
+  const hasOpened = useRef(false); 
+  const status = watch('status');
   const values = watch();
-    const status = watch("status");
-    
-    useEffect(() => {
-    if (status === 1) {
-      handleOpen(true);   
+
+  
+  const handleClose = () => {
+    setOpen(false);
+    if (onModalClose) onModalClose();
+  };
+
+
+  const handleOpen = () => setOpen(true);
+
+ 
+  useEffect(() => {
+    if (!invoice) return;
+
+    if (Number(invoice?.status) === 1) return;
+
+   
+    if (Number(status) === 1 && !hasOpened.current) {
+      hasOpened.current = true; 
+      handleOpen();
     }
-  }, [status]);
+  }, [status, invoice]);
+
+  const isPaid = Number(status) === 1 || Number(invoice?.status) === 1;
+
+
+
 
   return (
     <Stack
@@ -44,7 +58,7 @@ export default function InvoiceNewEditStatusDate({invoice}) {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
-        
+        disabled={isPaid} 
       >
         {[1, 0, 2, 3, 4].map((option) => (
           <MenuItem key={option} value={option}>
@@ -57,13 +71,12 @@ export default function InvoiceNewEditStatusDate({invoice}) {
         ))}
       </RHFSelect>
 
-
       <InvoicePaymentProofModal
         open={open}
         handleClose={handleClose}
         invoice={invoice}
-        
       />
+
       <Controller
         name="createdAt"
         control={control}
@@ -71,9 +84,7 @@ export default function InvoiceNewEditStatusDate({invoice}) {
           <DatePicker
             label="Date create"
             value={new Date(field.value)}
-            onChange={(newValue) => {
-              field.onChange(newValue);
-            }}
+            onChange={(newValue) => field.onChange(newValue)}
             slotProps={{
               textField: {
                 fullWidth: true,
@@ -93,9 +104,7 @@ export default function InvoiceNewEditStatusDate({invoice}) {
           <DatePicker
             label="Due date"
             value={field.value}
-            onChange={(newValue) => {
-              field.onChange(newValue);
-            }}
+            onChange={(newValue) => field.onChange(newValue)}
             minDate={new Date()}
             slotProps={{
               textField: {
@@ -111,6 +120,7 @@ export default function InvoiceNewEditStatusDate({invoice}) {
   );
 }
 
-InvoiceNewEditStatusDate.propTypes={
+InvoiceNewEditStatusDate.propTypes = {
   invoice: PropTypes.object,
-}
+  onModalClose: PropTypes.func,
+};

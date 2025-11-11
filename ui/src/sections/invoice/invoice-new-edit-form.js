@@ -126,7 +126,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
       <Card>
         <InvoiceNewEditAddress />
 
-        <InvoiceNewEditStatusDate invoice={currentInvoice} />
+        <InvoiceNewEditStatusDate invoice={currentInvoice}   onModalClose={() => loadingSend.onFalse()}  />
 
         <InvoiceNewEditDetails />
       </Card>

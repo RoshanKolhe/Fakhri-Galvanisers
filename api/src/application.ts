@@ -26,6 +26,7 @@ import {CronComponent} from '@loopback/cron';
 import {JWTStrategy} from './authentication-strategy/jwt-strategy';
 import multer from 'multer';
 import {MyCustomerService} from './services/customer-service';
+import { PdfService } from './services/pdf-service';
 
 export {ApplicationConfig};
 
@@ -72,6 +73,7 @@ export class FakhriGalvanisersApplication extends BootMixin(
     this.bind('service.user.service').toClass(MyUserService);
     this.bind('service.customer.service').toClass(MyCustomerService);
     this.bind(EmailManagerBindings.SEND_MAIL).toClass(EmailService);
+    this.bind('service.pdf.service').toClass(PdfService);
   }
 
   protected configureFileUpload(destination?: string) {
