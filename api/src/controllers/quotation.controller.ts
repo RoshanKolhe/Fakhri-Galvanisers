@@ -116,7 +116,7 @@ export class QuotationController {
     if (quotation.status === 2) {
       await this.notificationRepository.create({
         avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
-        title: `Admin sent you the Quotation for approval`,
+        title: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
         type: 'quotation',
         status: 0,
         customerId: quotation.customerId,
@@ -127,8 +127,8 @@ export class QuotationController {
 
       const template = notificationTemplate({
         userData: customer,
-        subject: `Admin sent you the Quotation for approval`,
-        content: `Admin sent you the Quotation for approval`,
+        subject: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
+        content: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
         buttonInfo: `Click the button below to check the quotation:`,
         buttonName: `View Quotation`,
         redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotationData?.id}/view`
@@ -160,8 +160,8 @@ export class QuotationController {
 
     const template = notificationTemplate({
       userData: customer,
-      subject: `Admin sent you the Quotation for approval`,
-      content: `Admin sent you the Quotation for approval`,
+      subject: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
+      content: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
       redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotationData?.id}/view`,
       buttonInfo: `Click the button below to check the quotation:`,
       buttonName: `View Quotation`,
@@ -361,7 +361,7 @@ export class QuotationController {
     if (quotation.status === 2) {
       await this.notificationRepository.create({
         avatarUrl: user?.avatar?.fileUrl ? user?.avatar?.fileUrl : null,
-        title: `Admin sent you the Quotation for approval`,
+        title: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
         type: 'quotation',
         status: 0,
         customerId: quotation.customerId,
@@ -372,8 +372,8 @@ export class QuotationController {
 
       const template = notificationTemplate({
         userData: customer,
-        subject: `Admin sent you the Quotation for approval`,
-        content: `Admin sent you the Quotation for approval`,
+        subject: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
+        content: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
         buttonInfo: `Click the button below to check the quotation:`,
         buttonName: `View Quotation`,
         redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${id}/view`
@@ -404,8 +404,8 @@ export class QuotationController {
 
     const template = notificationTemplate({
       userData: user,
-      subject: `Admin sent you the Quotation for approval`,
-      content: `Admin sent you the Quotation for approval`,
+      subject: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
+      content: `The quotation for the materials you had inquired for is ready and awaiting your approval.`,
       redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/quotation/${quotation?.id}/view`,
       buttonInfo: 'Click the button below to check the quotation:',
       buttonName: 'View Quotation'
