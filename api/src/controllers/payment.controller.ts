@@ -347,7 +347,7 @@ export class PaymentController {
             //  send notification and send email for dispatch 
             await this.notificationRepository.create({
               avatarUrl: customer?.avatar?.fileUrl ? customer?.avatar?.fileUrl : null,
-              title: `Material is ready with this order id`,
+              title: `Material is ready with this order id ${id}`,
               type: 'order',
               status: 0,
               customerId: order.customerId,
@@ -358,8 +358,8 @@ export class PaymentController {
 
             const template = notificationTemplate({
               userData: customer,
-              subject: `Material is ready with this order id`,
-              content: `Material is ready with this order id`,
+              subject: `Material is ready with this order id ${id}`,
+              content: `Material is ready with this order id ${id}`,
               buttonInfo: `Click the button below to check the order:`,
               buttonName: `View Order`,
               redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/order/${orderData?.id}`
@@ -561,7 +561,7 @@ export class PaymentController {
     
     await this.notificationRepository.create({
       avatarUrl: orderData.customer?.avatar?.fileUrl ? orderData.customer?.avatar?.fileUrl : null,
-      title: `Material is ready with this order id`,
+      title: `Material is ready with this order id ${orderId}`,
       type: 'order',
       status: 0,
       customerId: order.customerId,
@@ -572,8 +572,8 @@ export class PaymentController {
 
     const template = notificationTemplate({
       userData: orderData.customer,
-      subject: `Material is ready with this order id`,
-      content: `Material is ready with this order id`,
+      subject: `Material is ready with this order id ${orderId}`,
+      content: `Material is ready with this order id ${orderId}`,
       buttonInfo: `Click the button below to check the order:`,
       buttonName: `View Order`,
       redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/order/${orderId}`
