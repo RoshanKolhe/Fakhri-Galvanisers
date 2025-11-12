@@ -121,6 +121,36 @@ export default function NotificationItem({ notification, drawer }) {
     </Stack>
   );
 
+    const orderAction = (
+    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+      {notification?.extraDetails?.orderId && (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            console.log('here');
+            drawer.onFalse();
+            router.push(paths.dashboard.order.view(notification.extraDetails.orderId));
+          }}
+        >
+          View Order
+        </Button>
+      )}
+      {isAdmin && notification?.extraDetails?.orderId ? (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => {
+            drawer.onFalse();
+            router.push(paths.dashboard.order.edit(notification.extraDetails.orderId));
+          }}
+        >
+          View Order
+        </Button>
+      ) : null}
+    </Stack>
+  );
+
   const inquiryAction = (
     <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
       <Button
@@ -256,6 +286,7 @@ export default function NotificationItem({ notification, drawer }) {
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
         {notification.type === 'quotation' && quotationAction}
+        {notification.type === 'order' && orderAction}
         {notification.type === 'inquiry' && inquiryAction}
         {notification.type === 'file' && fileAction}
         {notification.type === 'tags' && tagsAction}
