@@ -13,11 +13,11 @@ export default function InvoiceNewEditStatusDate({ invoice, onModalClose }) {
   const { control, watch } = useFormContext();
   const [open, setOpen] = useState(false);
 
-  const hasOpened = useRef(false); 
+  const hasOpened = useRef(false);
   const status = watch('status');
   const values = watch();
 
-  
+
   const handleClose = () => {
     setOpen(false);
     if (onModalClose) onModalClose();
@@ -26,15 +26,15 @@ export default function InvoiceNewEditStatusDate({ invoice, onModalClose }) {
 
   const handleOpen = () => setOpen(true);
 
- 
+
   useEffect(() => {
     if (!invoice) return;
 
     if (Number(invoice?.status) === 1) return;
 
-   
+
     if (Number(status) === 1 && !hasOpened.current) {
-      hasOpened.current = true; 
+      hasOpened.current = true;
       handleOpen();
     }
   }, [status, invoice]);
@@ -58,7 +58,7 @@ export default function InvoiceNewEditStatusDate({ invoice, onModalClose }) {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
-        disabled={isPaid} 
+        disabled={isPaid}
       >
         {[1, 0, 2, 3, 4].map((option) => (
           <MenuItem key={option} value={option}>
@@ -75,6 +75,7 @@ export default function InvoiceNewEditStatusDate({ invoice, onModalClose }) {
         open={open}
         handleClose={handleClose}
         invoice={invoice}
+        refreshPayment={handleClose}
       />
 
       <Controller

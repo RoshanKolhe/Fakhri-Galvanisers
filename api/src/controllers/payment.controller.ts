@@ -573,7 +573,7 @@ export class PaymentController {
     const template = notificationTemplate({
       userData: orderData.customer,
       subject: `Material is ready with this order id ${orderId}`,
-      content: `Material is ready with this order id ${orderId}`,
+      content: `Material is ready with this order id`,
       buttonInfo: `Click the button below to check the order:`,
       buttonName: `View Order`,
       redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/order/${orderId}`

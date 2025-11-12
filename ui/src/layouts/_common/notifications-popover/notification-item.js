@@ -130,7 +130,7 @@ export default function NotificationItem({ notification, drawer }) {
           onClick={() => {
             console.log('here');
             drawer.onFalse();
-            router.push(paths.dashboard.order.view(notification.extraDetails.orderId));
+            router.push(paths.dashboard.order.details(notification.extraDetails.orderId));
           }}
         >
           View Order
