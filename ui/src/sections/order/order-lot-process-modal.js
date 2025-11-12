@@ -264,6 +264,9 @@ console.log({totalQuantity})
 
   const sumQuantitiesReducer = (total, lot) => total + (lot.quantity || 0);
 
+  console.log('lots', lots);
+  console.log('times', times);
+
   const handleSubmit = async () => {
     const newErrors = {};
     let hasErrors = false;
@@ -303,20 +306,20 @@ console.log({totalQuantity})
           processId: processes[processIndex].id,
           duration: process.duration,
           timeTaken: process?.timeTaken ? process.timeTaken : null,
-          status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
+          status: process?.status ? process?.status : 0,
         })) || [],
       preTreatmentProcesses:
         times[index]?.map((process, processIndex) => ({
           processId: processes[processIndex].id,
           duration: process.duration,
           timeTaken: process?.timeTaken ? process.timeTaken : null,
-          status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
+          status: process?.status ? process?.status : 0,
         })) || [],
       processes: times[index]?.map((process, processIndex) => ({
         processId: processes[processIndex].id,
         duration: process.duration,
         timeTaken: process?.timeTaken ? process.timeTaken : null,
-        status: process?.processesDetails?.status ? process?.processesDetails?.status : 0,
+        status: process?.status ? process?.status : 0,
       })) || [],
     }));
 

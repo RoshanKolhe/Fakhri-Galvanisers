@@ -582,8 +582,6 @@ export class OrderController {
       if (materialsData && materialsData.length > 0) {
         for (const material of materialsData) {
           const materialId = material.id;
-
-          console.log(material);
           await this.materialRepository.updateById(
             materialId,
             {
@@ -623,7 +621,6 @@ export class OrderController {
             await this.lotsRepository.deleteById(lotToDelete.id, { transaction: tx });
           }
 
-          console.log('material lots', materialLots);
           for (const lot of material.lots) {
             const existingLot = materialLots.find(
               (ml) => ml.lotNumber === lot.lotNumber,
@@ -637,7 +634,6 @@ export class OrderController {
                 visualInspection: lot.visualInspection,
               });
 
-              console.log('galavanizing process', lot)
               for (const lotProcess of existingLot.processes) {
                 const allProcesses = [
                   ...(material.lots[0].processes || []),
@@ -647,8 +643,6 @@ export class OrderController {
                   (res: any) => res.processId === lotProcess.id,
                 );
 
-                console.log('matchedProcessIndex', matchedProcessIndex, existingLot.id);
-                console.log('all processes', allProcesses);
                 if (matchedProcessIndex !== -1) {
                   const matchedProcess = allProcesses[matchedProcessIndex];
 
@@ -659,6 +653,8 @@ export class OrderController {
                       processesId: matchedProcess.processId,
                     }
                   }))
+
+                  console.log('matchedProcessData', matchedProcess);
                   await this.lotProcessesRepository.updateAll(
                     {
                       duration: matchedProcess.duration,
