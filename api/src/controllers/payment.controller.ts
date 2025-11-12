@@ -22,7 +22,7 @@ import {
   HttpErrors,
   getFilterSchemaFor,
 } from '@loopback/rest';
-import {Payment} from '../models';
+import { Payment } from '../models';
 import {
   CustomerRepository,
   DispatchRepository,
@@ -32,16 +32,17 @@ import {
   PaymentRepository,
   QcReportRepository,
 } from '../repositories';
-import {authenticate, AuthenticationBindings} from '@loopback/authentication';
-import {PermissionKeys} from '../authorization/permission-keys';
-import {inject} from '@loopback/core';
-import {UserProfile} from '@loopback/security';
-import {FakhriGalvanisersDataSource} from '../datasources';
+import { authenticate, AuthenticationBindings } from '@loopback/authentication';
+import { PermissionKeys } from '../authorization/permission-keys';
+import { inject } from '@loopback/core';
+import { UserProfile } from '@loopback/security';
+import { FakhriGalvanisersDataSource } from '../datasources';
 import SITE_SETTINGS from '../utils/config';
-import {EmailManagerBindings} from '../keys';
-import {EmailManager} from '../services/email.service';
+import { EmailManagerBindings } from '../keys';
+import { EmailManager } from '../services/email.service';
 import generatePaymentApprovedTemplate from '../templates/payment-approved.template';
 import generatePaymentRejectedTemplate from '../templates/payment-rejected.template';
+import notificationTemplate from '../templates/notification.template';
 
 export class PaymentController {
   constructor(
@@ -63,7 +64,7 @@ export class PaymentController {
     public qcReportRepository: QcReportRepository,
     @inject(EmailManagerBindings.SEND_MAIL)
     public emailManager: EmailManager,
-  ) {}
+  ) { }
 
   @authenticate({
     strategy: 'jwt',
@@ -74,7 +75,7 @@ export class PaymentController {
   @post('/payments')
   @response(200, {
     description: 'Payment model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Payment)}},
+    content: { 'application/json': { schema: getModelSchemaRef(Payment) } },
   })
   async create(
     @requestBody({
@@ -110,7 +111,7 @@ export class PaymentController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Payment, {includeRelations: true}),
+          items: getModelSchemaRef(Payment, { includeRelations: true }),
         },
       },
     },
@@ -118,20 +119,23 @@ export class PaymentController {
   async find(
     @inject(AuthenticationBindings.CURRENT_USER) currnetUser: UserProfile,
     @param.query.object('filter', getFilterSchemaFor(Payment))
-  filter?: Filter<Payment>,
-): Promise<{data:Payment[], count:{total:number,
-  paidTotal:number,
-  pendingTotal:number,
-  overdueTotal:number,
-  pendingApprovalTotal:number,
-  requestReuploadTotal:number,
+    filter?: Filter<Payment>,
+  ): Promise<{
+    data: Payment[], count: {
+      total: number,
+      paidTotal: number,
+      pendingTotal: number,
+      overdueTotal: number,
+      pendingApprovalTotal: number,
+      requestReuploadTotal: number,
 
 
-}}> {
+    }
+  }> {
     filter = filter ?? {};
 
     const baseFilter: Filter<Payment> = {
-          ...filter,
+      ...filter,
       where: {
         ...filter.where,
         isDeleted: false,
@@ -147,7 +151,7 @@ export class PaymentController {
             ],
           },
         },
-        {relation: 'customer'},
+        { relation: 'customer' },
       ],
       order: ['createdAt DESC'],
     };
@@ -155,10 +159,10 @@ export class PaymentController {
     let finalFilter: Filter<Payment>;
     if (
       currentUserPermission.includes('super_admin') ||
-      currentUserPermission.includes('admin') || 
+      currentUserPermission.includes('admin') ||
       currentUserPermission.includes('supervisor')
     ) {
-    finalFilter = baseFilter;
+      finalFilter = baseFilter;
     } else {
       finalFilter = {
         ...baseFilter,
@@ -167,29 +171,32 @@ export class PaymentController {
         },
       };
     }
-   
+
     console.log('final filter', finalFilter);
 
-    const countFilter={
-      isDeleted:false,
+    const countFilter = {
+      isDeleted: false,
     }
     const data = await this.paymentRepository.find(finalFilter);
     const total = await this.paymentRepository.count(countFilter);
-     const paidTotal = await this.paymentRepository.count({...countFilter,status:1});
-      const pendingTotal = await this.paymentRepository.count({...countFilter,status:0});
-       const overdueTotal = await this.paymentRepository.count({...countFilter,status:2});
-        const pendingApprovalTotal = await this.paymentRepository.count({...countFilter,status:3});
-         const requestReuploadTotal = await this.paymentRepository.count({...countFilter,status:4});
+    const paidTotal = await this.paymentRepository.count({ ...countFilter, status: 1 });
+    const pendingTotal = await this.paymentRepository.count({ ...countFilter, status: 0 });
+    const overdueTotal = await this.paymentRepository.count({ ...countFilter, status: 2 });
+    const pendingApprovalTotal = await this.paymentRepository.count({ ...countFilter, status: 3 });
+    const requestReuploadTotal = await this.paymentRepository.count({ ...countFilter, status: 4 });
 
 
-    return { data, count:{total: total.count,
-      paidTotal:paidTotal.count,
-      pendingTotal:pendingTotal.count,
-      overdueTotal:overdueTotal.count,
-      pendingApprovalTotal:pendingApprovalTotal.count,
-      requestReuploadTotal:requestReuploadTotal.count,
-    } };
-    
+    return {
+      data, count: {
+        total: total.count,
+        paidTotal: paidTotal.count,
+        pendingTotal: pendingTotal.count,
+        overdueTotal: overdueTotal.count,
+        pendingApprovalTotal: pendingApprovalTotal.count,
+        requestReuploadTotal: requestReuploadTotal.count,
+      }
+    };
+
   }
 
   @authenticate({
@@ -203,13 +210,13 @@ export class PaymentController {
     description: 'Payment model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Payment, {includeRelations: true}),
+        schema: getModelSchemaRef(Payment, { includeRelations: true }),
       },
     },
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Payment, {exclude: 'where'})
+    @param.filter(Payment, { exclude: 'where' })
     filter?: FilterExcludingWhere<Payment>,
   ): Promise<Payment> {
     return this.paymentRepository.findById(id, {
@@ -228,7 +235,7 @@ export class PaymentController {
             ],
           },
         },
-        {relation: 'customer'},
+        { relation: 'customer' },
       ],
     });
   }
@@ -248,7 +255,7 @@ export class PaymentController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Payment, {partial: true}),
+          schema: getModelSchemaRef(Payment, { partial: true }),
         },
       },
     })
@@ -270,16 +277,16 @@ export class PaymentController {
       if (payment.status && payment.status === 1) {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
-          {isPaid: true},
-          {transaction: tx},
+          { isPaid: true },
+          { transaction: tx },
         );
 
         const materials = await this.materialRepository.find({
-          where: {orderId: paymentDetails.orderId},
+          where: { orderId: paymentDetails.orderId },
         });
 
         const qcReports = await this.qcReportRepository.find({
-          where: {orderId: paymentDetails.orderId},
+          where: { orderId: paymentDetails.orderId },
         });
 
         const allMaterialsCompleted =
@@ -292,7 +299,7 @@ export class PaymentController {
         if (allMaterialsCompleted && allQcCompleted) {
           // Check if a dispatch record already exists
           const existingDispatch = await this.dispatchRepository.findOne({
-            where: {orderId: paymentDetails.orderId},
+            where: { orderId: paymentDetails.orderId },
           });
 
           if (!existingDispatch) {
@@ -301,7 +308,7 @@ export class PaymentController {
                 orderId: paymentDetails.orderId,
                 customerId: paymentDetails.customerId,
               },
-              {transaction: tx},
+              { transaction: tx },
             );
 
             // Update order timeline with 'Ready to Dispatch' entry
@@ -326,8 +333,45 @@ export class PaymentController {
                 status: 3,
                 timeline: orderTimeline,
               },
-              {transaction: tx},
+              { transaction: tx },
             );
+
+            const orderData = await this.orderRepository.findById(id,
+              {
+                include: [
+                  { relation: 'customer' }
+                ]
+              }
+            );
+
+            //  send notification and send email for dispatch 
+            await this.notificationRepository.create({
+              avatarUrl: customer?.avatar?.fileUrl ? customer?.avatar?.fileUrl : null,
+              title: `Material is ready with this order id`,
+              type: 'order',
+              status: 0,
+              customerId: order.customerId,
+              extraDetails: {
+                orderId: order.id,
+              },
+            });
+
+            const template = notificationTemplate({
+              userData: customer,
+              subject: `Material is ready with this order id`,
+              content: `Material is ready with this order id`,
+              buttonInfo: `Click the button below to check the order:`,
+              buttonName: `View Order`,
+              redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/order/${orderData?.id}`
+            });
+
+            await this.emailManager.sendMail({
+              from: SITE_SETTINGS.fromMail,
+              to: customer.email,
+              subject: template.subject,
+              html: template.html,
+            })
+
           } else {
             console.log(
               `Dispatch already exists for order ${paymentDetails.orderId}, skipping creation.`,
@@ -348,7 +392,7 @@ export class PaymentController {
               paymentId: paymentDetails.id,
             },
           },
-          {transaction: tx},
+          { transaction: tx },
         );
 
         const template = generatePaymentApprovedTemplate({
@@ -372,8 +416,8 @@ export class PaymentController {
       } else {
         await this.orderRepository.updateById(
           paymentDetails.orderId,
-          {isPaid: false},
-          {transaction: tx},
+          { isPaid: false },
+          { transaction: tx },
         );
       }
 
@@ -391,7 +435,7 @@ export class PaymentController {
               paymentId: paymentDetails.id,
             },
           },
-          {transaction: tx},
+          { transaction: tx },
         );
       }
 
@@ -409,7 +453,7 @@ export class PaymentController {
               paymentId: paymentDetails.id,
             },
           },
-          {transaction: tx},
+          { transaction: tx },
         );
 
         const template = generatePaymentRejectedTemplate({
@@ -433,7 +477,7 @@ export class PaymentController {
         }
       }
 
-      await this.paymentRepository.updateById(id, payment, {transaction: tx});
+      await this.paymentRepository.updateById(id, payment, { transaction: tx });
 
       await tx.commit();
     } catch (err) {
@@ -466,12 +510,12 @@ export class PaymentController {
   async createDispatch(
     @param.path.number('orderId') orderId: number,
   ): Promise<void> {
-    const qcReports = await this.qcReportRepository.find({where: {orderId}});
+    const qcReports = await this.qcReportRepository.find({ where: { orderId } });
     const order = await this.orderRepository.findById(orderId);
     const allQcCompleted =
       qcReports.length > 0 && qcReports.every(qc => qc.status === 1);
 
-    const materials = await this.materialRepository.find({where: {orderId}});
+    const materials = await this.materialRepository.find({ where: { orderId } });
     const allMaterialsCompleted =
       materials.length > 0 && materials.every(mat => mat.status === 2);
 
@@ -483,7 +527,7 @@ export class PaymentController {
 
     // Check if a dispatch record already exists for the order
     const existingDispatch = await this.dispatchRepository.findOne({
-      where: {orderId},
+      where: { orderId },
     });
 
     if (existingDispatch) {
@@ -509,15 +553,49 @@ export class PaymentController {
       timeline: orderTimeline,
     });
 
+    //  send notification and send email for dispatch 
+    const orderData : any = await this.orderRepository.findById(orderId, {
+      include: [{ relation: 'customer' }],
+    });
+
+    
+    await this.notificationRepository.create({
+      avatarUrl: orderData.customer?.avatar?.fileUrl ? orderData.customer?.avatar?.fileUrl : null,
+      title: `Material is ready with this order id`,
+      type: 'order',
+      status: 0,
+      customerId: order.customerId,
+      extraDetails: {
+        orderId: orderId,
+      },
+    });
+
+    const template = notificationTemplate({
+      userData: orderData.customer,
+      subject: `Material is ready with this order id`,
+      content: `Material is ready with this order id`,
+      buttonInfo: `Click the button below to check the order:`,
+      buttonName: `View Order`,
+      redirectLink: `${process.env.REACT_APP_ENDPOINT}/dashboard/order/${orderId}`
+    });
+
+    await this.emailManager.sendMail({
+      from: SITE_SETTINGS.fromMail,
+      to: orderData.customer.email,
+      subject: template.subject,
+      html: template.html,
+    })
+
+
     // Find the invoice related to this order
-    const invoice = await this.paymentRepository.findOne({where: {orderId}});
+    const invoice = await this.paymentRepository.findOne({ where: { orderId } });
 
     if (!invoice) {
       throw new HttpErrors.NotFound(`Invoice not found for order ${orderId}.`);
     }
 
     // Update isPaidSkip in the invoice table
-    await this.paymentRepository.updateById(invoice.id, {isPaidSkip: true});
+    await this.paymentRepository.updateById(invoice.id, { isPaidSkip: true });
 
     // Create a new dispatch record
     await this.dispatchRepository.create({
